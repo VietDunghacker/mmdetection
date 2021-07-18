@@ -229,6 +229,6 @@ evaluation = dict(interval = 250, metric = 'bbox')
 fp16 = dict(loss_scale=512.)
 
 # runtime
-load_from = '/gdrive/My Drive/data/SWA-VFNetX-1-18-53.4_VFNetX-R2101-41e-0.01-0.0001-52.2.pth'
+load_from = None
 resume_from = None
 workflow = [('train', 1)]
