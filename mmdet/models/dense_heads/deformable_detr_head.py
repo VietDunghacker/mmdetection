@@ -139,15 +139,7 @@ class DeformableDETRHead(DETRHead):
 		query_embeds = None
 		if not self.as_two_stage:
 			query_embeds = self.query_embedding.weight
-		hs, init_reference, inter_references, \
-			enc_outputs_class, enc_outputs_coord = self.transformer(
-					mlvl_feats,
-					mlvl_masks,
-					query_embeds,
-					mlvl_positional_encodings,
-					reg_branches=self.reg_branches if self.with_box_refine else None,  # noqa:E501
-					cls_branches=self.cls_branches if self.as_two_stage else None  # noqa:E501
-			)
+		hs, init_reference, inter_references, enc_outputs_class, enc_outputs_coord = self.transformer(mlvl_feats, mlvl_masks, query_embeds, mlvl_positional_encodings, reg_branches=self.reg_branches if self.with_box_refine else None, cls_branches=self.cls_branches if self.as_two_stage else None)
 		hs = hs.permute(0, 2, 1, 3)
 		outputs_classes = []
 		outputs_coords = []
