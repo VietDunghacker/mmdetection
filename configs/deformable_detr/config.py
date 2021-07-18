@@ -17,7 +17,7 @@ model = dict(
 		dcn=dict(type='DCNv2', deform_groups=1, fallback_on_stride=False),
 		stage_with_dcn=(False, True, True, True),
 		with_cp = True,
-        init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/pretrain/third_party/res2net101_v1d_26w_4s_mmdetv2-f0a600f9.pth')),
+		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/pretrain/third_party/res2net101_v1d_26w_4s_mmdetv2-f0a600f9.pth')),
 	neck=dict(
 		type='ChannelMapper',
 		in_channels=[512, 1024, 2048],
@@ -203,7 +203,16 @@ data = dict(
 	test=dict(pipeline=test_pipeline))
 
 # optimizer
-optimizer = dict(type="SGD", lr=0.0032, paramwise_cfg=dict(bias_lr_mult=2., bias_decay_mult=0.))
+optimizer = dict(
+	type='AdamW',
+	lr=2e-4,
+	weight_decay=0.0001,
+	paramwise_cfg=dict(
+		custom_keys={
+			'backbone': dict(lr_mult=0.1),
+			'sampling_offsets': dict(lr_mult=0.1),
+			'reference_points': dict(lr_mult=0.1)
+		}))
 optimizer_config = dict(grad_clip=None)
 # learning policy
 lr_config = dict(
