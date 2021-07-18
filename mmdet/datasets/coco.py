@@ -497,7 +497,7 @@ class CocoDataset(CustomDataset):
 							ap = float('nan')
 						aps.append(ap)
 						results_per_category.append((f'{nm["name"]}', f'{float(ap):0.4f}'))
-					eval_results['AP_per_class'] = aps
+					#eval_results['AP_per_class'] = aps
 
 					num_columns = min(6, len(results_per_category) * 2)
 					results_flatten = list(
