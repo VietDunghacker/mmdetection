@@ -121,7 +121,4 @@ class ACSL(nn.Module):
 
 		cls_loss = F.binary_cross_entropy_with_logits(cls_logits, target.float(), reduction='none')
 
-		if avg_factor is not None:
-			return torch.sum(weight_mask * cls_loss) / avg_factor
-		else:
-			return torch.sum(weight_mask * cls_loss) / self.n_i
+		return torch.sum(weight_mask * cls_loss) / self.n_i

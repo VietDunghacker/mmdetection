@@ -223,7 +223,7 @@ lr_config = dict(
 	)
 runner = dict(type='EpochBasedRunner', max_epochs = 36)
 checkpoint_config = dict(interval = 250)
-evaluation = dict(interval = 250, metric = 'mAP')
+evaluation = dict(interval = 250, metric = 'bbox')
 
 fp16 = None
 # runtime
