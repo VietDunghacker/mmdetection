@@ -81,7 +81,7 @@ class DETRHead(AnchorFreeHead):
 		# since it brings inconvenience when the initialization of
 		# `AnchorFreeHead` is called.
 		super(AnchorFreeHead, self).__init__(init_cfg)
-		self.bg_cls_weight = 1
+		self.bg_cls_weight = 0.1
 		self.sync_cls_avg_factor = sync_cls_avg_factor
 		class_weight = loss_cls.get('class_weight', None)
 		if class_weight is not None and (self.__class__ is DETRHead):
