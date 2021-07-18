@@ -226,7 +226,7 @@ runner = dict(type='EpochBasedRunnerAmp', max_epochs = 36)
 checkpoint_config = dict(interval = 250)
 evaluation = dict(interval = 250, metric = 'bbox')
 
-fp16 = dict(None)
+fp16 = None
 
 # runtime
 load_from = None
