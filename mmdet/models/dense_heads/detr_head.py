@@ -81,7 +81,7 @@ class DETRHead(AnchorFreeHead):
 		# since it brings inconvenience when the initialization of
 		# `AnchorFreeHead` is called.
 		super(AnchorFreeHead, self).__init__(init_cfg)
-		self.bg_cls_weight = 0
+		self.bg_cls_weight = 0.1
 		self.sync_cls_avg_factor = sync_cls_avg_factor
 		class_weight = loss_cls.get('class_weight', None)
 		if class_weight is not None and (self.__class__ is DETRHead):
@@ -372,15 +372,12 @@ class DETRHead(AnchorFreeHead):
 		# classification loss
 		cls_scores = cls_scores.reshape(-1, self.cls_out_channels)
 		# construct weighted avg_factor to match with the official DETR repo
-		cls_avg_factor = num_total_pos * 1.0 + \
-			num_total_neg * self.bg_cls_weight
+		cls_avg_factor = num_total_pos * 1.0 + num_total_neg * self.bg_cls_weight
 		if self.sync_cls_avg_factor:
-			cls_avg_factor = reduce_mean(
-				cls_scores.new_tensor([cls_avg_factor]))
+			cls_avg_factor = reduce_mean(cls_scores.new_tensor([cls_avg_factor]))
 		cls_avg_factor = max(cls_avg_factor, 1)
 
-		loss_cls = self.loss_cls(
-			cls_scores, labels, label_weights, avg_factor=cls_avg_factor)
+		loss_cls = self.loss_cls(cls_scores, labels, label_weights, avg_factor=cls_avg_factor)
 
 		# Compute the average number of gt boxes accross all gpus, for
 		# normalization purposes

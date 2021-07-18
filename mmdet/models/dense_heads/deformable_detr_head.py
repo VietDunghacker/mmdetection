@@ -43,8 +43,7 @@ class DeformableDETRHead(DETRHead):
 		if self.as_two_stage:
 			transformer['as_two_stage'] = self.as_two_stage
 
-		super(DeformableDETRHead, self).__init__(
-			*args, transformer=transformer, **kwargs)
+		super(DeformableDETRHead, self).__init__(*args, transformer=transformer, **kwargs)
 
 	def _init_layers(self):
 		"""Initialize classification branch and regression branch of head."""
