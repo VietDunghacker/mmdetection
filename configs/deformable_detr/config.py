@@ -3,7 +3,6 @@ _base_ = [
 ]
 model = dict(
 	type='DeformableDETR',
-	pretrained = 'https://download.openmmlab.com/pretrain/third_party/res2net101_v1d_26w_4s_mmdetv2-f0a600f9.pth',
 	backbone=dict(
 		type='Res2Net',
 		depth=101,
@@ -17,7 +16,8 @@ model = dict(
 		style='pytorch',
 		dcn=dict(type='DCNv2', deform_groups=1, fallback_on_stride=False),
 		stage_with_dcn=(False, True, True, True),
-		with_cp = True),
+		with_cp = True,
+        init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/pretrain/third_party/res2net101_v1d_26w_4s_mmdetv2-f0a600f9.pth')),
 	neck=dict(
 		type='ChannelMapper',
 		in_channels=[512, 1024, 2048],
