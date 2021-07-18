@@ -222,12 +222,11 @@ lr_config = dict(
 	warmup_iters=500,
 	warmup_ratio=0.1,
 	)
-runner = dict(type='EpochBasedRunnerAmp', max_epochs = 36)
+runner = dict(type='EpochBasedRunner', max_epochs = 36)
 checkpoint_config = dict(interval = 250)
-evaluation = dict(interval = 250, metric = 'bbox')
+evaluation = dict(interval = 250, metric = 'mAP')
 
-fp16 = dict(loss_scale = 512.)
-
+fp16 = None
 # runtime
 load_from = None
 resume_from = None
