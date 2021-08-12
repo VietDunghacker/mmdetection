@@ -1,12 +1,17 @@
 import os.path as osp
+import warnings
+from math import inf
 
+import mmcv
 import torch.distributed as dist
 from mmcv.runner import DistEvalHook as BaseDistEvalHook
 from mmcv.runner import EvalHook as BaseEvalHook
 from mmcv.utils import is_seq_of
 from torch.nn.modules.batchnorm import _BatchNorm
+from torch.utils.data import DataLoader
 
 from mmdet.utils import get_root_logger
+from mmcv.utils import print_log
 
 class EvalHook(BaseEvalHook):
 	def __init__(self, train_dataloader, val_dataloader,
