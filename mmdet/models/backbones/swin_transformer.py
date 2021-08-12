@@ -555,6 +555,7 @@ class SwinTransformer(nn.Module):
 			self.add_module(layer_name, layer)
 
 		self._freeze_stages()
+		self.init_weights()
 
 	def _freeze_stages(self):
 		if self.frozen_stages >= 0:
