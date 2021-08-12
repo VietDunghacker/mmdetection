@@ -36,7 +36,7 @@ model = dict(
 		in_channels=2048,
 		sync_cls_avg_factor=True,
 		with_box_refine=True,
-		as_two_stage=False,
+		as_two_stage=True,
 		transformer=dict(
 			type='DeformableDetrTransformer',
 			encoder=dict(
@@ -136,7 +136,7 @@ train_pipeline = [
 		crop_size=(0.9, 0.9)),
 	dict(
 		type='Resize',
-		img_scale=[(640, 640), (800, 800)],
+		img_scale=[(720, 720), (960, 960)],
 		multiscale_mode='range',
 		keep_ratio=True),
 	dict(
