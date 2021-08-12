@@ -36,7 +36,7 @@ model = dict(
 		in_channels=2048,
 		sync_cls_avg_factor=True,
 		with_box_refine=True,
-		as_two_stage=False,
+		as_two_stage=True,
 		transformer=dict(
 			type='DeformableDetrTransformer',
 			encoder=dict(
@@ -136,7 +136,7 @@ train_pipeline = [
 		crop_size=(0.9, 0.9)),
 	dict(
 		type='Resize',
-		img_scale=[(720, 720), (960, 960)],
+		img_scale=[(640, 640), (800, 800)],
 		multiscale_mode='range',
 		keep_ratio=True),
 	dict(
@@ -146,7 +146,7 @@ train_pipeline = [
 					  (16, 8), (8, 16), (16, 16), (16, 32), (32, 16), (32, 32),
 					  (32, 48), (48, 32), (48, 48)]),
 	dict(type='RandomFlip', flip_ratio=0.5),
-	dict(type='Pad', size_divisor=32),
+	dict(type='Pad', size_divisor=1),
 	dict(
 		type='Albu',
 		transforms=albu_train_transforms,
@@ -197,7 +197,7 @@ data = dict(
 	test=dict(pipeline=test_pipeline))
 
 # optimizer
-optimizer = dict(type='AdamW', lr=0.0001, betas=(0.9, 0.999), weight_decay=0.05,
+optimizer = dict(type='AdamW', lr=0.0001, betas=(0.9, 0.999), weight_decay=0.0001,
 	paramwise_cfg=dict(
 		custom_keys={
 			'backbone': dict(lr_mult=0.1),
