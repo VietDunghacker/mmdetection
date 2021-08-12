@@ -3,7 +3,6 @@ _base_ = [
 ]
 model = dict(
 	type='DeformableDETR',
-	pretrained = 'https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_base_patch4_window7_224_22k.pth',
 	backbone=dict(
 		type='SwinTransformer',
 		embed_dim=128,
@@ -20,6 +19,7 @@ model = dict(
 		patch_norm=True,
 		out_indices=(1, 2, 3),
 		use_checkpoint=True,
+		pretrained = 'https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_base_patch4_window7_224_22k.pth'
 	),
 	neck=dict(
 		type='ChannelMapper',
