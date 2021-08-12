@@ -36,7 +36,7 @@ model = dict(
 		in_channels=2048,
 		sync_cls_avg_factor=True,
 		with_box_refine=True,
-		as_two_stage=True,
+		as_two_stage=False,
 		transformer=dict(
 			type='DeformableDetrTransformer',
 			encoder=dict(
@@ -220,7 +220,7 @@ runner = dict(type='IterBasedRunner', max_iters=5000, max_epochs = None)
 checkpoint_config = dict(interval = 5000)
 evaluation = dict(interval = 5000, metric = 'bbox')
 
-fp16 = None
+fp16 = Nones
 
 # runtime
 resume_from = None
