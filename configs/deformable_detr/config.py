@@ -220,7 +220,7 @@ runner = dict(type='IterBasedRunner', max_iters=5000, max_epochs = None)
 checkpoint_config = dict(interval = 5000)
 evaluation = dict(interval = 5000, metric = 'bbox')
 
-fp16 = dict(loss_scale=512.)
+fp16 = None
 
 # runtime
 resume_from = None
