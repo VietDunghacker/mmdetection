@@ -110,7 +110,7 @@ class DetrTransformerEncoder(TransformerLayerSequence):
 									  f'Please specify post_norm_cfg'
 			self.post_norm = None
 
-	@force_fp32(apply_to=('query', ))
+	@force_fp32(apply_to=(*args, **kwargs))
 	def forward(self, *args, **kwargs):
 		"""Forward function for `TransformerCoder`.
 
