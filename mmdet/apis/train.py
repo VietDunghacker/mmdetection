@@ -40,7 +40,7 @@ def train_detector(model,
 				   distributed=False,
 				   validate=False,
 				   timestamp=None,
-				   meta=None):
+				   meta=dict()):
 	logger = get_root_logger(log_level=cfg.log_level)
 
 	# prepare data loaders
