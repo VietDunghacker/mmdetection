@@ -36,6 +36,7 @@ class EvalHook(BaseEvalHook):
 		self.train_dataloader = train_dataloader
 		self.dataloader = val_dataloader
 		self.interval = interval
+		self.start = start
 		self.by_epoch = by_epoch
 		
 		assert isinstance(save_best, str) or save_best is None, \
