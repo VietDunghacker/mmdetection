@@ -19,8 +19,20 @@ from .custom import CustomDataset
 @DATASETS.register_module()
 class CocoDataset(CustomDataset):
 
-	CLASSES = ['Abigail Kathleen Breslin',  'Aimee Teegarden',  'Alexa Helen Nikolas',  'Alexandra Hetherington Breckenridge',  'Alice Jane Evans',  'Alycia Jasmin Debnam-Carey',  'Amanda Macuga',  'Amanda Silver',  'Amiah Miller',  'Annie DeFatta',  'Annie Wersching',  'Arielle Caroline Kebbel',  'Ashley Nicole Simpson',  'Ayelet Zurer',  'Bianca Jasmine Lawson',  'Bianca Suzanne Collins',  'Bresha Webb',  'Brina Michelle Palencia',  'Brittany Anne Snow',  'Camille Sullivan',  'Cammy Hébert Miller',  'Candice Kristina Patton',  'Candice Rene Accola',  'Cassadee Blake Pope',  'Cassidy Freeman',  'Chelsea Gilligan',  'Chelsea Royce Tavares',  'Ciara Princess Harris',  'Claire Rhiannon Holt',  'Courtney Braden Ford',  'Deepika Padukone',  'Dianna Elise Agron',  'Dịch Hân',  'Elizabeth Blackmore',  'Elizabeth Melise Jow',  'Ellen Page',  "Emily O'Hara Ratajkowski",  'Emma Kristina Degerstedt',  'Emma Rose Roberts',  'Erin Beute',  'Erin Sanders',  'Evanna Lynch',  'Freya Tingley',  'Gage Golightly',  'Gina Torres',  'Hailee Steinfeld',  'Hồ Kỳ',  'Jane Colburn Levy',  'Janina Zione Gavankar',  'Jasmine Guy',  'Jeanine Marie Mason',  'Jenna Lee Dewan',  'Jennette Michelle Faye McCurdy',  'Jessica Lucas',  "Jodi Lyn O'Keefe",  'Julianne Alexandra Hough',  'Katerina Alexandre Hartford Graham',  'Katherine Elizabeth Upton',  'Kayla Noelle Ewell',  'Kelly Ann Hu',  'Kristen Gutoskie',  'Kristi Michelle Frank',  'Lauren Cohan',  'Lauren Corrinne',  'Lily Jane Collins',  'Lý Thất Hi',  'Marguerite MacIntyre',  'Meghan Rienks',  'Melinda Patrice Clarke',  'Mia Kirshner',  'Michaela McManus',  'Milica Bogdanovna Jovovich',  'Miranda Frigon',  'Miranda Taylor Cosgrove',  'Mora Stephens',  'Nancy Tiểu Tư',  'Natalie Elise Hall',  'Nathalie Kelley',  'Nikolina Kamenova Dobreva',  'Nại Nại Fox',  'Odessa Zion Segall Adlon',  'Olga Tchakova',  'Penelope Mitchell',  'Phoebe Jane Elizabeth Tonkin',  'Rachel Leah Bloom',  'Riawna Capri',  'Rosamund Mary Ellen Pike',  'Sara Canning',  'Sarah Jane Hyland',  'Sasha Bianca Lane',  'Savannah Jayde',  'Scarlett Hannah Byrne',  'Teressa Liane',  'Torrey Joël DeVitto',  'Tô Tiểu Tiểu',  'Vanessa Anne Hudgens',  'Vanessa Eichholz',  'Victoria Gabrielle Platt',  'Vũ Trụ',  'Yan-Kay Crystal Lowe',  'Đỗ Viki']
-	#CLASSES = ('person',)
+	CLASSES = ('person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
+			   'train', 'truck', 'boat', 'traffic light', 'fire hydrant',
+			   'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog',
+			   'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe',
+			   'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee',
+			   'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat',
+			   'baseball glove', 'skateboard', 'surfboard', 'tennis racket',
+			   'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl',
+			   'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot',
+			   'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch',
+			   'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop',
+			   'mouse', 'remote', 'keyboard', 'cell phone', 'microwave',
+			   'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock',
+			   'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush')
 
 	def load_annotations(self, ann_file):
 		"""Load annotation from COCO style annotation file.
@@ -346,7 +358,6 @@ class CocoDataset(CustomDataset):
 		result_files = self.results2json(results, jsonfile_prefix)
 		return result_files, tmp_dir
 
-
 	def evaluate(self,
 				 results,
 				 metric='bbox',
@@ -497,7 +508,7 @@ class CocoDataset(CustomDataset):
 							ap = float('nan')
 						aps.append(ap)
 						results_per_category.append((f'{nm["name"]}', f'{float(ap):0.4f}'))
-					#eval_results['AP_per_class'] = aps
+					eval_results['AP_per_class'] = aps
 
 					num_columns = min(6, len(results_per_category) * 2)
 					results_flatten = list(
