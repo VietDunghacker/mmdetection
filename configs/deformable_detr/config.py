@@ -215,12 +215,13 @@ lr_config = dict(
 	warmup_iters=500,
 	warmup_ratio=0.1,
 	)
+optimizer_config = dict(grad_clip=dict(max_norm=0.1, norm_type=2))
 runner = dict(type='IterBasedRunner', max_iters=5000, max_epochs = None)
 
 checkpoint_config = dict(interval = 5000)
 evaluation = dict(interval = 5000, metric = 'bbox')
 
-fp16 = None
+fp16 = dict(loss_scale = 512.)
 
 # runtime
 resume_from = None
