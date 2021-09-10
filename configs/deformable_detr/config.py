@@ -31,7 +31,7 @@ model = dict(
 		num_outs=4),
 	bbox_head=dict(
 		type='DeformableDETRHead',
-		num_query=128,
+		num_query=300,
 		num_classes=29,
 		in_channels=2048,
 		sync_cls_avg_factor=False,
@@ -136,7 +136,7 @@ train_pipeline = [
 		crop_size=(0.9, 0.9)),
 	dict(
 		type='Resize',
-		img_scale=[(640, 640), (800, 800)],
+		img_scale=[(640, 640), (960, 960)],
 		multiscale_mode='range',
 		keep_ratio=True),
 	dict(
@@ -200,7 +200,6 @@ data = dict(
 optimizer = dict(type='AdamW', lr=0.0001, betas=(0.9, 0.999), weight_decay=0.0001,
 	paramwise_cfg=dict(
 		custom_keys={
-			'backbone': dict(lr_mult=0.1),
 			'sampling_offsets': dict(lr_mult=0.1),
 			'reference_points': dict(lr_mult=0.1),
 			'absolute_pos_embed': dict(decay_mult=0.),
