@@ -6,7 +6,7 @@ import torch.distributed as dist
 from mmcv.runner import DistEvalHook as BaseDistEvalHook
 from mmcv.runner import EvalHook as BaseEvalHook
 from torch.nn.modules.batchnorm import _BatchNorm
-
+from torch.utils.data import DataLoader
 
 class EvalHook(BaseEvalHook):
 	rule_map = {'greater': lambda x, y: x > y, 'less': lambda x, y: x < y}
