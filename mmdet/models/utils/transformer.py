@@ -861,7 +861,7 @@ class DeformableDetrTransformer(Transformer):
 						  dim=4).flatten(2)
 		return pos
 
-	@force_fp32(apply_to=('mlvl_feats', 'mlvl_masks', 'query_embed'))
+	@force_fp32(apply_to=('mlvl_feats', 'mlvl_masks', 'query_embed', 'mlvl_pos_embeds'))
 	def forward(self,
 				mlvl_feats,
 				mlvl_masks,
