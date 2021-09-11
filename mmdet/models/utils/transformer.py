@@ -953,7 +953,6 @@ class DeformableDetrTransformer(Transformer):
 
 		feat_flatten = feat_flatten.permute(1, 0, 2)  # (H*W, bs, embed_dims)
 		lvl_pos_embed_flatten = lvl_pos_embed_flatten.permute(1, 0, 2)  # (H*W, bs, embed_dims)
-        print(type(feat_flatten), )
 
 		memory = self.encoder(
 			query=feat_flatten,
