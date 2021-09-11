@@ -2,7 +2,7 @@ _base_ = [
 	'../_base_/datasets/coco_detection.py', '../_base_/default_runtime.py'
 ]
 model = dict(
-	type='DETR',
+	type='DeformableDETR',
 	backbone=dict(
 		type='SwinTransformer',
 		embed_dim=128,
