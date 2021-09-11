@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import os.path as osp
+from math import inf
 
 import torch.distributed as dist
 from mmcv.runner import DistEvalHook as BaseDistEvalHook
