@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 import copy
 
 import torch
@@ -76,7 +77,8 @@ class DeformableDETRHead(DETRHead):
 				[reg_branch for _ in range(num_pred)])
 
 		if not self.as_two_stage:
-			self.query_embedding = nn.Embedding(self.num_query, self.embed_dims * 2)
+			self.query_embedding = nn.Embedding(self.num_query,
+												self.embed_dims * 2)
 
 	def init_weights(self):
 		"""Initialize weights of the DeformDETR head."""

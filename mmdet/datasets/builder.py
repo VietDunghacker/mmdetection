@@ -1,7 +1,8 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 import copy
 import platform
-import random
 import itertools
+import random
 import torch
 from collections import defaultdict
 from functools import partial
@@ -94,16 +95,17 @@ class ClassAwareSampler(Sampler):
 		if isinstance(self.dataset, CocoDataset) or isinstance(dataset, LVISDataset):
 			#ret = [1.0] * len(self.dataset)
 			for idx in range(len(self.dataset)):
-				cat_ids = self.dataset.get_cat_ids(idx)
+				cat_ids = set(self.dataset.get_cat_ids(idx))
 				ret.append(sum([self.cw[self.dataset.cat2label[cat_id]] for cat_id in cat_ids if cat_id in self.dataset.cat_ids]) + 1e-6)
 		else:
 			for idx in range(len(self.dataset)):
-				cat_ids = self.dataset.get_cat_ids(idx)
+				cat_ids = set(self.dataset.get_cat_ids(idx))
 				ret.append(sum([self.cw[cat_id] for cat_id in cat_ids if cat_id in self.dataset.cat_ids]) + 1e-6)
 		return torch.tensor(ret).float()
 
 	def __len__(self):
 		return len(self.dataset)
+
 
 def _concat_dataset(cfg, default_args=None):
 	from .dataset_wrappers import ConcatDataset
@@ -205,11 +207,22 @@ def build_dataloader(dataset,
 		batch_size = num_gpus * samples_per_gpu
 		num_workers = num_gpus * workers_per_gpu
 
-	init_fn = partial(worker_init_fn, num_workers=num_workers, rank=rank, seed=seed) if seed is not None else None
+	init_fn = partial(
+		worker_init_fn, num_workers=num_workers, rank=rank,
+		seed=seed) if seed is not None else None
 
 	sampler = ClassAwareSampler(dataset, samples_per_gpu) if shuffle else None
 
-	data_loader = DataLoader(dataset, batch_size=batch_size, sampler = sampler, num_workers=num_workers, collate_fn=partial(collate, samples_per_gpu=samples_per_gpu), pin_memory=False, worker_init_fn=init_fn, **kwargs)
+	data_loader = DataLoader(
+		dataset,
+		batch_size=batch_size,
+		sampler=sampler,
+		num_workers=num_workers,
+		collate_fn=partial(collate, samples_per_gpu=samples_per_gpu),
+		pin_memory=False,
+		worker_init_fn=init_fn,
+		**kwargs)
+
 	return data_loader
 
 

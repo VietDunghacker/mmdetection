@@ -1,5 +1,7 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 import pytest
 import torch
+from mmcv.utils import digit_version
 
 from mmdet.models.losses import (BalancedL1Loss, CrossEntropyLoss,
                                  DistributionFocalLoss, FocalLoss,
@@ -46,10 +48,11 @@ def test_loss_with_reduction_override(loss_class):
     IoULoss, BoundedIoULoss, GIoULoss, DIoULoss, CIoULoss, MSELoss, L1Loss,
     SmoothL1Loss, BalancedL1Loss
 ])
-def test_regression_losses(loss_class):
-    pred = torch.rand((10, 4))
-    target = torch.rand((10, 4))
-    weight = torch.rand((10, 4))
+@pytest.mark.parametrize('input_shape', [(10, 4), (0, 4)])
+def test_regression_losses(loss_class, input_shape):
+    pred = torch.rand(input_shape)
+    target = torch.rand(input_shape)
+    weight = torch.rand(input_shape)
 
     # Test loss forward
     loss = loss_class()(pred, target)
@@ -82,9 +85,16 @@ def test_regression_losses(loss_class):
 
 
 @pytest.mark.parametrize('loss_class', [FocalLoss, CrossEntropyLoss])
-def test_classification_losses(loss_class):
-    pred = torch.rand((10, 5))
-    target = torch.randint(0, 5, (10, ))
+@pytest.mark.parametrize('input_shape', [(10, 5), (0, 5)])
+def test_classification_losses(loss_class, input_shape):
+    if input_shape[0] == 0 and digit_version(
+            torch.__version__) < digit_version('1.5.0'):
+        pytest.skip(
+            f'CELoss in PyTorch {torch.__version__} does not support empty'
+            f'tensor.')
+
+    pred = torch.rand(input_shape)
+    target = torch.randint(0, 5, (input_shape[0], ))
 
     # Test loss forward
     loss = loss_class()(pred, target)
@@ -113,11 +123,43 @@ def test_classification_losses(loss_class):
 
 
 @pytest.mark.parametrize('loss_class', [GHMR])
-def test_GHMR_loss(loss_class):
-    pred = torch.rand((10, 4))
-    target = torch.rand((10, 4))
-    weight = torch.rand((10, 4))
+@pytest.mark.parametrize('input_shape', [(10, 4), (0, 4)])
+def test_GHMR_loss(loss_class, input_shape):
+    pred = torch.rand(input_shape)
+    target = torch.rand(input_shape)
+    weight = torch.rand(input_shape)
 
     # Test loss forward
     loss = loss_class()(pred, target, weight)
     assert isinstance(loss, torch.Tensor)
+
+
+@pytest.mark.parametrize('use_sigmoid', [True, False])
+def test_loss_with_ignore_index(use_sigmoid):
+    # Test cross_entropy loss
+    loss_class = CrossEntropyLoss(
+        use_sigmoid=use_sigmoid, use_mask=False, ignore_index=255)
+    pred = torch.rand((10, 5))
+    target = torch.randint(0, 5, (10, ))
+
+    ignored_indices = torch.randint(0, 10, (2, ), dtype=torch.long)
+    target[ignored_indices] = 255
+
+    # Test loss forward with default ignore
+    loss_with_ignore = loss_class(pred, target, reduction_override='sum')
+    assert isinstance(loss_with_ignore, torch.Tensor)
+
+    # Test loss forward with forward ignore
+    target[ignored_indices] = 250
+    loss_with_forward_ignore = loss_class(
+        pred, target, ignore_index=250, reduction_override='sum')
+    assert isinstance(loss_with_forward_ignore, torch.Tensor)
+
+    # Verify correctness
+    not_ignored_indices = (target != 250)
+    pred = pred[not_ignored_indices]
+    target = target[not_ignored_indices]
+    loss = loss_class(pred, target, reduction_override='sum')
+
+    assert torch.allclose(loss, loss_with_ignore)
+    assert torch.allclose(loss, loss_with_forward_ignore)

@@ -1,19 +1,21 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 import os.path as osp
-import warnings
-from math import inf
 
-import mmcv
 import torch.distributed as dist
 from mmcv.runner import DistEvalHook as BaseDistEvalHook
 from mmcv.runner import EvalHook as BaseEvalHook
-from mmcv.utils import is_seq_of
 from torch.nn.modules.batchnorm import _BatchNorm
-from torch.utils.data import DataLoader
 
-from mmdet.utils import get_root_logger
-from mmcv.utils import print_log
 
 class EvalHook(BaseEvalHook):
+	rule_map = {'greater': lambda x, y: x > y, 'less': lambda x, y: x < y}
+	init_value_map = {'greater': -inf, 'less': inf}
+	_default_greater_keys = [
+		'acc', 'top', 'AR@', 'auc', 'precision', 'mAP', 'mDice', 'mIoU',
+		'mAcc', 'aAcc'
+	]
+	_default_less_keys = ['loss']
+
 	def __init__(self, train_dataloader, val_dataloader,
 				 start=None,
 				 interval=1,
@@ -27,18 +29,23 @@ class EvalHook(BaseEvalHook):
 		if not isinstance(val_dataloader, DataLoader):
 			raise TypeError('dataloader must be a pytorch DataLoader, but got'
 							f' {type(dataloader)}')
-		if not interval > 0:
-			raise ValueError(f'interval must be positive, but got {interval}')
+
+		if interval <= 0:
+			raise ValueError(f'interval must be a positive number, '
+							 f'but got {interval}')
+
 		assert isinstance(by_epoch, bool), '``by_epoch`` should be a boolean'
+
 		if start is not None and start < 0:
 			raise ValueError(f'The evaluation start epoch {start} is smaller '
 							 f'than 0')
+
 		self.train_dataloader = train_dataloader
 		self.dataloader = val_dataloader
 		self.interval = interval
 		self.start = start
 		self.by_epoch = by_epoch
-		
+
 		assert isinstance(save_best, str) or save_best is None, \
 			'""save_best"" should be a str or None ' \
 			f'rather than {type(save_best)}'
@@ -110,8 +117,9 @@ class EvalHook(BaseEvalHook):
 				# infer from eval_results
 				self._init_rule(self.rule, list(eval_res.keys())[0])
 			return eval_res[self.key_indicator]
+		else:
+			return None
 
-		return None
 
 class DistEvalHook(BaseDistEvalHook):
 
