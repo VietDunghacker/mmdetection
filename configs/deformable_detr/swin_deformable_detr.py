@@ -209,7 +209,7 @@ optimizer = dict(
 			'reference_points': dict(lr_mult=0.1)}))
 optimizer_config = dict(grad_clip = None)
 # learning policy
-lr_config = dict(_delete_=True,
+lr_config = dict(
 	policy='CosineAnnealing',
 	min_lr_ratio = 0.12,
 	warmup='linear',
