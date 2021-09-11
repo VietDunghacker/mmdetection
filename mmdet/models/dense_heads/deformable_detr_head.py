@@ -94,6 +94,7 @@ class DeformableDETRHead(DETRHead):
 			for m in self.reg_branches:
 				nn.init.constant_(m[-1].bias.data[2:], 0.0)
 
+	@force_fp32()
 	def forward(self, mlvl_feats, img_metas):
 		"""Forward function.
 

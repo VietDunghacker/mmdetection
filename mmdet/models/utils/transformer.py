@@ -861,7 +861,6 @@ class DeformableDetrTransformer(Transformer):
 						  dim=4).flatten(2)
 		return pos
 
-	@force_fp32()
 	def forward(self,
 				mlvl_feats,
 				mlvl_masks,
