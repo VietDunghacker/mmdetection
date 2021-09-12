@@ -48,6 +48,8 @@ class DeformableDETRHead(DETRHead):
 
 		super(DeformableDETRHead, self).__init__(
 			*args, transformer=transformer, **kwargs)
+		if self.as_two_stage:
+			transformer['two_stage_num_proposals'] = self.num_query
 
 	def _init_layers(self):
 		"""Initialize classification branch and regression branch of head."""

@@ -661,7 +661,6 @@ class DETRHead(AnchorFreeHead):
 			bbox_pred = bbox_pred[bbox_index]
 		else:
 			scores, det_labels = F.softmax(cls_score, dim=-1)[..., :-1].max(-1)
-			print(scores.shape)
 			scores, bbox_index = scores.topk(max_per_img)
 			bbox_pred = bbox_pred[bbox_index]
 			det_labels = det_labels[bbox_index]
