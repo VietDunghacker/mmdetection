@@ -661,6 +661,7 @@ class DETRHead(AnchorFreeHead):
 			det_labels = det_labels[bbox_index]
 		else:
 			scores, det_labels = F.softmax(cls_score, dim=-1).max(-1)
+			print(cls_score)
 			print(scores)
 			print(det_labels)
 
