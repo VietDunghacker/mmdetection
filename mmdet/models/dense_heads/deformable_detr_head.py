@@ -320,7 +320,7 @@ class DeformableDETRHead(DETRHead):
 												rescale)
 
 			bboxes, labels = proposals
-			keep = bboxes[:, -1] >= cfg.score_thr
+			keep = bboxes[:, -1] >= self.test_cfg.score_thr
 			bboxes, labels = bboxes[keep], labels[keep]
 			proposals = (bboxes, labels)
 			result_list.append(proposals)
