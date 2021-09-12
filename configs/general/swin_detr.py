@@ -1,7 +1,7 @@
 _base_ = [
 	'../_base_/datasets/coco_detection.py', '../_base_/default_runtime.py'
 ]
-max_per_img = 100
+max_per_img = 32
 model = dict(
 	type='DETR',
 	backbone=dict(
@@ -76,7 +76,7 @@ model = dict(
 			iou_cost=dict(type='IoUCost', iou_mode='giou', weight=2.0))),
 	test_cfg=dict(
 		max_per_img=max_per_img,
-		nms_max_per_img = 100,
+		nms_max_per_img = min(max_per_img, 100),
 		nms = dict(type='soft_nms', iou_threshold=0.6)))
 
 # data setting
