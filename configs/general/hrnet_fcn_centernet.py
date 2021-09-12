@@ -94,12 +94,19 @@ albu_train_transforms = [
 ]
 
 train_pipeline = [
-	dict(
-		type='RandomCrop',
-		crop_type='relative_range',
-		crop_size=(0.9, 0.9)),
+	dict(type='LoadImageFromFile', to_float32=True, color_type='color'),
+	dict(type='LoadAnnotations', with_bbox=True),
 	dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
-	dict(type='Pad', size_divisor=800),
+	dict(
+		type='RandomCenterCropPad',
+		crop_size=(800, 800),
+		ratios=(0.9, 0.925, 0.95, 0.975, 1.0, 1.05, 1.1, 1.15, 1.2),
+		border = 380,
+		mean=[0, 0, 0],
+		std=[1, 1, 1],
+		to_rgb=True,
+		test_pad_mode=None),
+	dict(type='Resize', img_scale=(800, 800), keep_ratio=True, override = True),
 	dict(type='RandomFlip', flip_ratio=0.5),
 	dict(
 		type='CutOut',
@@ -128,13 +135,22 @@ train_pipeline = [
 ]
 
 test_pipeline = [
-	dict(type='LoadImageFromFile'),
+	dict(type='LoadImageFromFile', to_float32=True),
 	dict(
 		type='MultiScaleFlipAug',
 		img_scale=(800, 800),
 		flip=False,
 		transforms=[
 			dict(type='Resize', keep_ratio=True),
+			dict(
+				type='RandomCenterCropPad',
+				ratios=None,
+				border=None,
+				mean=[0, 0, 0],
+				std=[1, 1, 1],
+				to_rgb=True,
+				test_mode=True,
+				test_pad_mode=['size_divisor', 32]),
 			dict(type='RandomFlip'),
 			dict(type='Normalize', **img_norm_cfg),
 			dict(type='DefaultFormatBundle'),
@@ -176,11 +192,3 @@ fp16 = dict(loss_scale=512.)
 # runtime
 resume_from = None
 workflow = [('train', 1)]
-custom_hooks = [
-	dict(
-		type='SyncRandomSizeHook',
-		ratio_range=(20, 30),
-		img_scale=(800, 800),
-		interval=10,
-		priority=48),
-]
