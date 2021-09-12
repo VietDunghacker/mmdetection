@@ -664,11 +664,14 @@ class DETRHead(AnchorFreeHead):
 
 			fg_index = det_labels < self.num_classes
 			scores = scores[fg_index]
+			bbox_pred = bbox_pred[fg_index]
 			det_labels = det_labels[fg_index]
 
 			scores, bbox_index = scores.topk(min(max_per_img, len(scores)))
 			bbox_pred = bbox_pred[bbox_index]
 			det_labels = det_labels[bbox_index]
+
+		assert len(det_labels) == len(bbox_pred) == len(scores)
 
 		det_bboxes = bbox_cxcywh_to_xyxy(bbox_pred)
 		det_bboxes[:, 0::2] = det_bboxes[:, 0::2] * img_shape[1]
