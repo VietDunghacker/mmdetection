@@ -1,7 +1,7 @@
 _base_ = [
 	'../_base_/datasets/coco_detection.py', '../_base_/default_runtime.py'
 ]
-num_per_img = 32
+max_per_img = 32
 model = dict(
 	type='DeformableDETR',
 	backbone=dict(
@@ -30,7 +30,7 @@ model = dict(
 		num_outs=4),
 	bbox_head=dict(
 		type='DeformableDETRHead',
-		num_query=num_per_img,
+		num_query=max_per_img,
 		num_classes=1,
 		in_channels=256,
 		as_two_stage=False,
@@ -88,7 +88,7 @@ model = dict(
 			reg_cost=dict(type='BBoxL1Cost', weight=5.0, box_format='xywh'),
 			iou_cost=dict(type='IoUCost', iou_mode='giou', weight=2.0))),
 	test_cfg=dict(
-		max_per_img=num_per_img,
+		max_per_img=max_per_img,
 		nms_max_per_img = 32,
 		nms = dict(type='soft_nms', iou_threshold=0.6)))
 
