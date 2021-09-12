@@ -32,7 +32,7 @@ model = dict(
 		num_query=512,
 		num_classes=1,
 		in_channels=256,
-		as_two_stage=False,
+		as_two_stage=True,
 		with_box_refine=True,
 		transformer=dict(
 			type='DeformableDetrTransformer',
@@ -88,7 +88,7 @@ model = dict(
 			iou_cost=dict(type='IoUCost', iou_mode='giou', weight=2.0))),
 	test_cfg=dict(
 		max_per_img=512,
-		nms_max_per_img = 100,
+		nms_max_per_img = 32,
 		nms = dict(type='soft_nms', iou_threshold=0.6)))
 
 # data setting
