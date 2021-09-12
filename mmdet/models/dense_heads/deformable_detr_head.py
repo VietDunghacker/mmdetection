@@ -315,5 +315,14 @@ class DeformableDETRHead(DETRHead):
 			proposals = self._get_bboxes_single(cls_score, bbox_pred,
 												img_shape, scale_factor,
 												rescale)
-			result_list.append(proposals)
+			bboxes, labels = proposals
+			out_bboxes, keep = batched_nms(bboxes[:, :4].contiguous(), bboxes[:, -1].contiguous(), labels, dict(type='soft_nms', iou_threshold=0.6))
+			out_labels = labels[keep]
+
+			if len(out_bboxes) > 0:
+				idx = torch.argsort(out_bboxes[:, -1], descending=True)
+				idx = idx[:32]
+				out_bboxes = out_bboxes[idx]
+				out_labels = out_labels[idx]
+			result_list.append(tuple([out_bboxes, out_labels]))
 		return result_list
