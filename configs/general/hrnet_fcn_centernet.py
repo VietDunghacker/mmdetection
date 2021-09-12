@@ -6,7 +6,6 @@ _base_ = [
 # model settings
 model = dict(
 	type='CenterNet',
-	pretrained = 'https://download.openmmlab.com/pretrain/third_party/hrnetv2_w48-d2186c55.pth',
 	backbone=dict(
 		type='HRNet',
 		extra=dict(
