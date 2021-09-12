@@ -60,7 +60,6 @@ model = dict(
 		positional_encoding=dict(type='SinePositionalEncoding', num_feats=128, normalize=True),
 		loss_cls=dict(
 			type='CrossEntropyLoss',
-			bg_cls_weight=0.1,
 			use_sigmoid=False,
 			loss_weight=1.0,
 			class_weight=1.0),

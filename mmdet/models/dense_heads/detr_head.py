@@ -102,7 +102,7 @@ class DETRHead(AnchorFreeHead):
 			loss_cls.update({'class_weight': class_weight})
 			if 'bg_cls_weight' in loss_cls:
 				loss_cls.pop('bg_cls_weight')
-			self.bg_cls_weight = bg_cls_weight
+			#self.bg_cls_weight = bg_cls_weight
 
 		if train_cfg:
 			assert 'assigner' in train_cfg, 'assigner should be provided '\
@@ -661,9 +661,6 @@ class DETRHead(AnchorFreeHead):
 			det_labels = det_labels[bbox_index]
 		else:
 			scores, det_labels = F.softmax(cls_score, dim=-1).max(-1)
-			print(scores)
-			print(det_labels)
-			assert False
 
 			'''fg_index = det_labels < self.num_classes
 			scores = scores[fg_index]
