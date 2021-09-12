@@ -1,7 +1,7 @@
 _base_ = [
 	'../_base_/datasets/coco_detection.py', '../_base_/default_runtime.py'
 ]
-num_per_img = 512
+num_per_img = 32
 model = dict(
 	type='DeformableDETR',
 	backbone=dict(
@@ -33,7 +33,7 @@ model = dict(
 		num_query=num_per_img,
 		num_classes=1,
 		in_channels=256,
-		as_two_stage=True,
+		as_two_stage=False,
 		with_box_refine=True,
 		transformer=dict(
 			type='DeformableDetrTransformer',
