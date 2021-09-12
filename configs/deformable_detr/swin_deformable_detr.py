@@ -73,7 +73,6 @@ model = dict(
 			offset=-0.5),
 		loss_cls=dict(
 			type='CrossEntropyLoss',
-			bg_cls_weight=0.1,
 			use_sigmoid=False,
 			loss_weight=2.0,
 			class_weight=1.0),
