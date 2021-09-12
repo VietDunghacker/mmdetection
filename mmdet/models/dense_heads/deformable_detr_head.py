@@ -319,6 +319,6 @@ class DeformableDETRHead(DETRHead):
 
 		final_result = []
 		for det_bboxes, det_labels in result_list:
-			det_bbox, det_label = multiclass_nms(det_bbox, det_label, 0.05, dict(type='nms', iou_threshold=0.6), 100)
+			det_bbox, det_label = multiclass_nms(det_bboxes, det_labels, 0.05, dict(type='nms', iou_threshold=0.6), 100)
 			final_result.append(tuple([det_bbox, det_label]))
 		return final_result
