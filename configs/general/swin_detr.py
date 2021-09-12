@@ -55,8 +55,7 @@ model = dict(
 						dropout=0.1),
 					feedforward_channels=2048,
 					ffn_dropout=0.1,
-					operation_order=('self_attn', 'norm', 'cross_attn', 'norm',
-									 'ffn', 'norm')),
+					operation_order=('self_attn', 'norm', 'cross_attn', 'norm', 'ffn', 'norm')),
 			)),
 		positional_encoding=dict(type='SinePositionalEncoding', num_feats=128, normalize=True),
 		loss_cls=dict(
