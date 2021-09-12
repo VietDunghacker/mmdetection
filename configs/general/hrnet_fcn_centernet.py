@@ -172,7 +172,7 @@ data = dict(
 	test=dict(pipeline=test_pipeline))
 
 # optimizer
-optimizer = dict(type = 'SGD', lr=0.0032, momentum = 0.843, weight_decay = 0.00036)
+optimizer = dict(_delete_ = True, type = 'AdamW', lr=0.0005, weight_decay = 0.0001)
 optimizer_config = dict(grad_clip = None)
 # learning policy
 lr_config = dict(_delete_=True,
