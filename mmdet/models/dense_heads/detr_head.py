@@ -840,9 +840,6 @@ class DETRHead(AnchorFreeHead):
 		if labels.numel() == 0:
 			return bboxes, labels
 
-		keep = bboxes[:, -1] >= cfg.score_thr
-		bboxes, labels = bboxes[keep], labels[keep]
-
 		out_bboxes, keep = batched_nms(bboxes[:, :4].contiguous(), bboxes[:, -1].contiguous(), labels, cfg.nms)
 		out_labels = labels[keep]
 
