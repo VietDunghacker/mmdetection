@@ -252,7 +252,7 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 				   offset_preds,
 				   img_metas,
 				   rescale=True,
-				   with_nms=False):
+				   with_nms=True):
 		"""Transform network output for a batch into bbox predictions.
 
 		Args:
