@@ -280,6 +280,7 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 		assert len(center_heatmap_preds) == len(wh_preds) == len(
 			offset_preds) == 1
 		scale_factors = [img_meta['scale_factor'] for img_meta in img_metas]
+		print(scale_factors)
 		border_pixs = [img_meta['border'] for img_meta in img_metas]
 
 		batch_det_bboxes, batch_labels = self.decode_heatmap(
@@ -295,10 +296,10 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 		batch_det_bboxes[..., :4] -= batch_border
 
 		if rescale:
-			batch_det_bboxes[..., :4] /= batch_det_bboxes.new_tensor(
-				scale_factors).unsqueeze(1)
+			batch_det_bboxes[..., :4] /= batch_det_bboxes.new_tensor(scale_factors).unsqueeze(1)
 
 		if with_nms:
+			assert False
 			det_results = []
 			for (det_bboxes, det_labels) in zip(batch_det_bboxes, batch_labels):
 				det_bbox, det_label = self._bboxes_nms(det_bboxes, det_labels, self.test_cfg)
