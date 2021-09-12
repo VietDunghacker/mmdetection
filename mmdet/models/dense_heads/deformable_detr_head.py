@@ -7,7 +7,7 @@ import torch.nn.functional as F
 from mmcv.cnn import Linear, bias_init_with_prob, constant_init
 from mmcv.runner import force_fp32
 
-from mmdet.core import multi_apply, multiclass_nms
+from mmdet.core import multi_apply
 from mmdet.models.utils.transformer import inverse_sigmoid
 from ..builder import HEADS
 from .detr_head import DETRHead
@@ -316,9 +316,4 @@ class DeformableDETRHead(DETRHead):
 												img_shape, scale_factor,
 												rescale)
 			result_list.append(proposals)
-
-		final_result = []
-		for det_bboxes, det_labels in result_list:
-			det_bbox, det_label = multiclass_nms(det_bboxes, det_labels, 0.05, dict(type='nms', iou_threshold=0.6), 100)
-			final_result.append(tuple([det_bbox, det_label]))
-		return final_result
+		return result_list
