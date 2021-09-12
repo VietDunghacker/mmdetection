@@ -254,7 +254,7 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 				   offset_preds,
 				   img_metas,
 				   rescale=True,
-				   with_nms=False):
+				   with_nms=True):
 		"""Transform network output for a batch into bbox predictions.
 
 		Args:
@@ -302,10 +302,8 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 
 		if with_nms:
 			det_results = []
-			for (det_bboxes, det_labels) in zip(batch_det_bboxes,
-												batch_labels):
-				det_bbox, det_label = self._bboxes_nms(det_bboxes, det_labels,
-													   self.test_cfg)
+			for (det_bboxes, det_labels) in zip(batch_det_bboxes, batch_labels):
+				det_bbox, det_label = self._bboxes_nms(det_bboxes, det_labels, self.test_cfg)
 				det_results.append(tuple([det_bbox, det_label]))
 		else:
 			det_results = [
@@ -360,17 +358,14 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 		br_y = (topk_ys + wh[..., 1] / 2) * (inp_h / height)
 
 		batch_bboxes = torch.stack([tl_x, tl_y, br_x, br_y], dim=2)
-		batch_bboxes = torch.cat((batch_bboxes, batch_scores[..., None]),
-								 dim=-1)
+		batch_bboxes = torch.cat((batch_bboxes, batch_scores[..., None]), dim=-1)
 		return batch_bboxes, batch_topk_labels
 
 	def _bboxes_nms(self, bboxes, labels, cfg):
 		if labels.numel() == 0:
 			return bboxes, labels
 
-		out_bboxes, keep = batched_nms(bboxes[:, :4].contiguous(),
-									   bboxes[:, -1].contiguous(), labels,
-									   cfg.nms_cfg)
+		out_bboxes, keep = batched_nms(bboxes[:, :4].contiguous(), bboxes[:, -1].contiguous(), labels, cfg.nms_cfg)
 		out_labels = labels[keep]
 
 		if len(out_bboxes) > 0:

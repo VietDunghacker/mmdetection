@@ -58,8 +58,7 @@ model = dict(
 					operation_order=('self_attn', 'norm', 'cross_attn', 'norm',
 									 'ffn', 'norm')),
 			)),
-		positional_encoding=dict(
-			type='SinePositionalEncoding', num_feats=128, normalize=True),
+		positional_encoding=dict(type='SinePositionalEncoding', num_feats=128, normalize=True),
 		loss_cls=dict(
 			type='CrossEntropyLoss',
 			bg_cls_weight=0.1,
@@ -196,7 +195,8 @@ optimizer = dict(
 		custom_keys={
 			'absolute_pos_embed': dict(decay_mult=0.),
 			'relative_position_bias_table': dict(decay_mult=0.),
-			'norm': dict(decay_mult=0.)}))
+			'norm': dict(decay_mult=0.),
+			'backbone': dict(lr_mult=0.1, decay_mult=1.0)}))
 optimizer_config = dict(grad_clip = None)
 # learning policy
 lr_config = dict(
