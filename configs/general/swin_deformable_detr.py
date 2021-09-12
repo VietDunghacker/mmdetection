@@ -1,7 +1,7 @@
 _base_ = [
 	'../_base_/datasets/coco_detection.py', '../_base_/default_runtime.py'
 ]
-max_per_img = 32
+num_per_img = 32
 model = dict(
 	type='DeformableDETR',
 	backbone=dict(
@@ -30,7 +30,7 @@ model = dict(
 		num_outs=4),
 	bbox_head=dict(
 		type='DeformableDETRHead',
-		num_query=max_per_img,
+		num_query=num_per_img,
 		num_classes=1,
 		in_channels=256,
 		as_two_stage=False,
@@ -88,46 +88,14 @@ model = dict(
 			reg_cost=dict(type='BBoxL1Cost', weight=5.0, box_format='xywh'),
 			iou_cost=dict(type='IoUCost', iou_mode='giou', weight=2.0))),
 	test_cfg=dict(
-		max_per_img=max_per_img,
+		max_per_img=num_per_img,
 		nms_max_per_img = 32,
-		score_thr = 0.05,
 		nms = dict(type='soft_nms', iou_threshold=0.6)))
 
 # data setting
 dataset_type = 'CocoDataset'
 data_root = 'data/coco/'
 img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
-
-albu_train_transforms = [
-	dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.0, rotate_limit=0, interpolation=1, p=0.5),
-	dict(type='RandomBrightnessContrast', brightness_limit=[0.1, 0.3], contrast_limit=[0.1, 0.3], p=0.2),
-	dict(
-		type='OneOf',
-		transforms=[
-			dict(
-				type='RGBShift',
-				r_shift_limit=10,
-				g_shift_limit=10,
-				b_shift_limit=10,
-				p=1.0),
-			dict(
-				type='HueSaturationValue',
-				hue_shift_limit=20,
-				sat_shift_limit=30,
-				val_shift_limit=20,
-				p=1.0)
-		],
-		p=0.1),
-	dict(type='ImageCompression', quality_lower=85, quality_upper=95, p=0.2),
-	dict(type='ChannelShuffle', p=0.1),
-	dict(
-		type='OneOf',
-		transforms=[
-			dict(type='Blur', blur_limit=3, p=1.0),
-			dict(type='MedianBlur', blur_limit=3, p=1.0)
-		],
-		p=0.1),
-]
 
 train_pipeline = [
 	dict(type='LoadImageFromFile'),
@@ -147,21 +115,6 @@ train_pipeline = [
 		cutout_shape=[(4, 4), (4, 8), (8, 4), (8, 8),
 					  (16, 8), (8, 16), (16, 16), (16, 32), (32, 16), (32, 32),
 					  (32, 48), (48, 32), (48, 48)]),
-	dict(
-		type='Albu',
-		transforms=albu_train_transforms,
-		bbox_params=dict(
-			type='BboxParams',
-			format='pascal_voc',
-			label_fields=['gt_labels'],
-			min_visibility=0.0,
-			filter_lost_elements=True),
-		keymap={
-			'img': 'image',
-			'gt_bboxes': 'bboxes'
-		},
-		update_pad_shape=False,
-		skip_img_without_anno=True),	
 	dict(type='RandomFlip', flip_ratio=0.5),
 	dict(type='Normalize', **img_norm_cfg),
 	dict(type='Pad', size_divisor=1),
