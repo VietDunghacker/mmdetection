@@ -325,7 +325,7 @@ class DeformableDETRHead(DETRHead):
 		if labels.numel() == 0:
 			return bboxes, labels
 
-		out_bboxes, keep = batched_nms(bboxes[:, :4].contiguous(), bboxes[:, -1].contiguous(), labels, cfg.nms_cfg)
+		out_bboxes, keep = batched_nms(bboxes[:, :4].contiguous(), bboxes[:, -1].contiguous(), labels, cfg.nms)
 		out_labels = labels[keep]
 
 		if len(out_bboxes) > 0:
