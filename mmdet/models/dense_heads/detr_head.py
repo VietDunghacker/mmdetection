@@ -250,8 +250,7 @@ class DETRHead(AnchorFreeHead):
 
 		x = self.input_proj(x)
 		# interpolate masks to have the same spatial shape with x
-		masks = F.interpolate(
-			masks.unsqueeze(1), size=x.shape[-2:]).to(torch.bool).squeeze(1)
+		masks = F.interpolate(masks.unsqueeze(1), size=x.shape[-2:]).to(torch.bool).squeeze(1)
 		# position encoding
 		pos_embed = self.positional_encoding(masks)  # [bs, embed_dim, h, w]
 		# outs_dec: [nb_dec, bs, num_query, embed_dim]
@@ -259,8 +258,7 @@ class DETRHead(AnchorFreeHead):
 									   pos_embed)
 
 		all_cls_scores = self.fc_cls(outs_dec)
-		all_bbox_preds = self.fc_reg(self.activate(
-			self.reg_ffn(outs_dec))).sigmoid()
+		all_bbox_preds = self.fc_reg(self.activate(self.reg_ffn(outs_dec))).sigmoid()
 		return all_cls_scores, all_bbox_preds
 
 	@force_fp32(apply_to=('all_cls_scores_list', 'all_bbox_preds_list'))

@@ -318,9 +318,9 @@ class DeformableDETRHead(DETRHead):
 			proposals = self._get_bboxes_single(cls_score, bbox_pred,
 												img_shape, scale_factor,
 												rescale)
-			result_list.append(proposals)
-			#bboxes, labels = proposals
-			#result_list.append(tuple(self._bboxes_nms(bboxes, labels, self.test_cfg)))
+			#result_list.append(proposals)
+			bboxes, labels = proposals
+			result_list.append(tuple(self._bboxes_nms(bboxes, labels, self.test_cfg)))
 		return result_list
 
 	def _bboxes_nms(self, bboxes, labels, cfg):
