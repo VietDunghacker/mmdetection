@@ -8,7 +8,7 @@ from mmcv.runner import force_fp32
 
 from mmdet.core import (bbox_cxcywh_to_xyxy, bbox_xyxy_to_cxcywh,
 						build_assigner, build_sampler, multi_apply,
-						reduce_mean, multiclass_nms)
+						reduce_mean)
 from mmdet.models.utils import build_transformer
 from ..builder import HEADS, build_loss
 from .anchor_free_head import AnchorFreeHead
@@ -617,11 +617,7 @@ class DETRHead(AnchorFreeHead):
 												rescale)
 			result_list.append(proposals)
 
-		final_result = []
-		for det_bboxes, det_labels in result_list:
-			det_bbox, det_label = multiclass_nms(det_bbox, det_label, 0.05, dict(type='nms', iou_threshold=0.6), 100)
-			final_result.append(tuple([det_bbox, det_label]))
-		return final_result
+		return result_list
 
 	def _get_bboxes_single(self,
 						   cls_score,
