@@ -102,7 +102,7 @@ class DETRHead(AnchorFreeHead):
 			loss_cls.update({'class_weight': class_weight})
 			if 'bg_cls_weight' in loss_cls:
 				loss_cls.pop('bg_cls_weight')
-			#self.bg_cls_weight = bg_cls_weight
+			self.bg_cls_weight = bg_cls_weight
 
 		if train_cfg:
 			assert 'assigner' in train_cfg, 'assigner should be provided '\
