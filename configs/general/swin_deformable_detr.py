@@ -90,6 +90,7 @@ model = dict(
 	test_cfg=dict(
 		max_per_img=num_per_img,
 		nms_max_per_img = 32,
+		score_thr = 0.05,
 		nms = dict(type='soft_nms', iou_threshold=0.6)))
 
 # data setting
