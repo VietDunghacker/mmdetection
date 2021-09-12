@@ -1,6 +1,7 @@
 _base_ = [
 	'../_base_/datasets/coco_detection.py', '../_base_/default_runtime.py'
 ]
+num_per_img = 32
 model = dict(
 	type='DeformableDETR',
 	backbone=dict(
@@ -29,7 +30,7 @@ model = dict(
 		num_outs=4),
 	bbox_head=dict(
 		type='DeformableDETRHead',
-		num_query=300,
+		num_query=32,
 		num_classes=1,
 		in_channels=256,
 		as_two_stage=True,
@@ -72,11 +73,11 @@ model = dict(
 			normalize=True,
 			offset=-0.5),
 		loss_cls=dict(
-			type='CrossEntropyLoss',
-			bg_cls_weight=0.1,
+			type='FocalLoss',
 			use_sigmoid=False,
-			loss_weight=2.0,
-			class_weight=1.0),
+			gamma=2.0,
+			alpha=0.25,
+			loss_weight=2.0),
 		loss_bbox=dict(type='L1Loss', loss_weight=5.0),
 		loss_iou=dict(type='GIoULoss', loss_weight=2.0)),
 	# training and testing settings
@@ -87,7 +88,7 @@ model = dict(
 			reg_cost=dict(type='BBoxL1Cost', weight=5.0, box_format='xywh'),
 			iou_cost=dict(type='IoUCost', iou_mode='giou', weight=2.0))),
 	test_cfg=dict(
-		max_per_img=300,
+		max_per_img=32,
 		nms_max_per_img = 32,
 		nms = dict(type='soft_nms', iou_threshold=0.6)))
 
