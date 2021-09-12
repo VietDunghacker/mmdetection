@@ -44,7 +44,6 @@ class DeformableDETRHead(DETRHead):
 		self.as_two_stage = as_two_stage
 		if self.as_two_stage:
 			transformer['as_two_stage'] = self.as_two_stage
-			transformer['two_stage_num_proposals'] = self.num_query
 
 		super(DeformableDETRHead, self).__init__(
 			*args, transformer=transformer, **kwargs)
