@@ -75,7 +75,10 @@ model = dict(
 			cls_cost=dict(type='ClassificationCost', weight=1.),
 			reg_cost=dict(type='BBoxL1Cost', weight=5.0, box_format='xywh'),
 			iou_cost=dict(type='IoUCost', iou_mode='giou', weight=2.0))),
-	test_cfg=dict(max_per_img=max_per_img))
+	test_cfg=dict(
+		max_per_img=num_per_img,
+		nms_max_per_img = 32,
+		nms = dict(type='soft_nms', iou_threshold=0.6)))
 
 # data setting
 dataset_type = 'CocoDataset'
@@ -185,7 +188,6 @@ data = dict(
 
 # optimizer
 optimizer = dict(
-	_delete_=True,
 	type='AdamW',
 	lr=0.0001,
 	betas=(0.9, 0.999),
@@ -197,7 +199,7 @@ optimizer = dict(
 			'norm': dict(decay_mult=0.)}))
 optimizer_config = dict(grad_clip = None)
 # learning policy
-lr_config = dict(_delete_=True,
+lr_config = dict(
 	policy='CosineAnnealing',
 	min_lr_ratio = 0.12,
 	warmup='linear',
