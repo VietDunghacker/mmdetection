@@ -39,8 +39,7 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 				 in_channel,
 				 feat_channel,
 				 num_classes,
-				 loss_center_heatmap=dict(
-					 type='GaussianFocalLoss', loss_weight=1.0),
+				 loss_center_heatmap=dict(type='GaussianFocalLoss', loss_weight=1.0),
 				 loss_wh=dict(type='L1Loss', loss_weight=0.1),
 				 loss_offset=dict(type='L1Loss', loss_weight=1.0),
 				 train_cfg=None,
@@ -229,8 +228,7 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 										 min_overlap=0.3)
 				radius = max(0, int(radius))
 				ind = gt_label[j]
-				gen_gaussian_target(center_heatmap_target[batch_id, ind],
-									[ctx_int, cty_int], radius)
+				gen_gaussian_target(center_heatmap_target[batch_id, ind], [ctx_int, cty_int], radius)
 
 				wh_target[batch_id, 0, cty_int, ctx_int] = scale_box_w
 				wh_target[batch_id, 1, cty_int, ctx_int] = scale_box_h

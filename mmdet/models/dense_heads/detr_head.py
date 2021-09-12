@@ -389,9 +389,7 @@ class DETRHead(AnchorFreeHead):
 		factors = []
 		for img_meta, bbox_pred in zip(img_metas, bbox_preds):
 			img_h, img_w, _ = img_meta['img_shape']
-			factor = bbox_pred.new_tensor([img_w, img_h, img_w,
-										   img_h]).unsqueeze(0).repeat(
-											   bbox_pred.size(0), 1)
+			factor = bbox_pred.new_tensor([img_w, img_h, img_w, img_h]).unsqueeze(0).repeat(bbox_pred.size(0), 1)
 			factors.append(factor)
 		factors = torch.cat(factors, 0)
 
@@ -450,12 +448,9 @@ class DETRHead(AnchorFreeHead):
 				- num_total_neg (int): Number of negative samples in all \
 					images.
 		"""
-		assert gt_bboxes_ignore_list is None, \
-			'Only supports for gt_bboxes_ignore setting to None.'
+		assert gt_bboxes_ignore_list is None, 'Only supports for gt_bboxes_ignore setting to None.'
 		num_imgs = len(cls_scores_list)
-		gt_bboxes_ignore_list = [
-			gt_bboxes_ignore_list for _ in range(num_imgs)
-		]
+		gt_bboxes_ignore_list = [gt_bboxes_ignore_list for _ in range(num_imgs)]
 
 		(labels_list, label_weights_list, bbox_targets_list,
 		 bbox_weights_list, pos_inds_list, neg_inds_list) = multi_apply(
@@ -528,13 +523,11 @@ class DETRHead(AnchorFreeHead):
 		# DETR regress the relative position of boxes (cxcywh) in the image.
 		# Thus the learning target should be normalized by the image size, also
 		# the box format should be converted from defaultly x1y1x2y2 to cxcywh.
-		factor = bbox_pred.new_tensor([img_w, img_h, img_w,
-									   img_h]).unsqueeze(0)
+		factor = bbox_pred.new_tensor([img_w, img_h, img_w, img_h]).unsqueeze(0)
 		pos_gt_bboxes_normalized = sampling_result.pos_gt_bboxes / factor
 		pos_gt_bboxes_targets = bbox_xyxy_to_cxcywh(pos_gt_bboxes_normalized)
 		bbox_targets[pos_inds] = pos_gt_bboxes_targets
-		return (labels, label_weights, bbox_targets, bbox_weights, pos_inds,
-				neg_inds)
+		return (labels, label_weights, bbox_targets, bbox_weights, pos_inds, neg_inds)
 
 	# over-write because img_metas are needed as inputs for bbox_head.
 	def forward_train(self,
