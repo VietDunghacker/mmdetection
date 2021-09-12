@@ -374,15 +374,12 @@ class DETRHead(AnchorFreeHead):
 		# classification loss
 		cls_scores = cls_scores.reshape(-1, self.cls_out_channels)
 		# construct weighted avg_factor to match with the official DETR repo
-		cls_avg_factor = num_total_pos * 1.0 + \
-			num_total_neg * self.bg_cls_weight
+		cls_avg_factor = num_total_pos * 1.0 + num_total_neg * self.bg_cls_weight
 		if self.sync_cls_avg_factor:
-			cls_avg_factor = reduce_mean(
-				cls_scores.new_tensor([cls_avg_factor]))
+			cls_avg_factor = reduce_mean(cls_scores.new_tensor([cls_avg_factor]))
 		cls_avg_factor = max(cls_avg_factor, 1)
 
-		loss_cls = self.loss_cls(
-			cls_scores, labels, label_weights, avg_factor=cls_avg_factor)
+		loss_cls = self.loss_cls(cls_scores, labels, label_weights, avg_factor=cls_avg_factor)
 
 		# Compute the average number of gt boxes accross all gpus, for
 		# normalization purposes
@@ -407,12 +404,10 @@ class DETRHead(AnchorFreeHead):
 		bboxes_gt = bbox_cxcywh_to_xyxy(bbox_targets) * factors
 
 		# regression IoU loss, defaultly GIoU loss
-		loss_iou = self.loss_iou(
-			bboxes, bboxes_gt, bbox_weights, avg_factor=num_total_pos)
+		loss_iou = self.loss_iou(bboxes, bboxes_gt, bbox_weights, avg_factor=num_total_pos)
 
 		# regression L1 loss
-		loss_bbox = self.loss_bbox(
-			bbox_preds, bbox_targets, bbox_weights, avg_factor=num_total_pos)
+		loss_bbox = self.loss_bbox(bbox_preds, bbox_targets, bbox_weights, avg_factor=num_total_pos)
 		return loss_cls, loss_bbox, loss_iou
 
 	def get_targets(self,
@@ -622,7 +617,11 @@ class DETRHead(AnchorFreeHead):
 												rescale)
 			result_list.append(proposals)
 
-		return result_list
+		final_result = []
+		for det_bboxes, det_labels in result_list:
+			det_bbox, det_label = multiclass_nms(det_bbox, det_label, 0.05, dict(type='nms', iou_threshold=0.6), 100)
+			final_result.append(tuple([det_bbox, det_label]))
+		return final_result
 
 	def _get_bboxes_single(self,
 						   cls_score,
