@@ -6,7 +6,7 @@ model = dict(
 	type='DETR',
 	backbone=dict(
 		type='SwinTransformer',
-		embed_dim=128,
+		embed_dims=128,
 		depths=[2, 2, 18, 2],
 		num_heads=[4, 8, 16, 32],
 		window_size=7,
@@ -15,11 +15,11 @@ model = dict(
 		qk_scale=None,
 		drop_rate=0.,
 		attn_drop_rate=0.,
-		drop_path_rate=0.2,
+		drop_path_rate=0.3,
 		patch_norm=True,
-		out_indices=(0, 1, 2, 3),
+		out_indices=(1, 2, 3),
 		with_cp=True,
-		init_cfg=dict(type='Pretrained', checkpoint='https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_base_patch4_window7_224_22k.pth')),
+		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/swin_base_224_b16x64_300e_imagenet_20210616_190742-93230b0d.pth')),
 	bbox_head=dict(
 		type='DETRHead',
 		num_classes=1,

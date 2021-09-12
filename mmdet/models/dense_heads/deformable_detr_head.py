@@ -6,7 +6,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from mmcv.cnn import Linear, bias_init_with_prob, constant_init
 from mmcv.runner import force_fp32
-from mmcv.ops import batched_nms
 
 from mmdet.core import multi_apply
 from mmdet.models.utils.transformer import inverse_sigmoid
@@ -319,28 +318,7 @@ class DeformableDETRHead(DETRHead):
 												img_shape, scale_factor,
 												rescale)
 
+			#result_list.append(proposals)
 			bboxes, labels = proposals
-			keep = bboxes[:, -1] >= self.test_cfg.score_thr
-			bboxes, labels = bboxes[keep], labels[keep]
-			proposals = (bboxes, labels)
-			result_list.append(proposals)
-			#bboxes, labels = proposals
-			#result_list.append(tuple(self._bboxes_nms(bboxes, labels, self.test_cfg)))
+			result_list.append(tuple(self._bboxes_nms(bboxes, labels, self.test_cfg)))
 		return result_list
-
-	def _bboxes_nms(self, bboxes, labels, cfg):
-		if labels.numel() == 0:
-			return bboxes, labels
-
-		keep = bboxes[:, -1] >= cfg.score_thr
-		bboxes, labels = bboxes[keep], labels[keep]
-
-		out_bboxes, keep = batched_nms(bboxes[:, :4].contiguous(), bboxes[:, -1].contiguous(), labels, cfg.nms)
-		out_labels = labels[keep]
-
-		if len(out_bboxes) > 0:
-			idx = torch.argsort(out_bboxes[:, -1], descending=True)
-			idx = idx[:cfg.nms_max_per_img]
-			out_bboxes = out_bboxes[idx]
-			out_labels = out_labels[idx]
-		return out_bboxes, out_labels

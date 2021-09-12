@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from mmcv.cnn import Conv2d, Linear, build_activation_layer
 from mmcv.cnn.bricks.transformer import FFN, build_positional_encoding
 from mmcv.runner import force_fp32
+from mmcv.ops import batched_nms
 
 from mmdet.core import (bbox_cxcywh_to_xyxy, bbox_xyxy_to_cxcywh,
 						build_assigner, build_sampler, multi_apply,
@@ -613,8 +614,9 @@ class DETRHead(AnchorFreeHead):
 			proposals = self._get_bboxes_single(cls_score, bbox_pred,
 												img_shape, scale_factor,
 												rescale)
-			result_list.append(proposals)
-
+			#result_list.append(proposals)
+			bboxes, labels = proposals
+			result_list.append(tuple(self._bboxes_nms(bboxes, labels, self.test_cfg)))
 		return result_list
 
 	def _get_bboxes_single(self,
@@ -834,3 +836,19 @@ class DETRHead(AnchorFreeHead):
 		det_bboxes = torch.cat((det_bboxes, scores.unsqueeze(-1)), -1)
 
 		return det_bboxes, det_labels
+	def _bboxes_nms(self, bboxes, labels, cfg):
+		if labels.numel() == 0:
+			return bboxes, labels
+
+		keep = bboxes[:, -1] >= cfg.score_thr
+		bboxes, labels = bboxes[keep], labels[keep]
+
+		out_bboxes, keep = batched_nms(bboxes[:, :4].contiguous(), bboxes[:, -1].contiguous(), labels, cfg.nms)
+		out_labels = labels[keep]
+
+		if len(out_bboxes) > 0:
+			idx = torch.argsort(out_bboxes[:, -1], descending=True)
+			idx = idx[:cfg.nms_max_per_img]
+			out_bboxes = out_bboxes[idx]
+			out_labels = out_labels[idx]
+		return out_bboxes, out_labels
