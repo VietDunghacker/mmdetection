@@ -73,8 +73,10 @@ model = dict(
 			normalize=True,
 			offset=-0.5),
 		loss_cls=dict(
-			type='CrossEntropyLoss',
-			use_sigmoid=False,
+			type='FocalLoss',
+			use_sigmoid=True,
+			alpha = 0.25,
+			gamma = 2.0,
 			loss_weight=2.0),
 		loss_bbox=dict(type='L1Loss', loss_weight=5.0),
 		loss_iou=dict(type='GIoULoss', loss_weight=2.0)),
