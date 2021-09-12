@@ -74,8 +74,7 @@ model = dict(
 		loss_cls=dict(
 			type='CrossEntropyLoss',
 			use_sigmoid=False,
-			loss_weight=2.0,
-			class_weight=1.0),
+			loss_weight=2.0),
 		loss_bbox=dict(type='L1Loss', loss_weight=5.0),
 		loss_iou=dict(type='GIoULoss', loss_weight=2.0)),
 	# training and testing settings
