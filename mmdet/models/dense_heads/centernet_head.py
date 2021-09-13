@@ -1,6 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from mmcv.cnn import bias_init_with_prob, normal_init
 from mmcv.ops import batched_nms
 from mmcv.runner import force_fp32
@@ -345,11 +346,9 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 		height, width = center_heatmap_pred.shape[2:]
 		inp_h, inp_w = img_shape
 
-		center_heatmap_pred = get_local_maximum(
-			center_heatmap_pred, kernel=kernel)
+		center_heatmap_pred = get_local_maximum(center_heatmap_pred, kernel=kernel)
 
-		*batch_dets, topk_ys, topk_xs = get_topk_from_heatmap(
-			center_heatmap_pred, k=k)
+		*batch_dets, topk_ys, topk_xs = get_topk_from_heatmap(center_heatmap_pred, k=k)
 		batch_scores, batch_index, batch_topk_labels = batch_dets
 
 		wh = transpose_and_gather_feat(wh_pred, batch_index)

@@ -199,10 +199,8 @@ def get_local_maximum(heat, kernel=3):
 			own value and other positions are 0.
 	"""
 	pad = (kernel - 1) // 2
-	hmax = torch.max(heat, dim = 1)
-	hmax = F.max_pool2d(hmax, kernel, stride=1, padding=pad)
-	print(heat.shape, hmax.shape)
-	assert False
+
+	hmax = F.max_pool2d(heat, kernel, stride=1, padding=pad)
 	keep = (hmax == heat).float()
 	return heat * keep
 
@@ -225,12 +223,18 @@ def get_topk_from_heatmap(scores, k=20):
 		- topk_ys (Tensor): Y-coord of each topk keypoint.
 		- topk_xs (Tensor): X-coord of each topk keypoint.
 	"""
-	batch, _, height, width = scores.size()
+	scores, labels = torch.max(scores, dim = 1)
+	print(scores[0])
+	print(labels)
+	assert False
+
+
+	'''batch, _, height, width = scores.size()
 	topk_scores, topk_inds = torch.topk(scores.view(batch, -1), k)
 	topk_clses = topk_inds // (height * width)
 	topk_inds = topk_inds % (height * width)
 	topk_ys = topk_inds // width
-	topk_xs = (topk_inds % width).int().float()
+	topk_xs = (topk_inds % width).int().float()'''
 	return topk_scores, topk_inds, topk_clses, topk_ys, topk_xs
 
 
