@@ -355,8 +355,8 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 		topk_ys = topk_inds // width
 		topk_xs = (topk_inds % width).int().float()
 
-		wh = wh_pred[topk_inds]
-		offset = offset_pred[topk_inds]
+		wh = wh_pred[topk_inds.unsqueeze(2).repeat(1, 1, 2)]
+		offset = offset_pred[topk_inds.unsqueeze(2).repeat(1, 1, 2)]
 		print(wh.shape)
 		print(topk_ys.shape)
 		assert False
