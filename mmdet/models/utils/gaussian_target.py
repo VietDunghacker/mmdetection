@@ -223,7 +223,9 @@ def get_topk_from_heatmap(scores, k=20):
 		- topk_ys (Tensor): Y-coord of each topk keypoint.
 		- topk_xs (Tensor): X-coord of each topk keypoint.
 	"""
+	print(scores[0, :, 0, 1])
 	scores, labels = torch.max(scores.permute(0, 2, 3, 1), dim = -1)
+	print(scores.shape)
 	print(scores[0])
 	print(labels)
 	assert False
