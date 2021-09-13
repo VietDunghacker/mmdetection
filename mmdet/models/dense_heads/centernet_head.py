@@ -357,6 +357,9 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 
 		wh = wh_pred[topk_inds]
 		offset = offset_pred[topk_inds]
+		print(wh.shape)
+		print(topk_ys.shape)
+		assert False
 
 		'''*batch_dets, topk_ys, topk_xs = get_topk_from_heatmap(center_heatmap_pred, k=k)
 		batch_scores, batch_index, batch_topk_labels = batch_dets
