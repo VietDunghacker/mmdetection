@@ -106,15 +106,8 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 			wh_pred (Tensor): wh predicts, the channels number is 2.
 			offset_pred (Tensor): offset predicts, the channels number is 2.
 		"""
-		feat_w, feat_h = feat.shape[-2:]
-
 		center_heatmap_pred = self.heatmap_head(feat).sigmoid()
-		wh_pred = self.wh_head(feat).sigmoid()
-		scale_map = torch.zeros_like(wh_pred, requires_grad = False)
-		scale_map[:, 0] = feat_w
-		scale_map[:, 1] = feat_h
-		wh_pred = wh_pred * scale_map
-
+		wh_pred = self.wh_head(feat)
 		offset_pred = self.offset_head(feat)
 		return center_heatmap_pred, wh_pred, offset_pred
 
@@ -153,7 +146,6 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 		assert len(center_heatmap_preds) == len(wh_preds) == len(
 			offset_preds) == 1
 		center_heatmap_pred = center_heatmap_preds[0]
-
 		wh_pred = wh_preds[0]
 		offset_pred = offset_preds[0]
 
