@@ -394,11 +394,6 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 		for batch_id in range(batch_size):
 			# Ground truth of corner embedding per image is a list of coord set
 			corner_match = []
-			tl_set = [(int(min(item[0] * width_ratio, width - 1)), int(min(item[1] * height_ratio, height - 1))) for item in gt_bboxes[batch_id]]
-			br_set = [(int(min(item[2] * width_ratio, width - 1)), int(min(item[3] * height_ratio, height - 1))) for item in gt_bboxes[batch_id]]
-			assert len(tl_set) == len(set(tl_set)), tl_set
-			assert len(br_set) == len(set(br_set)), br_set
-
 			for box_id in range(len(gt_labels[batch_id])):
 				left, top, right, bottom = gt_bboxes[batch_id][box_id]
 				center_x = (left + right) / 2.0
@@ -451,6 +446,7 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 					gt_tl_guiding_shift[batch_id, 1, top_idx, left_idx] = scale_center_y - top_idx
 					gt_br_guiding_shift[batch_id, 0, bottom_idx, right_idx] = right_idx - scale_center_x
 					gt_br_guiding_shift[batch_id, 1, bottom_idx, right_idx] = bottom_idx - scale_center_y
+
 				# Generate centripetal shift
 				if with_centripetal_shift:
 					gt_tl_centripetal_shift[batch_id, 0, top_idx, left_idx] = log(scale_center_x - scale_left)
@@ -470,10 +466,18 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 		if with_corner_emb:
 			target_result.update(corner_embedding=match)
 		if with_guiding_shift:
+			assert torch.max(gt_tl_guiding_shift[:, 0]) <= width
+			assert torch.max(gt_tl_guiding_shift[:, 1]) <= height
+			assert torch.max(gt_br_guiding_shift[:, 0]) <= width
+			assert torch.max(gt_br_guiding_shift[:, 1]) <= height
 			target_result.update(
 				topleft_guiding_shift=gt_tl_guiding_shift,
 				bottomright_guiding_shift=gt_br_guiding_shift)
 		if with_centripetal_shift:
+			assert torch.max(gt_tl_centripetal_shift[:, 0]) <= log(width)
+			assert torch.max(gt_tl_centripetal_shift[:, 1]) <= log(height)
+			assert torch.max(gt_tl_centripetal_shift[:, 0]) <= log(width)
+			assert torch.max(gt_tl_centripetal_shift[:, 1]) <= log(height)
 			target_result.update(
 				topleft_centripetal_shift=gt_tl_centripetal_shift,
 				bottomright_centripetal_shift=gt_br_centripetal_shift)
@@ -840,10 +844,8 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 		tl_heat = get_local_maximum(tl_heat, kernel=kernel)
 		br_heat = get_local_maximum(br_heat, kernel=kernel)
 
-		tl_scores, tl_inds, tl_clses, tl_ys, tl_xs = get_topk_from_heatmap(
-			tl_heat, k=k)
-		br_scores, br_inds, br_clses, br_ys, br_xs = get_topk_from_heatmap(
-			br_heat, k=k)
+		tl_scores, tl_inds, tl_clses, tl_ys, tl_xs = get_topk_from_heatmap(tl_heat, k=k)
+		br_scores, br_inds, br_clses, br_ys, br_xs = get_topk_from_heatmap(br_heat, k=k)
 
 		# We use repeat instead of expand here because expand is a
 		# shallow-copy function. Thus it could cause unexpected testing result
