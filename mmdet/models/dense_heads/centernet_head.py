@@ -115,7 +115,7 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 		scale_map[:, 1] = feat_h
 		wh_pred = wh_pred * scale_map
 
-		offset_pred = self.offset_head(feat)
+		offset_pred = self.offset_head(feat).sigmoid()
 		return center_heatmap_pred, wh_pred, offset_pred
 
 	@force_fp32(apply_to=('center_heatmap_preds', 'wh_preds', 'offset_preds'))
