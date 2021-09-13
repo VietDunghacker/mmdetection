@@ -386,8 +386,6 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 		if labels.numel() == 0:
 			return bboxes, labels
 
-		print("FUCK")
-
 		keep = bboxes[:, 4] > 0
 		bboxes = bboxes[keep]
 		labels = labels[keep]
