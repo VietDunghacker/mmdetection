@@ -7,7 +7,6 @@ _base_ = [
 max_per_img = 50
 model = dict(
 	type='CenterNet',
-	pretrained = 'https://download.openmmlab.com/pretrain/third_party/hrnetv2_w48-d2186c55.pth',
 	backbone=dict(
 		type='HRNet',
 		extra=dict(
@@ -36,7 +35,8 @@ model = dict(
 				num_blocks=(4, 4, 4, 4),
 				num_channels=(48, 96, 192, 384))),
 		norm_eval = False,
-		with_cp = True,),
+		with_cp = True,
+		init_cfg = dict(type='Pretrained', checkpoint='https://download.openmmlab.com/pretrain/third_party/hrnetv2_w48-d2186c55.pth')),
 	neck=dict(
 		type='FCNHead',
 		in_channels=[48, 96, 192, 384],
@@ -66,7 +66,7 @@ model = dict(
 		distance_threshold=0.5,
         score_thr=0.01,
         max_per_img=max_per_img,
-        nms=dict(type='soft_nms', iou_threshold=0.6, method='gaussian', min_score = 0.01)))
+        nms=dict(type='nms', iou_threshold=0.6)))
 
 # data setting
 dataset_type = 'CocoDataset'
