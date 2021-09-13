@@ -173,8 +173,8 @@ class CentripetalHead(CornerHead):
 				- br_centripetal_shift (Tensor): Predicted bottom-right
 				  centripetal shift heatmap.
 		"""
-		feat_h, feat_w = x.shape[-2:]
-		guiding_scale_map = torch.zeros_like(x, requires_grad = False)
+		batch_size, _, feat_h, feat_w = x.shape
+		guiding_scale_map = torch.zeros((batch_size, 2, feat_h, feat_w), requires_grad = False)
 		guiding_scale_map[:, 0] = feat_w / 2
 		guiding_scale_map[:, 1] = feat_h / 2
 
@@ -189,7 +189,7 @@ class CentripetalHead(CornerHead):
 		tl_feat_adaption = self.tl_feat_adaption[lvl_ind](tl_pool, tl_dcn_offset)
 		br_feat_adaption = self.br_feat_adaption[lvl_ind](br_pool, br_dcn_offset)
 
-		centripetal_scale_map = torch.zeros_like(x, requires_grad = False)
+		centripetal_scale_map = torch.zeros((batch_size, 2, feat_h, feat_w), requires_grad = False)
 		centripetal_scale_map[:, 0] = math.log(feat_w / 2)
 		centripetal_scale_map[:, 1] = math.log(feat_h / 2)
 

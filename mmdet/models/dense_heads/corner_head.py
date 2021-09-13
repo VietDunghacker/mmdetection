@@ -466,18 +466,18 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 		if with_corner_emb:
 			target_result.update(corner_embedding=match)
 		if with_guiding_shift:
-			assert torch.max(gt_tl_guiding_shift[:, 0]) <= width
-			assert torch.max(gt_tl_guiding_shift[:, 1]) <= height
-			assert torch.max(gt_br_guiding_shift[:, 0]) <= width
-			assert torch.max(gt_br_guiding_shift[:, 1]) <= height
+			assert torch.max(gt_tl_guiding_shift[:, 0]) <= width, torch.max(gt_tl_guiding_shift[:, 0])
+			assert torch.max(gt_tl_guiding_shift[:, 1]) <= height, torch.max(gt_tl_guiding_shift[:, 1]) 
+			assert torch.max(gt_br_guiding_shift[:, 0]) <= width, torch.max(gt_tl_guiding_shift[:, 0])
+			assert torch.max(gt_br_guiding_shift[:, 1]) <= height, torch.max(gt_tl_guiding_shift[:, 1]) 
 			target_result.update(
 				topleft_guiding_shift=gt_tl_guiding_shift,
 				bottomright_guiding_shift=gt_br_guiding_shift)
 		if with_centripetal_shift:
-			assert torch.max(gt_tl_centripetal_shift[:, 0]) <= log(width)
-			assert torch.max(gt_tl_centripetal_shift[:, 1]) <= log(height)
-			assert torch.max(gt_tl_centripetal_shift[:, 0]) <= log(width)
-			assert torch.max(gt_tl_centripetal_shift[:, 1]) <= log(height)
+			assert torch.max(gt_tl_centripetal_shift[:, 0]) <= log(width), torch.max(gt_tl_centripetal_shift[:, 0])
+			assert torch.max(gt_tl_centripetal_shift[:, 1]) <= log(height), torch.max(gt_tl_centripetal_shift[:, 1])
+			assert torch.max(gt_tl_centripetal_shift[:, 0]) <= log(width), torch.max(gt_tl_centripetal_shift[:, 0])
+			assert torch.max(gt_tl_centripetal_shift[:, 1]) <= log(height), torch.max(gt_tl_centripetal_shift[:, 1])
 			target_result.update(
 				topleft_centripetal_shift=gt_tl_centripetal_shift,
 				bottomright_centripetal_shift=gt_br_centripetal_shift)
