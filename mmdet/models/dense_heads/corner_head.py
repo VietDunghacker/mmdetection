@@ -414,15 +414,10 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 				scale_center_y = center_y * height_ratio
 
 				# Int coords on feature map/ground truth tensor
-				assert 0 <= width - int(scale_left) <= 1, "scale_left: {}, width: {}".format(scale_left, width - 1)
-				assert 0 <= width - int(scale_right) <= 1, "scale_right: {}, width: {}".format(scale_right, width - 1)
-				assert 0 <= height - int(scale_top) <= 1, "scale_top: {}, height: {}".format(scale_top, height)
-				assert 0 <= height - int(scale_bottom) <= 1, "scale_bottom: {}, height: {}".format(scale_bottom, height)
-
-				left_idx = int(scale_left)
-				right_idx = int(scale_right)
-				top_idx = int(scale_top)
-				bottom_idx = int(scale_bottom)
+				left_idx = min(int(scale_left), width - 1)
+				right_idx = min(int(scale_right), width - 1)
+				top_idx = min(int(scale_top), height - 1)
+				bottom_idx = min(int(scale_bottom), height - 1)
 
 				# Generate gaussian heatmap
 				scale_box_width = ceil(scale_right - scale_left)
@@ -441,6 +436,11 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 				gt_tl_offset[batch_id, 1, top_idx, left_idx] = top_offset
 				gt_br_offset[batch_id, 0, bottom_idx, right_idx] = right_offset
 				gt_br_offset[batch_id, 1, bottom_idx, right_idx] = bottom_offset
+
+				assert left_offset <= 1, left_offset
+				assert top_offset <= 1, top_offset
+				assert right_offset <= 1, right_offset
+				assert bottom_offset <= 1, bottom_offset
 
 				# Generate corner embedding
 				if with_corner_emb:
