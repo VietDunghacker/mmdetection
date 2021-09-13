@@ -356,7 +356,6 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 		batch_topk_labels = center_heatmap_labels.gather(1, topk_inds)
 		topk_ys = topk_inds // width
 		topk_xs = (topk_inds % width).int().float()
-		assert False
 
 		wh = wh_pred.gather(1, topk_inds.unsqueeze(2).repeat(1, 1, 2))
 		offset = offset_pred.gather(1, topk_inds.unsqueeze(2).repeat(1, 1, 2))
@@ -380,6 +379,10 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 	def _bboxes_nms(self, bboxes, labels, cfg):
 		if labels.numel() == 0:
 			return bboxes, labels
+
+		keep = bboxes[:, 4] > 0
+		bboxes = bboxes[keep]
+		labels = labels[keep]
 
 		out_bboxes, keep = batched_nms(bboxes[:, :4].contiguous(), bboxes[:, -1].contiguous(), labels, cfg.nms_cfg)
 		out_labels = labels[keep]
