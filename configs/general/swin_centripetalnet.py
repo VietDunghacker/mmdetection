@@ -4,69 +4,37 @@ _base_ = [
 ]
 
 # model settings
-max_per_img = 100
 model = dict(
 	type='CenterNet',
-	pretrained = 'https://download.openmmlab.com/pretrain/third_party/hrnetv2_w48-d2186c55.pth',
 	backbone=dict(
-		type='HRNet',
-		extra=dict(
-			stage1=dict(
-				num_modules=1,
-				num_branches=1,
-				block='BOTTLENECK',
-				num_blocks=(4, ),
-				num_channels=(64, )),
-			stage2=dict(
-				num_modules=1,
-				num_branches=2,
-				block='BASIC',
-				num_blocks=(4, 4),
-				num_channels=(48, 96)),
-			stage3=dict(
-				num_modules=4,
-				num_branches=3,
-				block='BASIC',
-				num_blocks=(4, 4, 4),
-				num_channels=(48, 96, 192)),
-			stage4=dict(
-				num_modules=3,
-				num_branches=4,
-				block='BASIC',
-				num_blocks=(4, 4, 4, 4),
-				num_channels=(48, 96, 192, 384))),
-		norm_eval = False,
-		with_cp = True,),
-	neck=dict(
-		type='FCNHead',
-		in_channels=[48, 96, 192, 384],
-		in_index=(0, 1, 2, 3),
-		channels=256,
-		input_transform='resize_concat',
-		kernel_size=1,
-		num_convs=1,
-		concat_input=False,
-		dropout_ratio=-1,
-		norm_cfg=dict(type='BN', requires_grad=True),
-		align_corners=False),
+		type='SwinTransformer',
+		embed_dims=128,
+		depths=[2, 2, 18, 2],
+		num_heads=[4, 8, 16, 32],
+		window_size=7,
+		mlp_ratio=4,
+		qkv_bias=True,
+		qk_scale=None,
+		drop_rate=0.,
+		attn_drop_rate=0.,
+		drop_path_rate=0.3,
+		patch_norm=True,
+		out_indices=(3, ),
+		with_cp=True,
+		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/swin_base_224_b16x64_300e_imagenet_20210616_190742-93230b0d.pth')),
+	neck=None,
 	bbox_head=dict(
 		type='CentripetalHead',
 		num_classes=34,
-		in_channels=256,
+		in_channels=1024,
 		num_feat_levels=1,
 		corner_emb_channels=0,
 		loss_heatmap=dict(type='GaussianFocalLoss', alpha=2.0, gamma=4.0, loss_weight=1),
 		loss_offset=dict(type='SmoothL1Loss', beta=1.0, loss_weight=1),
-		loss_guiding_shift=dict(type='SmoothL1Loss', beta=1.0, loss_weight=0.05 * 511 / 800),
+		loss_guiding_shift=dict(type='SmoothL1Loss', beta=1.0, loss_weight=1),
 		loss_centripetal_shift=dict(type='SmoothL1Loss', beta=1.0, loss_weight=1)),
 	train_cfg=None,
-	test_cfg=dict(
-		corner_topk=max_per_img,
-		local_maximum_kernel=3,
-		distance_threshold=0.5,
-        score_thr=0,
-        max_per_img=32,
-        nms=dict(type='soft_nms', iou_threshold=0.6, method='gaussian')))
+	test_cfg=dict(topk=100, local_maximum_kernel=3, max_per_img=32, threshold = 0.05, nms_cfg = dict(type='soft_nms', iou_threshold=0.5, method='gaussian')))
 
 # data setting
 dataset_type = 'CocoDataset'
