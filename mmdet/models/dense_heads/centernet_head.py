@@ -350,8 +350,9 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 		wh_pred = wh_pred.permute(0, 2, 3, 1).reshape(batch_size, -1, 2)
 		offset_pred = offset_pred.permute(0, 2, 3, 1).reshape(batch_size, -1, 2)
 
-		center_heatmap_scores, batch_topk_labels = center_heatmap_pred.max(-1)
+		center_heatmap_scores, center_heatmap_labels = center_heatmap_pred.max(-1)
 		batch_scores, topk_inds = torch.topk(center_heatmap_scores, k)
+		batch_topk_labels = center_heatmap_labels[topk_inds]
 		topk_ys = topk_inds // width
 		topk_xs = (topk_inds % width).int().float()
 
