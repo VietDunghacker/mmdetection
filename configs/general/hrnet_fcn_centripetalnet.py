@@ -66,7 +66,7 @@ model = dict(
 		distance_threshold=0.5,
         score_thr=0,
         max_per_img=32,
-        nms=dict(type='soft_nms', iou_threshold=0.6, method='gaussian')))
+        nms=dict(type='soft_nms', iou_threshold=0.6, method='gaussian', min_score = 0.01)))
 
 # data setting
 dataset_type = 'CocoDataset'

@@ -740,7 +740,7 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 		clses = clses[idx].view(-1)
 
 		detections = torch.cat([bboxes, scores.unsqueeze(-1)], -1)
-		keepinds = (detections[:, -1] > 0.1)
+		keepinds = (detections[:, -1] > 0.01)
 		detections = detections[keepinds]
 		labels = clses[keepinds]
 
