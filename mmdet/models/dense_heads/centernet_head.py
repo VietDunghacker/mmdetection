@@ -108,7 +108,6 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 		"""
 		center_heatmap_pred = self.heatmap_head(feat).sigmoid()
 		wh_pred = self.wh_head(feat)
-
 		offset_pred = self.offset_head(feat)
 		return center_heatmap_pred, wh_pred, offset_pred
 
@@ -148,10 +147,6 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 			offset_preds) == 1
 		center_heatmap_pred = center_heatmap_preds[0]
 		wh_pred = wh_preds[0]
-		'''feat_h, feat_w = center_heatmap_pred.shape[2:]
-		wh_pred[:, 0, :, :] *= feat_w
-		wh_pred[:, 1, :, :] *= feat_h'''
-
 		offset_pred = offset_preds[0]
 
 		target_result, avg_factor = self.get_targets(gt_bboxes, gt_labels,
@@ -298,12 +293,6 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 		batch_border = batch_det_bboxes.new_tensor(border_pixs)[:, [2, 0, 2, 0]].unsqueeze(1)
 		batch_det_bboxes[..., :4] -= batch_border
 
-		inp_h, inp_w = img_metas[0]['batch_input_shape']
-		batch_det_bboxes[..., 0].clamp_(min = 0, max = inp_w)
-		batch_det_bboxes[..., 1].clamp_(min = 0, max = inp_h)
-		batch_det_bboxes[..., 2].clamp_(min = 0, max = inp_w)
-		batch_det_bboxes[..., 3].clamp_(min = 0, max = inp_h)	
-
 		if rescale:
 			batch_det_bboxes[..., :4] /= batch_det_bboxes.new_tensor(scale_factors).unsqueeze(1)
 
@@ -359,7 +348,7 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 		offset = transpose_and_gather_feat(offset_pred, batch_index)
 		topk_xs = topk_xs + offset[..., 0]
 		topk_ys = topk_ys + offset[..., 1]
-		tl_x = ((topk_xs - wh[..., 0] / 2) * (inp_w / width))
+		tl_x = (topk_xs - wh[..., 0] / 2) * (inp_w / width)
 		tl_y = (topk_ys - wh[..., 1] / 2) * (inp_h / height)
 		br_x = (topk_xs + wh[..., 0] / 2) * (inp_w / width)
 		br_y = (topk_ys + wh[..., 1] / 2) * (inp_h / height)
