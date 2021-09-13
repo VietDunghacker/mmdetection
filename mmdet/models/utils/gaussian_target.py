@@ -238,7 +238,7 @@ def get_topk_from_heatmap(scores, k=20):
 	topk_ys = gather_feat(topk_ys.view(batch, -1, 1), topk_ind).view(batch, k)
 	topk_xs = gather_feat(topk_xs.view(batch, -1, 1), topk_ind).view(batch, k)
 
-	return topk_scores, topk_inds, topk_clses, topk_ys, topk_xs
+	return topk_score, topk_inds, topk_clses, topk_ys, topk_xs
 
 
 def gather_feat(feat, ind, mask=None):
