@@ -107,7 +107,7 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 			offset_pred (Tensor): offset predicts, the channels number is 2.
 		"""
 		center_heatmap_pred = self.heatmap_head(feat).sigmoid()
-		wh_pred = self.wh_head(feat)
+		wh_pred = self.wh_head(feat).sigmoid()
 		offset_pred = self.offset_head(feat)
 		return center_heatmap_pred, wh_pred, offset_pred
 
@@ -146,7 +146,11 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 		assert len(center_heatmap_preds) == len(wh_preds) == len(
 			offset_preds) == 1
 		center_heatmap_pred = center_heatmap_preds[0]
+
+		feat_h, feat_w = center_heatmap_pred.shape[-2:]
 		wh_pred = wh_preds[0]
+		wh_pred[:, 0] *= feat_w
+		wh_pred[:, 1] *= feat_h
 		offset_pred = offset_preds[0]
 
 		target_result, avg_factor = self.get_targets(gt_bboxes, gt_labels,
