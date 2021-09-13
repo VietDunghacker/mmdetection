@@ -394,8 +394,8 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 		for batch_id in range(batch_size):
 			# Ground truth of corner embedding per image is a list of coord set
 			corner_match = []
-			tl_set = [(int(item[0]), int(item[1])) for item in gt_bboxes[batch_id]]
-			br_set = [(int(item[2]), int(item[3])) for item in gt_bboxes[batch_id]]
+			tl_set = [(int(min(item[0] * width_ratio, width - 1)), int(min(item[1] * height_ratio, height - 1))) for item in gt_bboxes[batch_id]]
+			br_set = [(int(min(item[2] * width_ratio, width - 1)), int(min(item[3] * height_ratio, height - 1))) for item in gt_bboxes[batch_id]]
 			assert len(tl_set) == len(set(tl_set)), tl_set
 			assert len(br_set) == len(set(br_set)), br_set
 
