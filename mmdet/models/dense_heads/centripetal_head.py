@@ -174,14 +174,11 @@ class CentripetalHead(CornerHead):
 				  centripetal shift heatmap.
 		"""
 		batch_size, _, feat_h, feat_w = x.shape
-		guiding_scale_map = torch.zeros((batch_size, 2, feat_h, feat_w), requires_grad = False, device = x.device)
-		guiding_scale_map[:, 0] = feat_w / 2
-		guiding_scale_map[:, 1] = feat_h / 2
 
 		tl_heat, br_heat, _, _, tl_off, br_off, tl_pool, br_pool = super().forward_single(x, lvl_ind, return_pool=True)
 
-		tl_guiding_shift = self.tl_guiding_shift[lvl_ind](tl_pool).sigmoid() * guiding_scale_map
-		br_guiding_shift = self.br_guiding_shift[lvl_ind](br_pool).sigmoid() * guiding_scale_map
+		tl_guiding_shift = self.tl_guiding_shift[lvl_ind](tl_pool)
+		br_guiding_shift = self.br_guiding_shift[lvl_ind](br_pool)
 
 		tl_dcn_offset = self.tl_dcn_offset[lvl_ind](tl_guiding_shift.detach())
 		br_dcn_offset = self.br_dcn_offset[lvl_ind](br_guiding_shift.detach())
@@ -189,12 +186,8 @@ class CentripetalHead(CornerHead):
 		tl_feat_adaption = self.tl_feat_adaption[lvl_ind](tl_pool, tl_dcn_offset)
 		br_feat_adaption = self.br_feat_adaption[lvl_ind](br_pool, br_dcn_offset)
 
-		centripetal_scale_map = torch.zeros((batch_size, 2, feat_h, feat_w), requires_grad = False, device = x.device)
-		centripetal_scale_map[:, 0] = math.log(feat_w / 2)
-		centripetal_scale_map[:, 1] = math.log(feat_h / 2)
-
-		tl_centripetal_shift = self.tl_centripetal_shift[lvl_ind](tl_feat_adaption).sigmoid() * centripetal_scale_map
-		br_centripetal_shift = self.br_centripetal_shift[lvl_ind](br_feat_adaption).sigmoid() * centripetal_scale_map
+		tl_centripetal_shift = self.tl_centripetal_shift[lvl_ind](tl_feat_adaption)
+		br_centripetal_shift = self.br_centripetal_shift[lvl_ind](br_feat_adaption)
 
 		result_list = [
 			tl_heat, br_heat, tl_off, br_off, tl_guiding_shift,

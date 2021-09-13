@@ -298,8 +298,8 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 			tl_emb = self.tl_emb[lvl_ind](tl_pool)
 			br_emb = self.br_emb[lvl_ind](br_pool)
 
-		tl_off = self.tl_off[lvl_ind](tl_pool).sigmoid()
-		br_off = self.br_off[lvl_ind](br_pool).sigmoid()
+		tl_off = self.tl_off[lvl_ind](tl_pool)
+		br_off = self.br_off[lvl_ind](br_pool)
 
 		result_list = [tl_heat, br_heat, tl_emb, br_emb, tl_off, br_off]
 		if return_pool:
@@ -865,10 +865,8 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 		br_ys = br_ys + br_off[..., 1]
 
 		if with_centripetal_shift:
-			tl_centripetal_shift = transpose_and_gather_feat(
-				tl_centripetal_shift, tl_inds).view(batch, k, 1, 2).exp()
-			br_centripetal_shift = transpose_and_gather_feat(
-				br_centripetal_shift, br_inds).view(batch, 1, k, 2).exp()
+			tl_centripetal_shift = transpose_and_gather_feat(tl_centripetal_shift, tl_inds).view(batch, k, 1, 2).exp()
+			br_centripetal_shift = transpose_and_gather_feat(br_centripetal_shift, br_inds).view(batch, 1, k, 2).exp()
 
 			tl_ctxs = tl_xs + tl_centripetal_shift[..., 0]
 			tl_ctys = tl_ys + tl_centripetal_shift[..., 1]
@@ -937,25 +935,17 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 
 			bboxes_center_x = (bboxes[..., 0] + bboxes[..., 2]) / 2
 			bboxes_center_y = (bboxes[..., 1] + bboxes[..., 3]) / 2
-			rcentral[..., 0] = bboxes_center_x - mu * (bboxes[..., 2] -
-													   bboxes[..., 0]) / 2
-			rcentral[..., 1] = bboxes_center_y - mu * (bboxes[..., 3] -
-													   bboxes[..., 1]) / 2
-			rcentral[..., 2] = bboxes_center_x + mu * (bboxes[..., 2] -
-													   bboxes[..., 0]) / 2
-			rcentral[..., 3] = bboxes_center_y + mu * (bboxes[..., 3] -
-													   bboxes[..., 1]) / 2
+			rcentral[..., 0] = bboxes_center_x - mu * (bboxes[..., 2] - bboxes[..., 0]) / 2
+			rcentral[..., 1] = bboxes_center_y - mu * (bboxes[..., 3] - bboxes[..., 1]) / 2
+			rcentral[..., 2] = bboxes_center_x + mu * (bboxes[..., 2] - bboxes[..., 0]) / 2
+			rcentral[..., 3] = bboxes_center_y + mu * (bboxes[..., 3] - bboxes[..., 1]) / 2
 			area_rcentral = ((rcentral[..., 2] - rcentral[..., 0]) * (rcentral[..., 3] - rcentral[..., 1])).abs()
 			dists = area_ct_bboxes / area_rcentral
 
-			tl_ctx_inds = (ct_bboxes[..., 0] <= rcentral[..., 0]) | (
-				ct_bboxes[..., 0] >= rcentral[..., 2])
-			tl_cty_inds = (ct_bboxes[..., 1] <= rcentral[..., 1]) | (
-				ct_bboxes[..., 1] >= rcentral[..., 3])
-			br_ctx_inds = (ct_bboxes[..., 2] <= rcentral[..., 0]) | (
-				ct_bboxes[..., 2] >= rcentral[..., 2])
-			br_cty_inds = (ct_bboxes[..., 3] <= rcentral[..., 1]) | (
-				ct_bboxes[..., 3] >= rcentral[..., 3])
+			tl_ctx_inds = (ct_bboxes[..., 0] <= rcentral[..., 0]) | (ct_bboxes[..., 0] >= rcentral[..., 2])
+			tl_cty_inds = (ct_bboxes[..., 1] <= rcentral[..., 1]) | (ct_bboxes[..., 1] >= rcentral[..., 3])
+			br_ctx_inds = (ct_bboxes[..., 2] <= rcentral[..., 0]) | (ct_bboxes[..., 2] >= rcentral[..., 2])
+			br_cty_inds = (ct_bboxes[..., 3] <= rcentral[..., 1]) | (ct_bboxes[..., 3] >= rcentral[..., 3])
 
 		if with_embedding:
 			tl_emb = transpose_and_gather_feat(tl_emb, tl_inds)

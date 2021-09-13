@@ -231,6 +231,35 @@ def get_topk_from_heatmap(scores, k=20):
 	topk_xs = (topk_inds % width).int().float()
 	return topk_scores, topk_inds, topk_clses, topk_ys, topk_xs
 
+'''def get_topk_from_heatmap(scores, k=20):
+	"""Get top k positions from heatmap.
+
+	Args:
+		scores (Tensor): Target heatmap with shape
+			[batch, num_classes, height, width].
+		k (int): Target number. Default: 20.
+
+	Returns:
+		tuple[torch.Tensor]: Scores, indexes, categories and coords of
+			topk keypoint. Containing following Tensors:
+
+		- topk_scores (Tensor): Max scores of each topk keypoint.
+		- topk_inds (Tensor): Indexes of each topk keypoint.
+		- topk_clses (Tensor): Categories of each topk keypoint.
+		- topk_ys (Tensor): Y-coord of each topk keypoint.
+		- topk_xs (Tensor): X-coord of each topk keypoint.
+	"""
+	batch, num_classes, height, width = scores.size()
+	scores = scores.view(batch, num_classes, -1).permute(0, 2, 1).contiguous()
+	scores, clses = torch.max(scores, dim = -1)
+	
+	topk_scores, topk_inds = torch.topk(scores, k)
+	topk_clses = clses.gather(1, topk_inds)
+
+	topk_ys = topk_inds // width
+	topk_xs = (topk_inds % width).int().float()
+	return topk_scores, topk_inds, topk_clses, topk_ys, topk_xs
+'''
 
 def gather_feat(feat, ind, mask=None):
 	"""Gather feature according to index.
