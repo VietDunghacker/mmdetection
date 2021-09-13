@@ -150,8 +150,7 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 				- loss_wh (Tensor): loss of hw heatmap
 				- loss_offset (Tensor): loss of offset heatmap.
 		"""
-		assert len(center_heatmap_preds) == len(wh_preds) == len(
-			offset_preds) == 1
+		assert len(center_heatmap_preds) == len(wh_preds) == len(offset_preds) == 1
 		center_heatmap_pred = center_heatmap_preds[0]
 
 		wh_pred = wh_preds[0]
@@ -226,6 +225,10 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 			center_x = (gt_bbox[:, [0]] + gt_bbox[:, [2]]) * width_ratio / 2
 			center_y = (gt_bbox[:, [1]] + gt_bbox[:, [3]]) * height_ratio / 2
 			gt_centers = torch.cat((center_x, center_y), dim=1)
+
+			gt_center_set = [(ctx.int(), cty.int()) for (ctx, cty) in gt_centers]
+			if len(gt_centers) != len(gt_center_set):
+				print("Fuck: " + gt_centers)
 
 			for j, ct in enumerate(gt_centers):
 				ctx_int, cty_int = ct.int()
@@ -352,9 +355,9 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 		inp_h, inp_w = img_shape
 
 		center_heatmap_pred = get_local_maximum(center_heatmap_pred, kernel=kernel)
-		center_heatmap_pred = center_heatmap_pred.permute(0, 2, 3, 1).reshape(batch_size, -1, num_classes)
-		wh_pred = wh_pred.permute(0, 2, 3, 1).reshape(batch_size, -1, 2)
-		offset_pred = offset_pred.permute(0, 2, 3, 1).reshape(batch_size, -1, 2)
+		center_heatmap_pred = center_heatmap_pred.permute(0, 2, 3, 1).contiguous().view(batch_size, -1, num_classes)
+		wh_pred = wh_pred.permute(0, 2, 3, 1).contiguous().view(batch_size, -1, 2)
+		offset_pred = offset_pred.permute(0, 2, 3, 1).contiguous().view(batch_size, -1, 2)
 
 		center_heatmap_scores, center_heatmap_labels = center_heatmap_pred.max(-1)
 		batch_scores, topk_inds = torch.topk(center_heatmap_scores, k)
