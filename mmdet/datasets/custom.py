@@ -216,6 +216,7 @@ class CustomDataset(Dataset):
 			results['proposals'] = self.proposals[idx]
 		self.pre_pipeline(results)
 		a = self.pipeline(results)
+		print_log(results, a)
 		return a
 
 	def prepare_test_img(self, idx):
