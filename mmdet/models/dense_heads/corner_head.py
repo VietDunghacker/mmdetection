@@ -414,10 +414,10 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 				scale_center_y = center_y * height_ratio
 
 				# Int coords on feature map/ground truth tensor
-				assert scale_left <= width - 1, "scale_left: {}, width - 1: {}".format(scale_left, width - 1)
-				assert scale_right <= width - 1, "scale_right: {}, width - 1: {}".format(scale_right, width - 1)
-				assert scale_top <= height - 1, "scale_top: {}, height - 1: {}".format(scale_top, width - 1)
-				assert scale_bottom <= height - 1, "scale_bottom: {}, height - 1: {}".format(scale_bottom, width - 1)
+				assert scale_left <= width - 1, "scale_left: {}, width - 1: {}".format(left, width - 1)
+				assert scale_right <= width - 1, "scale_right: {}, width - 1: {}".format(right, width - 1)
+				assert scale_top <= height - 1, "scale_top: {}, height - 1: {}".format(top, width - 1)
+				assert scale_bottom <= height - 1, "scale_bottom: {}, height - 1: {}".format(bottom, width - 1)
 
 				left_idx = int(scale_left)
 				right_idx = int(scale_right)
