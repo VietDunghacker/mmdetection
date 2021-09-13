@@ -298,8 +298,8 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 			tl_emb = self.tl_emb[lvl_ind](tl_pool)
 			br_emb = self.br_emb[lvl_ind](br_pool)
 
-		tl_off = self.tl_off[lvl_ind](tl_pool)
-		br_off = self.br_off[lvl_ind](br_pool)
+		tl_off = self.tl_off[lvl_ind](tl_pool).sigmoid()
+		br_off = self.br_off[lvl_ind](br_pool).sigmoid()
 
 		result_list = [tl_heat, br_heat, tl_emb, br_emb, tl_off, br_off]
 		if return_pool:
