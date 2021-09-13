@@ -745,8 +745,7 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 		labels = clses[keepinds]
 
 		if with_nms:
-			detections, labels = self._bboxes_nms(detections, labels,
-												  self.test_cfg)
+			detections, labels = self._bboxes_nms(detections, labels, self.test_cfg)
 
 		return detections, labels
 
@@ -760,8 +759,7 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 		if 'nms' not in cfg:
 			cfg.nms = cfg.nms_cfg
 
-		out_bboxes, keep = batched_nms(bboxes[:, :4], bboxes[:, -1], labels,
-									   cfg.nms)
+		out_bboxes, keep = batched_nms(bboxes[:, :4], bboxes[:, -1], labels, cfg.nms)
 		out_labels = labels[keep]
 
 		if len(out_bboxes) > 0:
@@ -929,8 +927,7 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 			br_ctxs *= br_ctxs.gt(0.0).type_as(br_ctxs)
 			br_ctys *= br_ctys.gt(0.0).type_as(br_ctys)
 
-			ct_bboxes = torch.stack((tl_ctxs, tl_ctys, br_ctxs, br_ctys),
-									dim=3)
+			ct_bboxes = torch.stack((tl_ctxs, tl_ctys, br_ctxs, br_ctys), dim=3)
 			area_ct_bboxes = ((br_ctxs - tl_ctxs) * (br_ctys - tl_ctys)).abs()
 
 			rcentral = torch.zeros_like(ct_bboxes)
@@ -948,8 +945,7 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 													   bboxes[..., 0]) / 2
 			rcentral[..., 3] = bboxes_center_y + mu * (bboxes[..., 3] -
 													   bboxes[..., 1]) / 2
-			area_rcentral = ((rcentral[..., 2] - rcentral[..., 0]) *
-							 (rcentral[..., 3] - rcentral[..., 1])).abs()
+			area_rcentral = ((rcentral[..., 2] - rcentral[..., 0]) * (rcentral[..., 3] - rcentral[..., 1])).abs()
 			dists = area_ct_bboxes / area_rcentral
 
 			tl_ctx_inds = (ct_bboxes[..., 0] <= rcentral[..., 0]) | (

@@ -63,7 +63,7 @@ model = dict(
 	test_cfg=dict(
 		corner_topk=max_per_img,
 		local_maximum_kernel=3,
-		distance_threshold=0.5,
+		distance_threshold=0.05,
         score_thr=0,
         max_per_img=32,
         nms=dict(type='soft_nms', iou_threshold=0.6, method='gaussian')))
