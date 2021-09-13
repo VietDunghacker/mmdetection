@@ -21,7 +21,7 @@ __all__ = [
     'DetrTransformerDecoderLayer', 'DetrTransformerDecoder', 'Transformer',
     'build_transformer', 'build_linear_layer', 'SinePositionalEncoding',
     'LearnedPositionalEncoding', 'DynamicConv', 'SimplifiedBasicBlock',
-    'NormedLinear', 'NormedConv2d', 'make_divisible', 'InvertedResidual',s
+    'NormedLinear', 'NormedConv2d', 'make_divisible', 'InvertedResidual',
     'SELayer', 'interpolate_as', 'ConvUpsample', 'CSPLayer', "ModulatedSEPCConv", 'SEPCConv',
     'BRPool', 'TLPool'
 ]
