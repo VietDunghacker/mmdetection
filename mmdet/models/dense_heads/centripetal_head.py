@@ -319,10 +319,6 @@ class CentripetalHead(CornerHead):
 		tl_mask = gt_tl_heatmap.eq(1).sum(1).gt(0).unsqueeze(1).type_as(gt_tl_heatmap)
 		br_mask = gt_br_heatmap.eq(1).sum(1).gt(0).unsqueeze(1).type_as(gt_br_heatmap)
 
-		print(tl_hmp.shape[2:])
-		print(torch.max(gt_tl_guiding_shift), torch.max(gt_br_guiding_shift), torch.max(gt_tl_centripetal_shift), torch.max(gt_br_centripetal_shift))
-		assert False
-
 		# Guiding shift loss
 		tl_guiding_loss = self.loss_guiding_shift(
 			tl_guiding_shift,
