@@ -414,10 +414,10 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 				scale_center_y = center_y * height_ratio
 
 				# Int coords on feature map/ground truth tensor
-				left_idx = min(int(scale_left), width - 1)
-				right_idx = min(int(scale_right), width - 1)
-				top_idx = min(int(scale_top), height - 1)
-				bottom_idx = min(int(scale_bottom), height - 1)
+				left_idx = int(min(scale_left, width - 1))
+				right_idx = int(min(scale_right, width - 1))
+				top_idx = int(min(scale_top, height - 1))
+				bottom_idx = int(min(scale_bottom, height - 1))
 
 				# Generate gaussian heatmap
 				scale_box_width = ceil(scale_right - scale_left)
