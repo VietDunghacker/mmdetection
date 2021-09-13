@@ -199,6 +199,7 @@ def get_local_maximum(heat, kernel=3):
 			own value and other positions are 0.
 	"""
 	pad = (kernel - 1) // 2
+	hmax = torch.max(heat, dim = 1)
 	hmax = F.max_pool2d(heat, kernel, stride=1, padding=pad)
 	print(heat.shape, hmax.shape)
 	assert False
