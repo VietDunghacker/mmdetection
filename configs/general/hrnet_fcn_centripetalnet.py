@@ -4,7 +4,7 @@ _base_ = [
 ]
 
 # model settings
-max_per_img = 100
+max_per_img = 50
 model = dict(
 	type='CenterNet',
 	pretrained = 'https://download.openmmlab.com/pretrain/third_party/hrnetv2_w48-d2186c55.pth',
@@ -64,9 +64,9 @@ model = dict(
 		corner_topk=max_per_img,
 		local_maximum_kernel=3,
 		distance_threshold=0.5,
-        score_thr=0,
-        max_per_img=32,
-        nms=dict(type='nms', iou_threshold=0.6)))
+        score_thr=0.01,
+        max_per_img=max_per_img,
+        nms=dict(type='soft_nms', iou_threshold=0.6, method='gaussian', min_score = 0.01)))
 
 # data setting
 dataset_type = 'CocoDataset'
