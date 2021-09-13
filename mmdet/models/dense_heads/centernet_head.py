@@ -342,16 +342,27 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 			  - batch_topk_labels (Tensor): Categories of each box with \
 				  shape (B, k)
 		"""
-		height, width = center_heatmap_pred.shape[2:]
+		batch_size, num_classes, height, width = center_heatmap_pred.shape
 		inp_h, inp_w = img_shape
 
 		center_heatmap_pred = get_local_maximum(center_heatmap_pred, kernel=kernel)
+		center_heatmap_pred = center_heatmap_pred.permute(0, 2, 3, 1).reshape(batch_size, -1, num_classes)
+		wh_pred = wh_pred.permute(0, 2, 3, 1).reshape(batch_size, -1, 2)
+		offset_pred = offset_pred.permute(0, 2, 3, 1).reshape(batch_size, -1, 2)
 
-		*batch_dets, topk_ys, topk_xs = get_topk_from_heatmap(center_heatmap_pred, k=k)
+		center_heatmap_scores, batch_topk_labels = center_heatmap_pred.max(-1)
+		batch_scores, topk_inds = torch.topk(center_heatmap_scores, k)
+		topk_ys = topk_inds // width
+		topk_xs = (topk_inds % width).int().float()
+
+		wh = wh_pred[topk_inds]
+		offset = offset_pred[topk_inds]
+
+		'''*batch_dets, topk_ys, topk_xs = get_topk_from_heatmap(center_heatmap_pred, k=k)
 		batch_scores, batch_index, batch_topk_labels = batch_dets
 
 		wh = transpose_and_gather_feat(wh_pred, batch_index)
-		offset = transpose_and_gather_feat(offset_pred, batch_index)
+		offset = transpose_and_gather_feat(offset_pred, batch_index)'''
 		topk_xs = topk_xs + offset[..., 0]
 		topk_ys = topk_ys + offset[..., 1]
 		tl_x = (topk_xs - wh[..., 0] / 2) * (inp_w / width)
