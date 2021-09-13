@@ -113,8 +113,6 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 		scale_map = torch.zeros_like(wh_pred, requires_grad = False)
 		scale_map[:, 0] = feat_w
 		scale_map[:, 1] = feat_h
-		print(scale_map)
-		assert False
 		wh_pred = wh_pred * scale_map
 
 		offset_pred = self.offset_head(feat)
