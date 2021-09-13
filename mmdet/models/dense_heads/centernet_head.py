@@ -356,7 +356,7 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 		inp_h, inp_w = img_shape
 
 		center_heatmap_pred = get_local_maximum(center_heatmap_pred, kernel=kernel)
-		center_heatmap_pred = center_heatmap_pred.permute(0, 2, 3, 1).contiguous().view(batch_size, -1, num_classes)
+		'''center_heatmap_pred = center_heatmap_pred.permute(0, 2, 3, 1).contiguous().view(batch_size, -1, num_classes)
 		wh_pred = wh_pred.permute(0, 2, 3, 1).contiguous().view(batch_size, -1, 2)
 		offset_pred = offset_pred.permute(0, 2, 3, 1).contiguous().view(batch_size, -1, 2)
 
@@ -368,13 +368,13 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 		topk_xs = (topk_inds % width).int().float()
 
 		wh = wh_pred.gather(1, topk_inds.unsqueeze(2).repeat(1, 1, 2))
-		offset = offset_pred.gather(1, topk_inds.unsqueeze(2).repeat(1, 1, 2))
+		offset = offset_pred.gather(1, topk_inds.unsqueeze(2).repeat(1, 1, 2))'''
 
-		'''*batch_dets, topk_ys, topk_xs = get_topk_from_heatmap(center_heatmap_pred, k=k)
+		*batch_dets, topk_ys, topk_xs = get_topk_from_heatmap(center_heatmap_pred, k=k)
 		batch_scores, batch_index, batch_topk_labels = batch_dets
 
 		wh = transpose_and_gather_feat(wh_pred, batch_index)
-		offset = transpose_and_gather_feat(offset_pred, batch_index)'''
+		offset = transpose_and_gather_feat(offset_pred, batch_index)
 		topk_xs = topk_xs + offset[..., 0]
 		topk_ys = topk_ys + offset[..., 1]
 		tl_x = (topk_xs - wh[..., 0] / 2) * (inp_w / width)
@@ -389,10 +389,6 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 	def _bboxes_nms(self, bboxes, labels, cfg):
 		if labels.numel() == 0:
 			return bboxes, labels
-
-		keep = bboxes[:, -1] > 0
-		bboxes = bboxes[keep]
-		labels = labels[keep]
 
 		out_bboxes, keep = batched_nms(bboxes[:, :4].contiguous(), bboxes[:, -1].contiguous(), labels, cfg.nms_cfg)
 		out_labels = labels[keep]
