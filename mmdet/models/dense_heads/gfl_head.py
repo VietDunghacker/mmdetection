@@ -15,11 +15,9 @@ from .anchor_head import AnchorHead
 
 class Integral(nn.Module):
 	"""A fixed layer for calculating integral result from distribution.
-
 	This layer calculates the target location by :math: `sum{P(y_i) * y_i}`,
 	P(y_i) denotes the softmax vector that represents the discrete distribution
 	y_i denotes the discrete set, usually {0, 1, 2, ..., reg_max}
-
 	Args:
 		reg_max (int): The maximal value of the discrete set. Default: 16. You
 			may want to reset it according to your new dataset or related
@@ -35,11 +33,9 @@ class Integral(nn.Module):
 	def forward(self, x):
 		"""Forward feature from the regression head to get integral result of
 		bounding box location.
-
 		Args:
 			x (Tensor): Features of the regression head, shape (N, 4*(n+1)),
 				n is self.reg_max.
-
 		Returns:
 			x (Tensor): Integral result of box locations, i.e., distance
 				offsets from the box center in four directions, shape (N, 4).
@@ -51,17 +47,17 @@ class Integral(nn.Module):
 
 @HEADS.register_module()
 class GFLHead(AnchorHead):
-	"""Generalized Focal Loss: Learning Qualified and Distributed Bounding
-	Boxes for Dense Object Detection.
-
+	"""Head of GFLv1 and GFLv2.
 	GFL head structure is similar with ATSS, however GFL uses
 	1) joint representation for classification and localization quality, and
 	2) flexible General distribution for bounding box locations,
 	which are supervised by
-	Quality Focal Loss (QFL) and Distribution Focal Loss (DFL), respectively
-
-	https://arxiv.org/abs/2006.04388
-
+	Quality Focal Loss (QFL) and Distribution Focal Loss (DFL), respectively.
+	Furthermore, GFLv2 adds Distribution-Guided Quality Predictor (DGQP).
+	DGQP uses the statistics of learned distribution to guide the
+	localization quality estimation (LQE).
+	GFLv1: https://arxiv.org/abs/2006.04388
+	GFLv2: https://arxiv.org/abs/2011.12885
 	Args:
 		num_classes (int): Number of categories excluding the background
 			category.
@@ -75,6 +71,15 @@ class GFLHead(AnchorHead):
 		loss_qfl (dict): Config of Quality Focal Loss (QFL).
 		reg_max (int): Max value of integral set :math: `{0, ..., reg_max}`
 			in QFL setting. Default: 16.
+		use_dgqp (bool): Whether to use DGQP of GFLv2. Default: False.
+		reg_topk (int): k parameter of DGQP. Top-k values of distribution are
+			used for the input statistics. Default: 4.
+		reg_channels (int): Number of hidden layer unit of DGQP. Default: 64.
+		add_mean (bool): Whether to add mean to the input statistics of DGQP.
+			Default: True.
+		avg_samples_to_int (bool): Whether to integerize average numbers of
+			samples. True for compatibility with old MMDetection versions.
+			False for following original ATSS. Default: False.
 		init_cfg (dict or list[dict], optional): Initialization config dict.
 	Example:
 		>>> self = GFLHead(11, 7)
@@ -91,6 +96,11 @@ class GFLHead(AnchorHead):
 				 norm_cfg=dict(type='GN', num_groups=32, requires_grad=True),
 				 loss_dfl=dict(type='DistributionFocalLoss', loss_weight=0.25),
 				 reg_max=16,
+				 use_dgqp=False,
+				 reg_topk=4,
+				 reg_channels=64,
+				 add_mean=True,
+				 avg_samples_to_int=False,
 				 init_cfg=dict(
 					 type='Normal',
 					 layer='Conv2d',
@@ -105,6 +115,14 @@ class GFLHead(AnchorHead):
 		self.conv_cfg = conv_cfg
 		self.norm_cfg = norm_cfg
 		self.reg_max = reg_max
+		self.use_dgqp = use_dgqp
+		self.reg_topk = reg_topk
+		self.reg_channels = reg_channels
+		self.add_mean = add_mean
+		self.total_dim = reg_topk
+		if add_mean:
+			self.total_dim += 1
+		self.avg_samples_to_int = avg_samples_to_int
 		super(GFLHead, self).__init__(
 			num_classes, in_channels, init_cfg=init_cfg, **kwargs)
 
@@ -151,13 +169,17 @@ class GFLHead(AnchorHead):
 		self.scales = nn.ModuleList(
 			[Scale(1.0) for _ in self.anchor_generator.strides])
 
+		if self.use_dgqp:
+			conf_vector = [nn.Conv2d(4 * self.total_dim, self.reg_channels, 1)]
+			conf_vector += [self.relu]
+			conf_vector += [nn.Conv2d(self.reg_channels, 1, 1), nn.Sigmoid()]
+			self.reg_conf = nn.Sequential(*conf_vector)
+
 	def forward(self, feats):
 		"""Forward features from the upstream network.
-
 		Args:
 			feats (tuple[Tensor]): Features from the upstream network, each is
 				a 4D-tensor.
-
 		Returns:
 			tuple: Usually a tuple of classification scores and bbox prediction
 				cls_scores (list[Tensor]): Classification and quality (IoU)
@@ -171,12 +193,10 @@ class GFLHead(AnchorHead):
 
 	def forward_single(self, x, scale):
 		"""Forward feature of a single scale level.
-
 		Args:
 			x (Tensor): Features of a single scale level.
 			scale (:obj: `mmcv.cnn.Scale`): Learnable scale module to resize
 				the bbox prediction.
-
 		Returns:
 			tuple:
 				cls_score (Tensor): Cls and quality joint scores for a single
@@ -185,22 +205,39 @@ class GFLHead(AnchorHead):
 					level, the channel number is 4*(n+1), n is max value of
 					integral set.
 		"""
-		cls_feat = x
-		reg_feat = x
+		if isinstance(x, list):
+			cls_feat = x[0]
+			reg_feat = x[1]
+		else:
+			cls_feat = x
+			reg_feat = x
+
 		for cls_conv in self.cls_convs:
 			cls_feat = cls_conv(cls_feat)
 		for reg_conv in self.reg_convs:
 			reg_feat = reg_conv(reg_feat)
 		cls_score = self.gfl_cls(cls_feat)
 		bbox_pred = scale(self.gfl_reg(reg_feat)).float()
+		if self.use_dgqp:
+			N, C, H, W = bbox_pred.size()
+			prob = F.softmax(
+				bbox_pred.reshape(N, 4, self.reg_max + 1, H, W), dim=2)
+			prob_topk, _ = prob.topk(self.reg_topk, dim=2)
+			if self.add_mean:
+				prob_topk_mean = prob_topk.mean(dim=2, keepdim=True)
+				stat = torch.cat([prob_topk, prob_topk_mean], dim=2)
+			else:
+				stat = prob_topk
+			quality_score = self.reg_conf(
+				stat.type_as(reg_feat).reshape(N, -1, H, W))
+			cls_score = cls_score.sigmoid() * quality_score
+
 		return cls_score, bbox_pred
 
 	def anchor_center(self, anchors):
 		"""Get anchor centers from anchors.
-
 		Args:
 			anchors (Tensor): Anchor list with shape (N, 4), "xyxy" format.
-
 		Returns:
 			Tensor: Anchor centers with shape (N, 2), "xy" format.
 		"""
@@ -211,7 +248,6 @@ class GFLHead(AnchorHead):
 	def loss_single(self, anchors, cls_score, bbox_pred, labels, label_weights,
 					bbox_targets, stride, num_total_samples):
 		"""Compute loss of a single scale level.
-
 		Args:
 			anchors (Tensor): Box reference for each scale level with shape
 				(N, num_total_anchors, 4).
@@ -229,7 +265,6 @@ class GFLHead(AnchorHead):
 			stride (tuple): Stride in this scale level.
 			num_total_samples (int): Number of positive samples that is
 				reduced over all GPUs.
-
 		Returns:
 			dict[str, Tensor]: A dictionary of loss components.
 		"""
@@ -246,7 +281,8 @@ class GFLHead(AnchorHead):
 		# FG cat_id: [0, num_classes -1], BG cat_id: num_classes
 		bg_class_ind = self.num_classes
 		pos_inds = ((labels >= 0)
-					& (labels < bg_class_ind)).nonzero().squeeze(1)
+					&
+					(labels < bg_class_ind)).nonzero(as_tuple=False).squeeze(1)
 		score = label_weights.new_zeros(labels.shape)
 
 		if len(pos_inds) > 0:
@@ -255,7 +291,9 @@ class GFLHead(AnchorHead):
 			pos_anchors = anchors[pos_inds]
 			pos_anchor_centers = self.anchor_center(pos_anchors) / stride[0]
 
-			weight_targets = cls_score.detach().sigmoid()
+			weight_targets = cls_score.detach()
+			if not self.use_dgqp:
+				weight_targets = weight_targets.sigmoid()
 			weight_targets = weight_targets.max(dim=1)[0][pos_inds]
 			pos_bbox_pred_corners = self.integral(pos_bbox_pred)
 			pos_decode_bbox_pred = distance2bbox(pos_anchor_centers,
@@ -305,7 +343,6 @@ class GFLHead(AnchorHead):
 			 img_metas,
 			 gt_bboxes_ignore=None):
 		"""Compute losses of the head.
-
 		Args:
 			cls_scores (list[Tensor]): Cls and quality scores for each scale
 				level has shape (N, num_classes, H, W).
@@ -319,7 +356,6 @@ class GFLHead(AnchorHead):
 				image size, scaling factor, etc.
 			gt_bboxes_ignore (list[Tensor] | None): specify which bounding
 				boxes can be ignored when computing the loss.
-
 		Returns:
 			dict[str, Tensor]: A dictionary of loss components.
 		"""
@@ -349,6 +385,8 @@ class GFLHead(AnchorHead):
 		num_total_samples = reduce_mean(
 			torch.tensor(num_total_pos, dtype=torch.float,
 						 device=device)).item()
+		if self.avg_samples_to_int:
+			num_total_samples = int(num_total_samples)
 		num_total_samples = max(num_total_samples, 1.0)
 
 		losses_cls, losses_bbox, losses_dfl,\
@@ -367,7 +405,8 @@ class GFLHead(AnchorHead):
 		avg_factor = reduce_mean(avg_factor).clamp_(min=1).item()
 		losses_bbox = list(map(lambda x: x / avg_factor, losses_bbox))
 		losses_dfl = list(map(lambda x: x / avg_factor, losses_dfl))
-		return dict(loss_cls=losses_cls, loss_bbox=losses_bbox, loss_dfl=losses_dfl)
+		return dict(
+			loss_cls=losses_cls, loss_bbox=losses_bbox, loss_dfl=losses_dfl)
 
 	def _get_bboxes(self,
 					cls_scores,
@@ -379,7 +418,6 @@ class GFLHead(AnchorHead):
 					rescale=False,
 					with_nms=True):
 		"""Transform outputs for a single batch item into labeled boxes.
-
 		Args:
 			cls_scores (list[Tensor]): Box scores for a single scale level
 				has shape (N, num_classes, H, W).
@@ -398,7 +436,6 @@ class GFLHead(AnchorHead):
 				Default: False.
 			with_nms (bool): If True, do nms before return boxes.
 				Default: True.
-
 		Returns:
 			list[tuple[Tensor, Tensor]]: Each item in result_list is 2-tuple.
 				The first item is an (n, 5) tensor, where 5 represent
@@ -418,8 +455,10 @@ class GFLHead(AnchorHead):
 				mlvl_anchors):
 			assert cls_score.size()[-2:] == bbox_pred.size()[-2:]
 			assert stride[0] == stride[1]
-			scores = cls_score.permute(0, 2, 3, 1).reshape(
-				batch_size, -1, self.cls_out_channels).sigmoid()
+			scores_shape = (batch_size, -1, self.cls_out_channels)
+			scores = cls_score.permute(0, 2, 3, 1).reshape(scores_shape)
+			if not self.use_dgqp:
+				scores = scores.sigmoid()
 			bbox_pred = bbox_pred.permute(0, 2, 3, 1)
 
 			bbox_pred = self.integral(bbox_pred) * stride[0]
@@ -480,7 +519,6 @@ class GFLHead(AnchorHead):
 					label_channels=1,
 					unmap_outputs=True):
 		"""Get targets for GFL head.
-
 		This method is almost the same as `AnchorHead.get_targets()`. Besides
 		returning the targets as the parent method does, it also returns the
 		anchors as the first element of the returned tuple.
@@ -546,7 +584,6 @@ class GFLHead(AnchorHead):
 						   unmap_outputs=True):
 		"""Compute regression, classification targets for anchors in a single
 		image.
-
 		Args:
 			flat_anchors (Tensor): Multi-level anchors of the image, which are
 				concatenated into a single tensor of shape (num_anchors, 4)
@@ -564,7 +601,6 @@ class GFLHead(AnchorHead):
 			label_channels (int): Channel of label.
 			unmap_outputs (bool): Whether to map outputs back to the original
 				set of anchors.
-
 		Returns:
 			tuple: N is the number of total anchors in the image.
 				anchors (Tensor): All anchors in the image with shape (N, 4).
@@ -646,3 +682,8 @@ class GFLHead(AnchorHead):
 			int(flags.sum()) for flags in split_inside_flags
 		]
 		return num_level_anchors_inside
+
+
+@HEADS.register_module()
+class GFLSEPCHead(GFLHead):
+	pass
