@@ -200,8 +200,8 @@ def get_local_maximum(heat, kernel=3):
 	"""
 	pad = (kernel - 1) // 2
 	hmax = F.max_pool2d(heat, kernel, stride=1, padding=pad)
-    print(heat.shape, hmax.shape)
-    assert False
+	print(heat.shape, hmax.shape)
+	assert False
 	keep = (hmax == heat).float()
 	return heat * keep
 
