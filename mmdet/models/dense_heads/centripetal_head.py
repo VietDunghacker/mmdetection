@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import torch
 import torch.nn as nn
 from mmcv.cnn import ConvModule, normal_init
 from mmcv.ops import DeformConv2d
