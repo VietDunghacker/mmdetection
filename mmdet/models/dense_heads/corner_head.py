@@ -594,12 +594,12 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 		tl_off_mask = gt_tl_hmp.eq(1).sum(1).gt(0).unsqueeze(1).type_as(gt_tl_hmp)
 		br_off_mask = gt_br_hmp.eq(1).sum(1).gt(0).unsqueeze(1).type_as(gt_br_hmp)
 		tl_off_loss = self.loss_offset(
-			tl_off.sigmoid(),
+			tl_off,
 			gt_tl_off,
 			tl_off_mask,
 			avg_factor=max(1, tl_off_mask.sum()))
 		br_off_loss = self.loss_offset(
-			br_off.sigmoid(),
+			br_off,
 			gt_br_off,
 			br_off_mask,
 			avg_factor=max(1, br_off_mask.sum()))
