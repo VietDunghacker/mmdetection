@@ -109,7 +109,7 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 		"""
 		feat_w, feat_h = feat.shape[-2:]
 
-		center_heatmap_pred = F.softmax(self.heatmap_head(feat), dim = 1)
+		center_heatmap_pred = self.heatmap_head(feat).sigmoid()
 		wh_pred = self.wh_head(feat).sigmoid()
 		scale_map = torch.zeros_like(wh_pred, requires_grad = False)
 		scale_map[:, 0] = feat_w
