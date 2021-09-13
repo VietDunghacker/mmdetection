@@ -354,13 +354,9 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 		batch_scores, topk_inds = torch.topk(center_heatmap_scores, k)
 		topk_ys = topk_inds // width
 		topk_xs = (topk_inds % width).int().float()
-		print(topk_inds[0])
 
 		wh = wh_pred.gather(1, topk_inds.unsqueeze(2).repeat(1, 1, 2))
 		offset = offset_pred.gather(1, topk_inds.unsqueeze(2).repeat(1, 1, 2))
-		print(wh.shape)
-		print(topk_ys.shape)
-		assert False
 
 		'''*batch_dets, topk_ys, topk_xs = get_topk_from_heatmap(center_heatmap_pred, k=k)
 		batch_scores, batch_index, batch_topk_labels = batch_dets
