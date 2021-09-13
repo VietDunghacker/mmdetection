@@ -1,6 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from mmcv.cnn import bias_init_with_prob, normal_init
 from mmcv.ops import batched_nms
 from mmcv.runner import force_fp32
@@ -226,7 +227,7 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 			center_y = (gt_bbox[:, [1]] + gt_bbox[:, [3]]) * height_ratio / 2
 			gt_centers = torch.cat((center_x, center_y), dim=1)
 
-			gt_center_set = [(ctx.int(), cty.int()) for (ctx, cty) in gt_centers]
+			gt_center_set = set([(ctx.int(), cty.int()) for (ctx, cty) in gt_centers])
 			if len(gt_centers) != len(gt_center_set):
 				print("Fuck: " + gt_centers)
 
