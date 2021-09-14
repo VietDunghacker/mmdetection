@@ -121,7 +121,7 @@ class DyHead(BaseModule):
 		self.output_shape = output_shape
 
 		self.blocks = ModuleList()
-		for _ in self.num_stacks:
+		for _ in num_stacks:
 			self.blocks.append(DyHeadBlock(output_shape, spatial_cfg, task_cfg))
 
 	def forward(self, feats):
