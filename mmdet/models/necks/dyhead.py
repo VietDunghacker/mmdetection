@@ -141,5 +141,5 @@ class DyHead(BaseModule):
 		output = torch.stack(outputs, dim = 1) #B x L x C x H x W
 		output = output.view(B, L, C, H * W).permute(0, 1, 3, 2).contiguous() #B x L x S x C
 		output = self.blocks(output).permute(0, 1, 3, 2).contiguous() #B x L x C x S
-		output = output.reshape(B, L * C, H, W)
+		output = output.view(B, L * C, H, W)
 		return (output, )
