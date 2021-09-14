@@ -143,7 +143,7 @@ class DyHead(BaseModule):
 		outputs = []
 		for i, feat in enumerate(feats):
 			if i < median_level:
-				outputs.append(F.avg_pool2d(feat, kernel_size = 2 ** (median_level - i), kernel_size = 2 ** (median_level - i)))
+				outputs.append(F.avg_pool2d(feat, kernel_size = 2 ** (median_level - i), stride = 2 ** (median_level - i)))
 			elif i == median_level:
 				outputs.append(feat)
 			else:
