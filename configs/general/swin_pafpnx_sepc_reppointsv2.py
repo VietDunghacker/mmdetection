@@ -60,7 +60,6 @@ model = dict(
 		gradient_mul=0.1,
 		point_strides=[8, 16, 32, 64, 128],
 		point_base_scale=4,
-		conv_cfg=dict(type='DCNv2'),
 		norm_cfg=dict(type='GN', num_groups=32, requires_grad=True),
 		loss_cls=dict(type='FocalLoss', use_sigmoid=True, gamma=2.0, alpha=0.25, loss_weight=1.0),
 		loss_bbox_init=dict(type='CIoULoss', loss_weight=1.0),
