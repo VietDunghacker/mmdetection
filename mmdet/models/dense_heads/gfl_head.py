@@ -123,8 +123,7 @@ class GFLHead(AnchorHead):
 		if add_mean:
 			self.total_dim += 1
 		self.avg_samples_to_int = avg_samples_to_int
-		super(GFLHead, self).__init__(
-			num_classes, in_channels, init_cfg=init_cfg, **kwargs)
+		super(GFLHead, self).__init__(num_classes, in_channels, init_cfg=init_cfg, **kwargs)
 
 		self.sampling = False
 		if self.train_cfg:
@@ -267,19 +266,19 @@ class GFLHead(AnchorHead):
 		"""
 		assert stride[0] == stride[1], 'h stride is not equal to w stride!'
 		anchors = anchors.reshape(-1, 4)
-		cls_score = cls_score.permute(0, 2, 3,
-									  1).reshape(-1, self.cls_out_channels)
-		bbox_pred = bbox_pred.permute(0, 2, 3,
-									  1).reshape(-1, 4 * (self.reg_max + 1))
+		cls_score = cls_score.permute(0, 2, 3, 1).reshape(-1, self.cls_out_channels)
+		bbox_pred = bbox_pred.permute(0, 2, 3, 1).reshape(-1, 4 * (self.reg_max + 1))
 		bbox_targets = bbox_targets.reshape(-1, 4)
 		labels = labels.reshape(-1)
 		label_weights = label_weights.reshape(-1)
 
 		# FG cat_id: [0, num_classes -1], BG cat_id: num_classes
 		bg_class_ind = self.num_classes
-		pos_inds = ((labels >= 0)
-					&
-					(labels < bg_class_ind)).nonzero(as_tuple=False).squeeze(1)
+		print(bg_class_ind)
+		import torch
+		print(torch.max(labels))
+		assert False
+		pos_inds = ((labels >= 0) & (labels < bg_class_ind)).nonzero(as_tuple=False).squeeze(1)
 		score = label_weights.new_zeros(labels.shape)
 
 		if len(pos_inds) > 0:

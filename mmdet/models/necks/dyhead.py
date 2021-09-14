@@ -142,5 +142,5 @@ class DyHead(BaseModule):
 		output = output.view(B, L, C, H * W).permute(0, 1, 3, 2).contiguous() #B x L x S x C
 		assert (B, L, S, C) == tuple(output.shape)
 		output = self.blocks(output).permute(0, 1, 3, 2).contiguous() #B x L x C x S
-		output = output.view(B, L * C, H, W)
+		output = output.view(B, L * C, H, W) #B x (L x C) x H x W
 		return (output, )
