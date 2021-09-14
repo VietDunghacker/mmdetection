@@ -49,7 +49,7 @@ model = dict(
 			strides=[32]),
 		loss_cls=dict(
 			type='QualityFocalLoss',
-			use_sigmoid=True,
+			use_sigmoid=False,
 			beta=2.0,
 			loss_weight=1.0),
 		loss_dfl=dict(type='DistributionFocalLoss', loss_weight=0.25),
