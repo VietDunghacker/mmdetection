@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
-import torch.nn.function as F
+import torch.nn.functional as F
 
+from mmcv.ops import ModulatedDeformConv2d
 from mmcv.runner import BaseModule, ModuleList
 
 from .GFL import GFLHead
