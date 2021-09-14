@@ -149,7 +149,7 @@ train_pipeline = [
 		update_pad_shape=False,
 		skip_img_without_anno=True),	
 	dict(type='Normalize', **img_norm_cfg),
-	dict(type='LoadRPDV2Annotations', num_classes=1),
+	dict(type='LoadRPDV2Annotations', num_classes=34),
 	dict(type='RPDV2FormatBundle'),
 	dict(type='Collect', keys=['img', 'gt_bboxes', 'gt_labels', 'gt_sem_map', 'gt_sem_weights']),
 ]
