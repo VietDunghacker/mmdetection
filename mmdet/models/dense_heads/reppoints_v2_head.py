@@ -107,12 +107,10 @@ class RepPointsV2Head(AnchorFreeHead):
 			'The points number should be a square number.'
 		assert self.dcn_kernel % 2 == 1, \
 			'The points number should be an odd square number.'
-		dcn_base = np.arange(-self.dcn_pad,
-							 self.dcn_pad + 1).astype(np.float64)
+		dcn_base = np.arange(-self.dcn_pad, self.dcn_pad + 1).astype(np.float64)
 		dcn_base_y = np.repeat(dcn_base, self.dcn_kernel)
 		dcn_base_x = np.tile(dcn_base, self.dcn_kernel)
-		dcn_base_offset = np.stack([dcn_base_y, dcn_base_x], axis=1).reshape(
-			(-1))
+		dcn_base_offset = np.stack([dcn_base_y, dcn_base_x], axis=1).reshape((-1))
 		self.dcn_base_offset = torch.tensor(dcn_base_offset).view(1, -1, 1, 1)
 
 		super().__init__(num_classes, in_channels, loss_cls=loss_cls, init_cfg=init_cfg, **kwargs)
@@ -185,9 +183,7 @@ class RepPointsV2Head(AnchorFreeHead):
 		pts_out_dim = 4 if self.use_grid_points else 2 * self.num_points
 
 		cls_in_channels = self.feat_channels + 6
-		self.reppoints_cls_conv = DeformConv2d(cls_in_channels,
-											 self.point_feat_channels,
-											 self.dcn_kernel, 1, self.dcn_pad)
+		self.reppoints_cls_conv = DeformConv2d(cls_in_channels, self.point_feat_channels, self.dcn_kernel, 1, self.dcn_pad)
 		self.reppoints_cls_out = nn.Conv2d(self.point_feat_channels,
 										   self.cls_out_channels, 1, 1, 0)
 
@@ -200,8 +196,7 @@ class RepPointsV2Head(AnchorFreeHead):
 													self.point_feat_channels,
 													self.dcn_kernel, 1,
 													self.dcn_pad)
-		self.reppoints_pts_refine_out = nn.Conv2d(self.point_feat_channels,
-												  pts_out_dim, 1, 1, 0)
+		self.reppoints_pts_refine_out = nn.Conv2d(self.point_feat_channels, pts_out_dim, 1, 1, 0)
 
 		self.reppoints_hem_tl_score_out = nn.Conv2d(self.feat_channels, 1, 3, 1, 1)
 		self.reppoints_hem_br_score_out = nn.Conv2d(self.feat_channels, 1, 3, 1, 1)
@@ -1050,9 +1045,7 @@ class RepPointsV2Head(AnchorFreeHead):
 		padding = mlvl_scores.new_zeros(mlvl_scores.shape[0], 1)
 		mlvl_scores = torch.cat([mlvl_scores, padding], dim=1)
 		if nms:
-			det_bboxes, det_labels = multiclass_nms(mlvl_bboxes, mlvl_scores,
-													cfg.score_thr, cfg.nms,
-													cfg.max_per_img)
+			det_bboxes, det_labels = multiclass_nms(mlvl_bboxes, mlvl_scores, cfg.score_thr, cfg.nms, cfg.max_per_img)
 			return det_bboxes, det_labels
 		else:
 			return mlvl_bboxes, mlvl_scores

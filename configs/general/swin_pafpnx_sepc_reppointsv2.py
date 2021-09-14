@@ -56,10 +56,11 @@ model = dict(
 		first_kernel_size=3,
 		kernel_size=1,
 		corner_dim=64,
-		num_points=9,
+		num_points=25,
 		gradient_mul=0.1,
 		point_strides=[8, 16, 32, 64, 128],
 		point_base_scale=4,
+		conv_cfg=dict(type='DCNv2'),
 		norm_cfg=dict(type='GN', num_groups=32, requires_grad=True),
 		loss_cls=dict(type='FocalLoss', use_sigmoid=True, gamma=2.0, alpha=0.25, loss_weight=1.0),
 		loss_bbox_init=dict(type='CIoULoss', loss_weight=1.0),
@@ -88,7 +89,7 @@ model = dict(
 		nms_pre=1000,
 		min_bbox_size=0,
 		score_thr=0.05,
-		nms=dict(type='soft_nms', iou_thr=0.6, method = 'gaussian'),
+		nms=dict(type='nms', iou_threshold=0.6),
 		max_per_img=100)
 	)
 

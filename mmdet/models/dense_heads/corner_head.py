@@ -39,10 +39,8 @@ class BiCornerPool(BaseModule):
 				 norm_cfg=dict(type='BN', requires_grad=True),
 				 init_cfg=None):
 		super(BiCornerPool, self).__init__(init_cfg)
-		self.direction1_conv = ConvModule(
-			in_channels, feat_channels, 3, padding=1, norm_cfg=norm_cfg)
-		self.direction2_conv = ConvModule(
-			in_channels, feat_channels, 3, padding=1, norm_cfg=norm_cfg)
+		self.direction1_conv = ConvModule(in_channels, feat_channels, 3, padding=1, norm_cfg=norm_cfg)
+		self.direction2_conv = ConvModule(in_channels, feat_channels, 3, padding=1, norm_cfg=norm_cfg)
 
 		self.aftpool_conv = ConvModule(
 			feat_channels,
@@ -52,10 +50,8 @@ class BiCornerPool(BaseModule):
 			norm_cfg=norm_cfg,
 			act_cfg=None)
 
-		self.conv1 = ConvModule(
-			in_channels, out_channels, 1, norm_cfg=norm_cfg, act_cfg=None)
-		self.conv2 = ConvModule(
-			in_channels, out_channels, 3, padding=1, norm_cfg=norm_cfg)
+		self.conv1 = ConvModule(in_channels, out_channels, 1, norm_cfg=norm_cfg, act_cfg=None)
+		self.conv2 = ConvModule(in_channels, out_channels, 3, padding=1, norm_cfg=norm_cfg)
 
 		self.direction1_pool = CornerPool(directions[0])
 		self.direction2_pool = CornerPool(directions[1])
