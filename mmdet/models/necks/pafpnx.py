@@ -22,8 +22,6 @@ class PAFPNX(FPN):
 			build the feature pyramid. Default: -1, which means the last level.
 		add_extra_convs (bool): Whether to add conv layers on top of the
 			original feature maps. Default: False.
-		extra_convs_on_inputs (bool): Whether to apply extra conv on
-			the original feature from the backbone. Default: False.
 		relu_before_extra_convs (bool): Whether to apply relu before the extra
 			conv. Default: False.
 		no_norm_on_lateral (bool): Whether to apply norm on lateral.
@@ -43,7 +41,6 @@ class PAFPNX(FPN):
 				 start_level=0,
 				 end_level=-1,
 				 add_extra_convs=False,
-				 extra_convs_on_inputs=True,
 				 relu_before_extra_convs=False,
 				 no_norm_on_lateral=False,
 				 conv_cfg=None,
@@ -53,8 +50,7 @@ class PAFPNX(FPN):
 				 upsample_cfg=dict(mode='nearest'),
 				 init_cfg=dict(type='Xavier', layer='Conv2d', distribution='uniform')):
 		super(PAFPNX, self).__init__(in_channels, out_channels, num_outs, start_level,
-							 end_level, add_extra_convs, extra_convs_on_inputs,
-							 relu_before_extra_convs, no_norm_on_lateral,
+							 end_level, add_extra_convs, relu_before_extra_convs, no_norm_on_lateral,
 							 conv_cfg, norm_cfg, act_cfg, upsample_cfg, init_cfg)
 		self.pafpn_conv_cfg = pafpn_conv_cfg if pafpn_conv_cfg is not None else conv_cfg
 		# add extra bottom up pathway
