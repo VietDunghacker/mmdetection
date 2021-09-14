@@ -76,18 +76,20 @@ class TaskAwareAttention(nn.Module):
 	def forward(self, feat):
 		B, L, S, C = feat.shape
 		assert L == self.L and S == self.S and C == self.C 
-		feat = feat.permute(0, 3, 1, 2).contiguous()
-		x = F.avg_pool2d(feat, (self.L, self.S)).squeeze()
-		x = self.relu(self.fc1(x))
-		x = self.fc2(x)
-		x = 2 * x.sigmoid() - 1
+		feat = feat.permute(0, 3, 1, 2).contiguous() #B x C x L x S
+		x = F.avg_pool2d(feat, (self.L, self.S)).squeeze() #B x C
+		x = self.relu(self.fc1(x)) #B x (C / channel_reduction)
+		x = self.fc2(x) #B x 4
+		x = 2 * x.sigmoid() - 1 #B x 4
 
-		thetas = self.init_values.to(feat.device) + self.lambdas.to(feat.device) * x
-		alphas = thetas[:, :2]
-		betas = thetas[:, 2:]
+		thetas = self.init_values.to(feat.device) + self.lambdas.to(feat.device) * x #B x 4
+		alphas = thetas[:, :2] #B x 2
+		betas = thetas[:, 2:] #B x 2
+
+		feat = feat.permute(1, 2, 3, 0) #C x L x S x B
 
 		output = torch.maximum((alphas[:, 0] * feat + betas[:, 0]), (alphas[:, 1] * feat + betas[:, 1]))
-		output = output.permute(0, 2, 3, 1).contiguous()
+		output = output.permute(3, 1, 2, 0).contiguous() #B x L
 		return output
 
 class DyHeadBlock(nn.Module):
