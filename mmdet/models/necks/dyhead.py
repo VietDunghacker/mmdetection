@@ -92,6 +92,7 @@ class TaskAwareAttention(nn.Module):
 
 class DyHeadBlock(nn.Module):
 	def __init__(self, size, spatial_cfg, task_cfg):
+		super(DyHeadBlock, self).__init__()
 		L, S, C = size
 		assert L % 2 == 1
 		block = []
@@ -105,10 +106,6 @@ class DyHeadBlock(nn.Module):
 
 @NECKS.register_module()
 class DyHead(BaseModule):
-	"""SEPC (Scale-Equalizing Pyramid Convolution).
-	https://arxiv.org/abs/2005.03101 https://github.com/jshilong/SEPC
-	"""
-
 	def __init__(self,
 				 output_shape,
 				 num_stacks=6,
