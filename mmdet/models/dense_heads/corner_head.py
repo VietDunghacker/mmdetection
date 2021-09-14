@@ -745,6 +745,9 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 		out_bboxes, keep = batched_nms(bboxes[:, :4].contiguous(), bboxes[:, -1].contiguous(), labels, cfg.nms)
 		out_labels = labels[keep]
 
+		out_bboxes, keep = batched_nms(out_bboxes[:, :4].contiguous(), out_bboxes[:, -1].contiguous(), out_labels, dict(type = 'nms', iou_threshold = 1.0))
+		out_labels = out_labels[keep]		
+
 		if len(out_bboxes) > 0:
 			# use `sort` to replace with `argsort` here
 			_, idx = torch.sort(out_bboxes[:, -1], descending=True)

@@ -7,7 +7,7 @@ from mmcv.cnn import ConvModule, bias_init_with_prob, normal_init
 from mmdet.core import (PointGenerator, build_assigner, build_sampler,
 						images_to_levels, multi_apply, multiclass_nms, unmap)
 from mmdet.models.utils import BRPool, TLPool
-from mmcv.ops import DeformConv2d
+from mmcv.ops import DeformConv2d, batched_nms
 from ..builder import HEADS, build_loss
 from .anchor_free_head import AnchorFreeHead
 
@@ -393,8 +393,7 @@ class RepPointsV2Head(AnchorFreeHead):
 		# points center for one time
 		multi_level_points = []
 		for i in range(num_levels):
-			points = self.point_generators[i].grid_points(
-				featmap_sizes[i], self.point_strides[i])
+			points = self.point_generators[i].grid_points(featmap_sizes[i], self.point_strides[i])
 			multi_level_points.append(points)
 		points_list = [[point.clone() for point in multi_level_points] for _ in range(num_imgs)]
 
@@ -752,12 +751,8 @@ class RepPointsV2Head(AnchorFreeHead):
 		gt_hm_br_weight = gt_hm_br_weight.reshape(-1)
 
 		loss_heatmap = 0
-		loss_heatmap += self.loss_heatmap(
-			hm_score_tl, gt_hm_tl, gt_hm_tl_weight, avg_factor=num_total_samples_tl
-		)
-		loss_heatmap += self.loss_heatmap(
-			hm_score_br, gt_hm_br, gt_hm_br_weight, avg_factor=num_total_samples_br
-		)
+		loss_heatmap += self.loss_heatmap(hm_score_tl, gt_hm_tl, gt_hm_tl_weight, avg_factor=num_total_samples_tl)
+		loss_heatmap += self.loss_heatmap(hm_score_br, gt_hm_br, gt_hm_br_weight, avg_factor=num_total_samples_br)
 		loss_heatmap /= 2.0
 
 		# heatmap offset loss
@@ -770,14 +765,8 @@ class RepPointsV2Head(AnchorFreeHead):
 		gt_offset_br_weight = gt_offset_br_weight.reshape(-1, 2)
 
 		loss_offset = 0
-		loss_offset += self.loss_offset(
-			hm_offset_tl, gt_offset_tl, gt_offset_tl_weight,
-			avg_factor=num_total_samples_tl
-		)
-		loss_offset += self.loss_offset(
-			hm_offset_br, gt_offset_br, gt_offset_br_weight,
-			avg_factor=num_total_samples_br
-		)
+		loss_offset += self.loss_offset(hm_offset_tl, gt_offset_tl, gt_offset_tl_weight, avg_factor=num_total_samples_tl)
+		loss_offset += self.loss_offset(hm_offset_br, gt_offset_br, gt_offset_br_weight, avg_factor=num_total_samples_br)
 		loss_offset /= 2.0
 
 		return loss_cls, loss_pts_init, loss_pts_refine, loss_heatmap, loss_offset
@@ -1046,6 +1035,9 @@ class RepPointsV2Head(AnchorFreeHead):
 		mlvl_scores = torch.cat([mlvl_scores, padding], dim=1)
 		if nms:
 			det_bboxes, det_labels = multiclass_nms(mlvl_bboxes, mlvl_scores, cfg.score_thr, cfg.nms, cfg.max_per_img)
+
+			det_bboxes, keep = batched_nms(det_bboxes[:, :4].contiguous(), det_bboxes[:, -1].contiguous(), det_labels, dict(type = 'nms', iou_threshold = 0.99, class_agnostic = True))
+			det_labels = det_labels[keep]
 			return det_bboxes, det_labels
 		else:
 			return mlvl_bboxes, mlvl_scores

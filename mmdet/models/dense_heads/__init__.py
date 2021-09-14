@@ -3,6 +3,7 @@ from .anchor_free_head import AnchorFreeHead
 from .anchor_head import AnchorHead
 from .atss_head import ATSSHead
 from .autoassign_head import AutoAssignHead
+from .bvr_head import BVRHead
 from .cascade_rpn_head import CascadeRPNHead, StageCascadeRPNHead
 from .centernet_head import CenterNetHead
 from .centripetal_head import CentripetalHead
@@ -18,6 +19,7 @@ from .ga_retina_head import GARetinaHead
 from .ga_rpn_head import GARPNHead
 from .gfl_head import GFLHead, GFLSEPCHead
 from .guided_anchor_head import FeatureAdaption, GuidedAnchorHead
+from .keypoint_head import KeypointHead
 from .ld_head import LDHead
 from .nasfcos_head import NASFCOSHead
 from .paa_head import PAAHead
@@ -46,5 +48,6 @@ __all__ = [
 	'SABLRetinaHead', 'CentripetalHead', 'VFNetHead', 'StageCascadeRPNHead',
 	'CascadeRPNHead', 'EmbeddingRPNHead', 'LDHead', 'CascadeRPNHead',
 	'AutoAssignHead', 'DETRHead', 'YOLOFHead', 'DeformableDETRHead',
-	'CenterNetHead', 'YOLOXHead', 'GFLSEPCHead', 'RepPointsV2Head'
+	'CenterNetHead', 'YOLOXHead', 'GFLSEPCHead', 'RepPointsV2Head',
+	'BVRHead', 'KeypointHead'
 ]

@@ -2,6 +2,7 @@
 from .atss import ATSS
 from .autoassign import AutoAssign
 from .base import BaseDetector
+from .bvr import BVR
 from .cascade_rcnn import CascadeRCNN
 from .centernet import CenterNet
 from .cornernet import CornerNet
@@ -46,5 +47,5 @@ __all__ = [
     'NASFCOS', 'PointRend', 'GFL', 'CornerNet', 'PAA', 'YOLOV3', 'YOLACT',
     'VFNet', 'DETR', 'TridentFasterRCNN', 'SparseRCNN', 'SCNet',
     'DeformableDETR', 'AutoAssign', 'YOLOF', 'CenterNet', 'YOLOX',
-    'TwoStagePanopticSegmentor', 'PanopticFPN', 'RepPointsV2Detector'
+    'TwoStagePanopticSegmentor', 'PanopticFPN', 'RepPointsV2Detector', 'BVR'
 ]

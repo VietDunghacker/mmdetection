@@ -162,8 +162,7 @@ class GFLHead(AnchorHead):
 					conv_cfg=self.conv_cfg,
 					norm_cfg=self.norm_cfg))
 		assert self.num_anchors == 1, 'anchor free version'
-		self.gfl_cls = nn.Conv2d(
-			self.feat_channels, self.cls_out_channels, 3, padding=1)
+		self.gfl_cls = nn.Conv2d(self.feat_channels, self.cls_out_channels, 3, padding=1)
 		self.gfl_reg = nn.Conv2d(
 			self.feat_channels, 4 * (self.reg_max + 1), 3, padding=1)
 		self.scales = nn.ModuleList(
@@ -220,16 +219,14 @@ class GFLHead(AnchorHead):
 		bbox_pred = scale(self.gfl_reg(reg_feat)).float()
 		if self.use_dgqp:
 			N, C, H, W = bbox_pred.size()
-			prob = F.softmax(
-				bbox_pred.reshape(N, 4, self.reg_max + 1, H, W), dim=2)
+			prob = F.softmax(bbox_pred.reshape(N, 4, self.reg_max + 1, H, W), dim=2)
 			prob_topk, _ = prob.topk(self.reg_topk, dim=2)
 			if self.add_mean:
 				prob_topk_mean = prob_topk.mean(dim=2, keepdim=True)
 				stat = torch.cat([prob_topk, prob_topk_mean], dim=2)
 			else:
 				stat = prob_topk
-			quality_score = self.reg_conf(
-				stat.type_as(reg_feat).reshape(N, -1, H, W))
+			quality_score = self.reg_conf(stat.type_as(reg_feat).reshape(N, -1, H, W))
 			cls_score = cls_score.sigmoid() * quality_score
 
 		return cls_score, bbox_pred
