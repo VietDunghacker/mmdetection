@@ -110,7 +110,7 @@ class DyHead(BaseModule):
 				 output_shape,
 				 num_stacks=6,
 				 spatial_cfg = dict(kernel_size=(3, 3), padding=1, stride=1, dilation=1, groups=1),
-				 task_cfg = dict(channel_reduction = 8, lambdas = None, init_values = None),
+				 task_cfg = dict(channel_reduction = 8),
 				 init_cfg=dict(type='Xavier', layer=['Conv2d', 'Linear'], distribution='uniform')):
 		L, S, C = output_shape
 		assert L % 2 == 1
