@@ -473,8 +473,7 @@ class GFLHead(AnchorHead):
 			else:
 				anchors = anchors.expand_as(bbox_pred)
 
-			bboxes = distance2bbox(
-				self.anchor_center(anchors), bbox_pred, max_shape=img_shapes)
+			bboxes = distance2bbox(self.anchor_center(anchors), bbox_pred, max_shape=img_shapes)
 			mlvl_bboxes.append(bboxes)
 			mlvl_scores.append(scores)
 
@@ -487,9 +486,9 @@ class GFLHead(AnchorHead):
 		# Add a dummy background class to the backend when using sigmoid
 		# remind that we set FG labels to [0, num_class-1] since mmdet v2.0
 		# BG cat_id: num_class
-		padding = batch_mlvl_scores.new_zeros(batch_size,
-											  batch_mlvl_scores.shape[1], 1)
-		batch_mlvl_scores = torch.cat([batch_mlvl_scores, padding], dim=-1)
+		if use_sigmoid_cls:
+			padding = batch_mlvl_scores.new_zeros(batch_size, batch_mlvl_scores.shape[1], 1)
+			batch_mlvl_scores = torch.cat([batch_mlvl_scores, padding], dim=-1)
 
 		if with_nms:
 			det_results = []
