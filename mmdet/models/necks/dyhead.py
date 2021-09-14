@@ -42,17 +42,13 @@ class SpatialAwareAttention(nn.Module):
 		# 3x3 Convolution with 3K out_channel output as described in Deform Conv2 paper
 		self.conv_offset = nn.Conv2d(in_channels=1, out_channels=3*self.K, kernel_size=self.kernel_size, stride=self.stride, padding=self.padding, dilation=dilation)
 		
-		self.deform_conv = ModulatedDeformConv2d(in_channels=self.L,
-										out_channels=self.L,
-										kernel_size=self.kernel_size,
-										stride=self.stride,
-										padding=self.padding,
-										dilation=self.dilation,
-										groups=self.groups)
+		self.deform_conv = ModulatedDeformConv2d(in_channels=self.L, out_channels=self.L, kernel_size=self.kernel_size, stride=self.stride, padding=self.padding, dilation=self.dilation, groups=self.groups)
+	
 	def forward(self, feat):
 		B, L, S, C = feat.shape
 		assert L == self.L and S == self.S and C == self.C 
 		out = self.conv_offset(feat[:, L // 2].unsqueeze(1))
+		assert len(out.shape) == 4
 
 		o1, o2, mask = torch.chunk(out, 3, dim=1)
 		offset = torch.cat((o1, o2), dim=1)
@@ -81,7 +77,7 @@ class TaskAwareAttention(nn.Module):
 		B, L, S, C = feat.shape
 		assert L == self.L and S == self.S and C == self.C 
 		feat = feat.permute(0, 3, 1, 2)
-		x = F.avgpool2d(feat, (self.S, self.C)).squeeze()
+		x = F.avgpool2d(feat, (self.L, self.S)).squeeze()
 		x = self.relu(self.fc1(x))
 		x = self.fc2(x)
 		x = 2 * x.sigmoid() - 1
@@ -91,7 +87,6 @@ class TaskAwareAttention(nn.Module):
 		betas = thetas[:, 2:]
 
 		output = torch.maximum((alphas[0] * feat + betas[0]), (alphas[1] * feat + betas[0]))
-
 		output = output.permute(0, 2, 3, 1)
 		return output
 
