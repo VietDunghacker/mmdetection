@@ -49,11 +49,13 @@ class PAFPNX(FPN):
 				 conv_cfg=None,
 				 norm_cfg=None,
 				 act_cfg=None,
-				 pafpn_conv_cfg=None):
+				 pafpn_conv_cfg=None,
+				 upsample_cfg=dict(mode='nearest'),
+				 init_cfg=dict(type='Xavier', layer='Conv2d', distribution='uniform')):
 		super(PAFPNX, self).__init__(in_channels, out_channels, num_outs, start_level,
 							 end_level, add_extra_convs, extra_convs_on_inputs,
 							 relu_before_extra_convs, no_norm_on_lateral,
-							 conv_cfg, norm_cfg, act_cfg)
+							 conv_cfg, norm_cfg, act_cfg, upsample_cfg, init_cfg)
 		self.pafpn_conv_cfg = pafpn_conv_cfg if pafpn_conv_cfg is not None else conv_cfg
 		# add extra bottom up pathway
 		self.downsample_convs = nn.ModuleList()
