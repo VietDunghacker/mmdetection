@@ -29,7 +29,6 @@ model = dict(
 			start_level=1,
 			add_extra_convs='on_input',
 			relu_before_extra_convs=True,
-			conv_cfg=dict(type='DCNv2'),
 			pafpn_conv_cfg=dict(type='DCNv2'),
 			norm_cfg=dict(type='GN', num_groups=32, requires_grad=True)),
 		dict(
