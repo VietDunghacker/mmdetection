@@ -7,7 +7,6 @@ from torch.nn import functional as F
 
 from mmdet.core import multi_apply
 from mmdet.models.dense_heads.atss_head import ATSSHead
-from mmdet.models.dense_heads.rank_based_atss_head import RankBasedATSSHead
 from mmdet.models.dense_heads.fcos_head import FCOSHead
 from mmdet.models.dense_heads.retina_head import RetinaHead
 from mmdet.models.dense_heads.gfl_head import GFLHead
@@ -41,16 +40,6 @@ def atss_forward_prediction_single(self, cls_feat, reg_feat, scale):
 	bbox_pred = scale(self.atss_reg(reg_feat)).float()
 	centerness = self.atss_centerness(reg_feat)
 	return cls_score, bbox_pred, centerness
-
-def rank_based_atss_forward_predictions(self, cls_feats, reg_feats):
-	return multi_apply(self.forward_prediction_single, cls_feats, reg_feats, self.scales)
-
-
-def rank_based_atss_forward_prediction_single(self, cls_feat, reg_feat, scale):
-	cls_score = self.atss_cls(cls_feat)
-	bbox_pred = scale(self.atss_reg(reg_feat)).float()
-	return cls_score, bbox_pred
-
 
 def fcos_forward_predictions(self, cls_feats, reg_feats):
 	return multi_apply(self.forward_prediction_single, cls_feats, reg_feats,
@@ -147,7 +136,7 @@ def assign_methods_for_bvr(module: nn.Module):
 		return
 
 	# check whether BVR supports the bbox_head
-	supported_heads = ('ATSSHead', 'FCOSHead', 'RetinaHead', 'GFLHead', 'RankBasedATSSHead', 'VFNetHead')
+	supported_heads = ('ATSSHead', 'FCOSHead', 'RetinaHead', 'GFLHead', 'VFNetHead')
 	module_name = module.__class__.__name__
 	assert module_name in supported_heads, 'not supported bbox_head'
 	assert hasattr(module, 'cls_convs'), 'not found cls_convs'
@@ -169,9 +158,6 @@ def assign_methods_for_bvr(module: nn.Module):
 	elif isinstance(module, ATSSHead):
 		module.forward_predictions = types.MethodType(atss_forward_predictions, module)
 		module.forward_prediction_single = types.MethodType(atss_forward_prediction_single, module)
-	elif isinstance(module, RankBasedATSSHead):
-		module.forward_predictions = types.MethodType(rank_based_atss_forward_predictions, module)
-		module.forward_prediction_single = types.MethodType(rank_based_atss_forward_prediction_single, module)
 	elif isinstance(module, FCOSHead):
 		module.forward_predictions = types.MethodType(fcos_forward_predictions, module)
 		module.forward_prediction_single = types.MethodType(fcos_forward_prediction_single, module)
