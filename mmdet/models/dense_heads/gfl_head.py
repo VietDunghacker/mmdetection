@@ -162,10 +162,8 @@ class GFLHead(AnchorHead):
 					norm_cfg=self.norm_cfg))
 		assert self.num_anchors == 1, 'anchor free version'
 		self.gfl_cls = nn.Conv2d(self.feat_channels, self.cls_out_channels, 3, padding=1)
-		self.gfl_reg = nn.Conv2d(
-			self.feat_channels, 4 * (self.reg_max + 1), 3, padding=1)
-		self.scales = nn.ModuleList(
-			[Scale(1.0) for _ in self.anchor_generator.strides])
+		self.gfl_reg = nn.Conv2d(self.feat_channels, 4 * (self.reg_max + 1), 3, padding=1)
+		self.scales = nn.ModuleList([Scale(1.0) for _ in self.anchor_generator.strides])
 
 		if self.use_dgqp:
 			conf_vector = [nn.Conv2d(4 * self.total_dim, self.reg_channels, 1)]
