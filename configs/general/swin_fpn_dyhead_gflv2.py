@@ -22,13 +22,14 @@ model = dict(
 		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/swin_base_224_b16x64_300e_imagenet_20210616_190742-93230b0d.pth')),
 	neck=[
 		dict(
-			type='FPN',
+			type='PAFPNX',
 			in_channels=[128, 256, 512, 1024],
 			out_channels=256,
-			num_outs=5,
 			start_level=1,
-			add_extra_convs='on_input',
+			add_extra_convs='on_output',
+			num_outs=5,
 			relu_before_extra_convs=True,
+			pafpn_conv_cfg=dict(type='DCNv2'),
 			norm_cfg=dict(type='GN', num_groups=32, requires_grad=True)),
 		dict(
 			type='DyHead',
