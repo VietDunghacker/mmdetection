@@ -122,7 +122,6 @@ class DyHead(BaseModule):
 			self.blocks.append(DyHeadBlock(output_shape, spatial_cfg, task_cfg))
 
 	def forward(self, feats):
-		assert len(in_channels) == len(feats)
 		B, C, H, W = feats[(len(feats) - 1) // 2].shape
 		assert C == self.output_shape[2] and H * W == self.output_shape[1]
 		L, S, C = self.output_shape
