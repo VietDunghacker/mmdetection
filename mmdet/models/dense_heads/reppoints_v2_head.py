@@ -312,7 +312,14 @@ class RepPointsV2Head(AnchorFreeHead):
 
 	def forward_single(self, x):
 		""" Forward feature map of a single FPN level."""
-		dcn_base_offset = self.dcn_base_offset.type_as(x)
+		if isinstance(x, list):
+			cls_feat = x[0]
+			pts_feat = x[1]
+		else:
+			cls_feat = x
+			pts_feat = x
+
+		dcn_base_offset = self.dcn_base_offset.type_as(cls_feat)
 		# If we use center_init, the initial reppoints is from center points.
 		# If we use bounding bbox representation, the initial reppoints is
 		#   from regular grid placed on a pre-defined bbox.
@@ -323,8 +330,6 @@ class RepPointsV2Head(AnchorFreeHead):
 									  scale]).view(1, 4, 1, 1)
 		else:
 			points_init = 0
-		cls_feat = x
-		pts_feat = x
 		for cls_conv in self.cls_convs:
 			cls_feat = cls_conv(cls_feat)
 		for reg_conv in self.reg_convs:
