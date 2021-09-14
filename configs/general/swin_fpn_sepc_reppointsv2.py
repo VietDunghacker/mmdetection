@@ -22,14 +22,12 @@ model = dict(
 		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/swin_base_224_b16x64_300e_imagenet_20210616_190742-93230b0d.pth')),
 	neck=[
 		dict(
-			type='PAFPNX',
+			type='FPN',
 			in_channels=[128, 256, 512, 1024],
 			out_channels=256,
 			num_outs=5,
 			start_level=1,
 			add_extra_convs='on_input',
-			relu_before_extra_convs=True,
-			pafpn_conv_cfg=dict(type='DCNv2'),
 			norm_cfg=dict(type='GN', num_groups=32, requires_grad=True)),
 		dict(
 			type='SEPC',
@@ -60,7 +58,6 @@ model = dict(
 		gradient_mul=0.1,
 		point_strides=[8, 16, 32, 64, 128],
 		point_base_scale=4,
-		conv_cfg=dict(type='DCNv2'),
 		norm_cfg=dict(type='GN', num_groups=32, requires_grad=True),
 		loss_cls=dict(type='FocalLoss', use_sigmoid=True, gamma=2.0, alpha=0.25, loss_weight=1.0),
 		loss_bbox_init=dict(type='CIoULoss', loss_weight=1.0),
