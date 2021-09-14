@@ -28,6 +28,7 @@ model = dict(
 			num_outs=5,
 			start_level=1,
 			add_extra_convs='on_input',
+			relu_before_extra_convs=True,
 			norm_cfg=dict(type='GN', num_groups=32, requires_grad=True)),
 		dict(
 			type='SEPC',
