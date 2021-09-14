@@ -66,7 +66,7 @@ class TaskAwareAttention(nn.Module):
 		assert self.C % channel_reduction == 0
 
 		self.fc1 = nn.Linear(self.C, self.C // channel_reduction)
-		self.fc2 = nn.Linear(self.C // channel_reduction, 2)
+		self.fc2 = nn.Linear(self.C // channel_reduction, 4)
 		self.relu = nn.ReLU(inplace=True)
 		self.sigmoid = nn.Sigmoid()
 
@@ -86,7 +86,7 @@ class TaskAwareAttention(nn.Module):
 		alphas = thetas[:, :2]
 		betas = thetas[:, 2:]
 
-		output = torch.maximum((alphas[0] * feat + betas[0]), (alphas[1] * feat + betas[0]))
+		output = torch.maximum((alphas[:, 0] * feat + betas[:, 0]), (alphas[:, 1] * feat + betas[:, 1]))
 		output = output.permute(0, 2, 3, 1).contiguous()
 		return output
 
