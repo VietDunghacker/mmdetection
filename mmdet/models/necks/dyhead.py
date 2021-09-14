@@ -40,7 +40,7 @@ class SpatialAwareAttention(nn.Module):
 		self.groups = spatial_cfg['groups']
 
 		# 3x3 Convolution with 3K out_channel output as described in Deform Conv2 paper
-		self.conv_offset = nn.Conv2d(in_channels=1, out_channels=3*self.K, kernel_size=self.kernel_size, stride=self.stride, padding=self.padding, dilation=dilation)
+		self.conv_offset = nn.Conv2d(in_channels=1, out_channels=3*self.K, kernel_size=self.kernel_size, stride=self.stride, padding=self.padding, dilation=self.dilation)
 		
 		self.deform_conv = ModulatedDeformConv2d(in_channels=self.L, out_channels=self.L, kernel_size=self.kernel_size, stride=self.stride, padding=self.padding, dilation=self.dilation, groups=self.groups)
 	
