@@ -89,7 +89,7 @@ class TaskAwareAttention(nn.Module):
 		feat = feat.permute(1, 2, 3, 0) #C x L x S x B
 
 		output = torch.maximum((alphas[:, 0] * feat + betas[:, 0]), (alphas[:, 1] * feat + betas[:, 1]))
-		output = output.permute(3, 1, 2, 0).contiguous() #B x L
+		output = output.permute(3, 1, 2, 0).contiguous() #B x L x S x C
 		return output
 
 class DyHeadBlock(nn.Module):
@@ -138,6 +138,8 @@ class DyHead(BaseModule):
 				outputs.append(feat)
 			else:
 				outputs.append(F.interpolate(feat, size = (H, W), mode = 'bilinear', align_corners = False))
-		output = torch.stack(outputs, dim = 1)
-		output = output.view(B, L, C, -1).permute(0, 1, 3, 2).contiguous()
-		return [self.blocks(output), ]
+		output = torch.stack(outputs, dim = 1) #B x L x C x H x W
+		output = output.view(B, L, C, H * W).permute(0, 1, 3, 2).contiguous() #B x L x S x C
+		output = self.blocks(output).permute(0, 1, 3, 2) #B x L x C x S
+		output = output.view(B, L * C, H, W)
+		return (output, )
