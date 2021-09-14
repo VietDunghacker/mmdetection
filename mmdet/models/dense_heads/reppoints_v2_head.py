@@ -1035,7 +1035,6 @@ class RepPointsV2Head(AnchorFreeHead):
 		mlvl_scores = torch.cat([mlvl_scores, padding], dim=1)
 		if nms:
 			det_bboxes, det_labels = multiclass_nms(mlvl_bboxes, mlvl_scores, cfg.score_thr, cfg.nms, cfg.max_per_img)
-
 			return det_bboxes, det_labels
 		else:
 			return mlvl_bboxes, mlvl_scores
