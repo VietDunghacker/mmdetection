@@ -1036,8 +1036,8 @@ class RepPointsV2Head(AnchorFreeHead):
 		if nms:
 			det_bboxes, det_labels = multiclass_nms(mlvl_bboxes, mlvl_scores, cfg.score_thr, cfg.nms, cfg.max_per_img)
 
-			#det_bboxes, keep = batched_nms(det_bboxes[:, :4].contiguous(), det_bboxes[:, -1].contiguous(), det_labels, dict(type = 'nms', iou_threshold = 0.99, class_agnostic = True))
-			#det_labels = det_labels[keep]
+			det_bboxes, keep = batched_nms(det_bboxes[:, :4].contiguous(), det_bboxes[:, -1].contiguous(), det_labels, dict(type = 'nms', iou_threshold = 0.99, class_agnostic = True))
+			det_labels = det_labels[keep]
 			return det_bboxes, det_labels
 		else:
 			return mlvl_bboxes, mlvl_scores

@@ -47,8 +47,7 @@ class SEPCConv(DeformConv2d):
 		offset = self.conv_offset(x)
 
 		# padding is needed to avoid error `input image is smaller than kernel`
-		input_pad = (x.size(2) < self.kernel_size[0]) or (x.size(3) <
-														  self.kernel_size[1])
+		input_pad = (x.size(2) < self.kernel_size[0]) or (x.size(3) < self.kernel_size[1])
 		if input_pad:
 			pad_h = max(self.kernel_size[0] - x.size(2), 0)
 			pad_w = max(self.kernel_size[1] - x.size(3), 0)

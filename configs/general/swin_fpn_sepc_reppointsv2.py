@@ -204,7 +204,7 @@ lr_config = dict(
 	min_lr_ratio = 0.12,
 	warmup='linear',
 	warmup_iters=500,
-	warmup_ratio=0.1,
+	warmup_ratio=1.0 / 3,
 	)
 runner = dict(type='IterBasedRunner', max_iters=10000, max_epochs = None)
 checkpoint_config = dict(interval = 100)
