@@ -77,7 +77,7 @@ class TaskAwareAttention(nn.Module):
 		B, L, S, C = feat.shape
 		assert L == self.L and S == self.S and C == self.C 
 		feat = feat.permute(0, 3, 1, 2).contiguous()
-		x = F.avgpool2d(feat, (self.L, self.S)).squeeze()
+		x = F.avg_pool2d(feat, (self.L, self.S)).squeeze()
 		x = self.relu(self.fc1(x))
 		x = self.fc2(x)
 		x = 2 * x.sigmoid() - 1
