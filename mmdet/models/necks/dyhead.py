@@ -66,7 +66,7 @@ class TaskAwareAttention(nn.Module):
 		assert self.C % channel_reduction == 0
 
 		self.fc1 = nn.Linear(self.C, self.C // channel_reduction)
-		self.fc2 = nn.Linear(self.C // channel_reduction, 4)
+		self.fc2 = nn.Linear(self.C // channel_reduction, 2)
 		self.relu = nn.ReLU(inplace=True)
 		self.sigmoid = nn.Sigmoid()
 
