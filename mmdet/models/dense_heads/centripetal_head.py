@@ -173,8 +173,6 @@ class CentripetalHead(CornerHead):
 				- br_centripetal_shift (Tensor): Predicted bottom-right
 				  centripetal shift heatmap.
 		"""
-		batch_size, _, feat_h, feat_w = x.shape
-
 		tl_heat, br_heat, _, _, tl_off, br_off, tl_pool, br_pool = super().forward_single(x, lvl_ind, return_pool=True)
 
 		tl_guiding_shift = self.tl_guiding_shift[lvl_ind](tl_pool)
