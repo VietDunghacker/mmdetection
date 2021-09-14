@@ -168,7 +168,7 @@ class RepPointsV2Head(AnchorFreeHead):
         pts_out_dim = 4 if self.use_grid_points else 2 * self.num_points
 
         cls_in_channels = self.feat_channels + 6
-        self.reppoints_cls_conv = DeformConv(cls_in_channels,
+        self.reppoints_cls_conv = DeformConv2d(cls_in_channels,
                                              self.point_feat_channels,
                                              self.dcn_kernel, 1, self.dcn_pad)
         self.reppoints_cls_out = nn.Conv2d(self.point_feat_channels,
@@ -179,7 +179,7 @@ class RepPointsV2Head(AnchorFreeHead):
         self.reppoints_pts_init_out = nn.Conv2d(self.point_feat_channels,
                                                 pts_out_dim, 1, 1, 0)
         pts_in_channels = self.feat_channels + 6
-        self.reppoints_pts_refine_conv = DeformConv(pts_in_channels,
+        self.reppoints_pts_refine_conv = DeformConv2d(pts_in_channels,
                                                     self.point_feat_channels,
                                                     self.dcn_kernel, 1,
                                                     self.dcn_pad)
