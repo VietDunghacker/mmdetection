@@ -115,7 +115,6 @@ class DyHead(BaseModule):
 	"""
 
 	def __init__(self,
-				 in_channels,
 				 output_shape,
 				 num_stacks=6,
 				 spatial_cfg = dict(kernel_size=(3, 3), padding=1, stride=1, dilation=1, groups=1),
@@ -126,7 +125,6 @@ class DyHead(BaseModule):
 		assert len(in_channels) == L
 		assert in_channels[(L - 1) // 2] == C
 		super(DyHead, self).__init__(init_cfg)
-		self.in_channels = in_channels
 		self.output_shape = output_shape
 
 		self.blocks = ModuleList()
