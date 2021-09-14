@@ -489,7 +489,7 @@ class RepPointsV2Head(AnchorFreeHead):
 		num_valid_proposals = proposals.shape[0]
 		bbox_gt = proposals.new_zeros([num_valid_proposals, 4])
 		bbox_weights = proposals.new_zeros([num_valid_proposals, 4])
-		labels = proposals.new_full((num_valid_proposals, ), self.background_label, dtype=torch.long)
+		labels = proposals.new_full((num_valid_proposals, ), self.num_classes, dtype=torch.long)
 		label_weights = proposals.new_zeros(num_valid_proposals, dtype=torch.float)
 
 		pos_inds = sampling_result.pos_inds
