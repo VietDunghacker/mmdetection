@@ -117,8 +117,6 @@ class DyHead(BaseModule):
 				 init_cfg=dict(type='Xavier', layer=['Conv2d', 'Linear'], distribution='uniform')):
 		L, S, C = output_shape
 		assert L % 2 == 1
-		assert len(in_channels) == L
-		assert in_channels[(L - 1) // 2] == C
 		super(DyHead, self).__init__(init_cfg)
 		self.output_shape = output_shape
 
