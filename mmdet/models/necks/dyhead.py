@@ -117,9 +117,10 @@ class DyHead(BaseModule):
 		super(DyHead, self).__init__(init_cfg)
 		self.output_shape = output_shape
 
-		self.blocks = ModuleList()
+		blocks = []
 		for _ in range(num_stacks):
-			self.blocks.append(DyHeadBlock(output_shape, spatial_cfg, task_cfg))
+			blocks.append(DyHeadBlock(output_shape, spatial_cfg, task_cfg))
+		self.blocks	= nn.Sequential(*blocks)
 
 	def forward(self, feats):
 		B, C, H, W = feats[(len(feats) - 1) // 2].shape
