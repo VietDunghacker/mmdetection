@@ -54,8 +54,7 @@ class SimpleBVR_Transformer(nn.Module):
 		if (self.with_relative_positional_encoding
 				and shared_positional_encoding):
 			if relative_positional_encoding is not None:
-				self.relative_positional_encoding = \
-					relative_positional_encoding
+				self.relative_positional_encoding = relative_positional_encoding
 			else:
 				self.relative_positional_encoding = \
 					PositionalEncodingSineLearned(

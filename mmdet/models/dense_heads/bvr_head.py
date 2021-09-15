@@ -134,9 +134,7 @@ class BVRHead(BaseDenseHead, BBoxTestMixin):
 				with_relative_positional_encoding=self.with_relative_positional_encoding,
 				with_appearance_relation=self.with_appearance_relation,
 				shared_positional_encoding=self.shared_positional_encoding_inter,
-				relative_positional_encoding=self.cls_transformer.
-				relative_positional_encoding
-				if self.shared_positional_encoding_outer else None,
+				relative_positional_encoding=self.cls_transformer.relative_positional_encoding if self.shared_positional_encoding_outer else None,
 				cat_pos=self.cat_pos)
 
 	def init_weights(self):
