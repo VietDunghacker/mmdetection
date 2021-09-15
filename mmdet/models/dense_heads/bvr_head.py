@@ -139,6 +139,11 @@ class BVRHead(BaseDenseHead, BBoxTestMixin):
 				if self.shared_positional_encoding_outer else None,
 				cat_pos=self.cat_pos)
 
+	def init_weights(self):
+		self.bbox_head.init_weights()
+		self.keypoint_head.init_weights()
+		# init transformer
+
 	def forward(self, feats):
 		cls_feats, reg_feats = self.bbox_head.forward_features(feats)
 		keypoint_scores, keypoint_offsets = self.keypoint_head([feats, cls_feats, reg_feats][self.keypoint_pos])

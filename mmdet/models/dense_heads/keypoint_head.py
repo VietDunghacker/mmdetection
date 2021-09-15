@@ -135,6 +135,39 @@ class KeypointHead(AnchorFreeHead):
 					norm_cfg=self.norm_cfg))
 		return layers
 
+	def init_weights(self):
+
+		for layer in self.shared_layers:
+			normal_init(layer.conv, std=0.01)
+
+		for _, layer in self.keypoint_layers.items():
+			for m in layer:
+				if isinstance(m, ConvModule):
+					normal_init(m.conv, std=0.01)
+				else:
+
+					def _init(m):
+						if isinstance(m, ConvModule):
+							normal_init(m.conv, std=0.01)
+						elif isinstance(m, (nn.Conv2d, nn.ConvTranspose2d)):
+							normal_init(m, std=0.01)
+
+					m.apply(_init)
+		bias_cls = bias_init_with_prob(0.01)
+		for _, head in self.keypoint_cls_heads.items():
+			for i, m in enumerate(head):
+				if i != len(head) - 1:
+					normal_init(m.conv, std=0.01)
+				else:
+					normal_init(m, std=0.01, bias=bias_cls)
+
+		for _, head in self.keypoint_offset_heads.items():
+			for i, m in enumerate(head):
+				if i != len(head) - 1:
+					normal_init(m.conv, std=0.01)
+				else:
+					normal_init(m, std=0.01)
+
 	def forward(
 		self,
 		feats: List[torch.Tensor],
@@ -375,10 +408,8 @@ class KeypointHead(AnchorFreeHead):
 			return heatmap * keep
 
 		keypoint_scores = _local_nms(keypoint_logits.sigmoid())
-		topk_score, topk_inds, _, topk_ys, topk_xs = _topk(
-			keypoint_scores, locations, max_keypoint_num)
-		topk_offsets = _gather_feat(
-			keypoint_offsets.reshape(keypoint_offsets.size(0), 2,
+		topk_score, topk_inds, _, topk_ys, topk_xs = _topk(keypoint_scores, locations, max_keypoint_num)
+		topk_offsets = _gather_feat(keypoint_offsets.reshape(keypoint_offsets.size(0), 2,
 									 -1).permute(0, 2, 1), topk_inds)
 		if block_grad:
 			topk_offsets = topk_offsets.detach()
