@@ -85,11 +85,8 @@ class ATSSAssigner(BaseAssigner):
 			if gt_labels is None:
 				assigned_labels = None
 			else:
-				assigned_labels = overlaps.new_full((num_bboxes, ),
-													-1,
-													dtype=torch.long)
-			return AssignResult(
-				num_gt, assigned_gt_inds, max_overlaps, labels=assigned_labels)
+				assigned_labels = overlaps.new_full((num_bboxes, ), -1, dtype=torch.long)
+			return AssignResult(num_gt, assigned_gt_inds, max_overlaps, labels=assigned_labels)
 
 		# compute center distance between all bbox and gt
 		gt_cx = (gt_bboxes[:, 0] + gt_bboxes[:, 2]) / 2.0
@@ -161,17 +158,15 @@ class ATSSAssigner(BaseAssigner):
 		overlaps_inf = overlaps_inf.view(num_gt, -1).t()
 
 		max_overlaps, argmax_overlaps = overlaps_inf.max(dim=1)
-		assigned_gt_inds[
-			max_overlaps != -INF] = argmax_overlaps[max_overlaps != -INF] + 1
+		assigned_gt_inds[max_overlaps != -INF] = argmax_overlaps[max_overlaps != -INF] + 1
 
 		if gt_labels is not None:
 			assigned_labels = assigned_gt_inds.new_full((num_bboxes, ), -1)
-			pos_inds = torch.nonzero(
-				assigned_gt_inds > 0, as_tuple=False).squeeze()
+			pos_inds = torch.nonzero(assigned_gt_inds > 0, as_tuple=False).squeeze()
 			if pos_inds.numel() > 0:
-				assigned_labels[pos_inds] = gt_labels[
-					assigned_gt_inds[pos_inds] - 1]
+				assigned_labels[pos_inds] = gt_labels[assigned_gt_inds[pos_inds] - 1]
+				print(bboxes[pos_inds])
+				assert False
 		else:
 			assigned_labels = None
-		return AssignResult(
-			num_gt, assigned_gt_inds, max_overlaps, labels=assigned_labels)
+		return AssignResult(num_gt, assigned_gt_inds, max_overlaps, labels=assigned_labels)

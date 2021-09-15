@@ -614,21 +614,15 @@ class GFLHead(AnchorHead):
 		# assign gt and sample anchors
 		anchors = flat_anchors[inside_flags, :]
 
-		num_level_anchors_inside = self.get_num_level_anchors_inside(
-			num_level_anchors, inside_flags)
-		assign_result = self.assigner.assign(anchors, num_level_anchors_inside,
-											 gt_bboxes, gt_bboxes_ignore,
-											 gt_labels)
+		num_level_anchors_inside = self.get_num_level_anchors_inside(num_level_anchors, inside_flags)
+		assign_result = self.assigner.assign(anchors, num_level_anchors_inside, gt_bboxes, gt_bboxes_ignore, gt_labels)
 
-		sampling_result = self.sampler.sample(assign_result, anchors,
-											  gt_bboxes)
+		sampling_result = self.sampler.sample(assign_result, anchors, gt_bboxes)
 
 		num_valid_anchors = anchors.shape[0]
 		bbox_targets = torch.zeros_like(anchors)
 		bbox_weights = torch.zeros_like(anchors)
-		labels = anchors.new_full((num_valid_anchors, ),
-								  self.num_classes,
-								  dtype=torch.long)
+		labels = anchors.new_full((num_valid_anchors, ), self.num_classes, dtype=torch.long)
 		label_weights = anchors.new_zeros(num_valid_anchors, dtype=torch.float)
 
 		pos_inds = sampling_result.pos_inds
