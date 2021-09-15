@@ -59,18 +59,18 @@ model = dict(
 			)),
 		positional_encoding=dict(type='SinePositionalEncoding', num_feats=128, normalize=True),
 		loss_cls=dict(
-			type='CrossEntropyLoss',
-			bg_cls_weight=0.1,
-			use_sigmoid=False,
-			loss_weight=1.0,
-			class_weight=1.0),
+			type='FocalLoss',
+			use_sigmoid=True,
+			gamma=2.0,
+			alpha=0.25,
+			loss_weight=2.0),
 		loss_bbox=dict(type='L1Loss', loss_weight=5.0),
 		loss_iou=dict(type='GIoULoss', loss_weight=2.0)),
 	# training and testing settings
 	train_cfg=dict(
 		assigner=dict(
 			type='HungarianAssigner',
-			cls_cost=dict(type='ClassificationCost', weight=1.),
+			cls_cost=dict(type='ClassificationCost', weight=2.),
 			reg_cost=dict(type='BBoxL1Cost', weight=5.0, box_format='xywh'),
 			iou_cost=dict(type='IoUCost', iou_mode='giou', weight=2.0))),
 	test_cfg=dict(
