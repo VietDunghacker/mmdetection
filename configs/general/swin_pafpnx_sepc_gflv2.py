@@ -75,8 +75,6 @@ model = dict(
 	)
 
 # data setting
-dataset_type = 'CocoDataset'
-data_root = '/content/data/'
 img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 albu_train_transforms = [
 	dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.0, rotate_limit=0, interpolation=1, p=0.5),
@@ -152,17 +150,9 @@ test_pipeline = [
 		])
 ]
 data = dict(
-	samples_per_gpu=12,
 	workers_per_gpu=4,
-	train=dict(type = dataset_type,
-		ann_file = data_root + '/annotations/instances_train2017.json',
-		img_prefix = 'train_images/',
-		pipeline=train_pipeline),
-	val=dict(type = dataset_type,
-		ann_file = data_root + '/annotations/instances_val2017.json',
-		img_prefix = 'val_images/',
-		pipeline=test_pipeline,
-		samples_per_gpu = 24),
+	train=dict(pipeline=train_pipeline),
+	val=dict(pipeline=test_pipeline),
 	test=dict(pipeline=test_pipeline))
 
 # optimizer
