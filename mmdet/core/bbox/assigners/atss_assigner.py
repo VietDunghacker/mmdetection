@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import torch
+from mmcv.utils import print_log
 
 from ..builder import BBOX_ASSIGNERS
 from ..iou_calculators import build_iou_calculator
@@ -165,7 +166,7 @@ class ATSSAssigner(BaseAssigner):
 			pos_inds = torch.nonzero(assigned_gt_inds > 0, as_tuple=False).squeeze()
 			if pos_inds.numel() > 0:
 				assigned_labels[pos_inds] = gt_labels[assigned_gt_inds[pos_inds] - 1]
-				print(bboxes[pos_inds])
+				print_log(str(bboxes[pos_inds]))
 				assert False
 		else:
 			assigned_labels = None
