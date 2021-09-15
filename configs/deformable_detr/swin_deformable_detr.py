@@ -89,7 +89,7 @@ model = dict(
 			iou_cost=dict(type='IoUCost', iou_mode='giou', weight=2.0))),
 	test_cfg=dict(
 		max_per_img=max_per_img,
-		nms_max_per_img = 32,
+		nms_max_per_img = max_per_img,
 		score_thr = 0.05,
 		nms = dict(type='soft_nms', iou_threshold=0.6)))
 
