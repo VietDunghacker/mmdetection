@@ -479,7 +479,7 @@ class GFLHead(AnchorHead):
 		# Add a dummy background class to the backend when using sigmoid
 		# remind that we set FG labels to [0, num_class-1] since mmdet v2.0
 		# BG cat_id: num_class
-		if use_sigmoid_cls:
+		if self.use_sigmoid_cls:
 			padding = batch_mlvl_scores.new_zeros(batch_size, batch_mlvl_scores.shape[1], 1)
 			batch_mlvl_scores = torch.cat([batch_mlvl_scores, padding], dim=-1)
 
