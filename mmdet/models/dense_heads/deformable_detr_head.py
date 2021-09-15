@@ -253,15 +253,9 @@ class DeformableDETRHead(DETRHead):
 			loss_dict['enc_loss_bbox'] = enc_losses_bbox
 			loss_dict['enc_loss_iou'] = enc_losses_iou
 
-		# loss from the last decoder layer
-		loss_dict['loss_cls'] = losses_cls[-1]
-		loss_dict['loss_bbox'] = losses_bbox[-1]
-		loss_dict['loss_iou'] = losses_iou[-1]
 		# loss from other decoder layers
-		num_dec_layer = 0
-		for loss_cls_i, loss_bbox_i, loss_iou_i in zip(losses_cls[:-1],
-													   losses_bbox[:-1],
-													   losses_iou[:-1]):
+		num_dec_layer = 1
+		for loss_cls_i, loss_bbox_i, loss_iou_i in zip(losses_cls, losses_bbox, losses_iou):
 			loss_dict[f'd{num_dec_layer}.loss_cls'] = loss_cls_i
 			loss_dict[f'd{num_dec_layer}.loss_bbox'] = loss_bbox_i
 			loss_dict[f'd{num_dec_layer}.loss_iou'] = loss_iou_i

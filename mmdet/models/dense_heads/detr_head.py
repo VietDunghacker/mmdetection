@@ -255,8 +255,7 @@ class DETRHead(AnchorFreeHead):
 		# position encoding
 		pos_embed = self.positional_encoding(masks)  # [bs, embed_dim, h, w]
 		# outs_dec: [nb_dec, bs, num_query, embed_dim]
-		outs_dec, _ = self.transformer(x, masks, self.query_embedding.weight,
-									   pos_embed)
+		outs_dec, _ = self.transformer(x, masks, self.query_embedding.weight, pos_embed)
 
 		all_cls_scores = self.fc_cls(outs_dec)
 		all_bbox_preds = self.fc_reg(self.activate(self.reg_ffn(outs_dec))).sigmoid()
@@ -640,11 +639,18 @@ class DETRHead(AnchorFreeHead):
 		max_per_img = self.test_cfg.get('max_per_img', self.num_query)
 		# exclude background
 		if self.loss_cls.use_sigmoid:
-			scores, det_labels = F.softmax(cls_score, dim=-1).max(-1)
+			'''scores, det_labels = F.softmax(cls_score, dim=-1).max(-1)
 
 			scores, bbox_index = scores.topk(min(max_per_img, len(scores)))
 			bbox_pred = bbox_pred[bbox_index]
-			det_labels = det_labels[bbox_index]
+			det_labels = det_labels[bbox_index]'''
+
+            cls_score = cls_score.sigmoid()
+            scores, indexes = cls_score.view(-1).topk(max_per_img)
+            det_labels = indexes % self.num_classes
+            bbox_index = indexes // self.num_classes
+            bbox_pred = bbox_pred[bbox_index]
+
 		else:
 			scores, det_labels = F.softmax(cls_score, dim=-1).max(-1)
 
