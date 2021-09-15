@@ -76,7 +76,7 @@ model = dict(
 	test_cfg=dict(
 		max_per_img=max_per_img,
 		nms_max_per_img = min(max_per_img, 100),
-		nms = dict(type='soft_nms', iou_threshold=0.6)))
+		nms = dict(type='nms', iou_threshold=0.6)))
 
 # data setting
 dataset_type = 'CocoDataset'
