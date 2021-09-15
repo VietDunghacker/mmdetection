@@ -184,18 +184,12 @@ class RepPointsV2Head(AnchorFreeHead):
 
 		cls_in_channels = self.feat_channels + 6
 		self.reppoints_cls_conv = DeformConv2d(cls_in_channels, self.point_feat_channels, self.dcn_kernel, 1, self.dcn_pad)
-		self.reppoints_cls_out = nn.Conv2d(self.point_feat_channels,
-										   self.cls_out_channels, 1, 1, 0)
+		self.reppoints_cls_out = nn.Conv2d(self.point_feat_channels, self.cls_out_channels, 1, 1, 0)
 
-		self.reppoints_pts_init_conv = nn.Conv2d(self.feat_channels,
-												 self.point_feat_channels, 3, 1, 1)
-		self.reppoints_pts_init_out = nn.Conv2d(self.point_feat_channels,
-												pts_out_dim, 1, 1, 0)
+		self.reppoints_pts_init_conv = nn.Conv2d(self.feat_channels, self.point_feat_channels, 3, 1, 1)
+		self.reppoints_pts_init_out = nn.Conv2d(self.point_feat_channels, pts_out_dim, 1, 1, 0)
 		pts_in_channels = self.feat_channels + 6
-		self.reppoints_pts_refine_conv = DeformConv2d(pts_in_channels,
-													self.point_feat_channels,
-													self.dcn_kernel, 1,
-													self.dcn_pad)
+		self.reppoints_pts_refine_conv = DeformConv2d(pts_in_channels, self.point_feat_channels, self.dcn_kernel, 1, self.dcn_pad)
 		self.reppoints_pts_refine_out = nn.Conv2d(self.point_feat_channels, pts_out_dim, 1, 1, 0)
 
 		self.reppoints_hem_tl_score_out = nn.Conv2d(self.feat_channels, 1, 3, 1, 1)
@@ -321,8 +315,7 @@ class RepPointsV2Head(AnchorFreeHead):
 		if self.use_grid_points or not self.center_init:
 			scale = self.point_base_scale / 2
 			points_init = dcn_base_offset / dcn_base_offset.max() * scale
-			bbox_init = x.new_tensor([-scale, -scale, scale,
-									  scale]).view(1, 4, 1, 1)
+			bbox_init = x.new_tensor([-scale, -scale, scale, scale]).view(1, 4, 1, 1)
 		else:
 			points_init = 0
 		for cls_conv in self.cls_convs:
