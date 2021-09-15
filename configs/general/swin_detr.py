@@ -1,7 +1,7 @@
 _base_ = [
 	'../_base_/datasets/coco_detection.py', '../_base_/default_runtime.py'
 ]
-max_per_img = 512
+max_per_img = 10
 model = dict(
 	type='DETR',
 	backbone=dict(
