@@ -645,11 +645,11 @@ class DETRHead(AnchorFreeHead):
 			bbox_pred = bbox_pred[bbox_index]
 			det_labels = det_labels[bbox_index]'''
 
-            cls_score = cls_score.sigmoid()
-            scores, indexes = cls_score.view(-1).topk(max_per_img)
-            det_labels = indexes % self.num_classes
-            bbox_index = indexes // self.num_classes
-            bbox_pred = bbox_pred[bbox_index]
+			cls_score = cls_score.sigmoid()
+			scores, indexes = cls_score.view(-1).topk(max_per_img)
+			det_labels = indexes % self.num_classes
+			bbox_index = indexes // self.num_classes
+			bbox_pred = bbox_pred[bbox_index]
 
 		else:
 			scores, det_labels = F.softmax(cls_score, dim=-1)[..., :-1].max(-1)
