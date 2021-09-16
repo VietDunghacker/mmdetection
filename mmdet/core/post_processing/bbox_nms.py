@@ -91,6 +91,7 @@ def multiclass_nms(multi_bboxes,
 		tuple: (dets, labels, indices (optional)), tensors of shape (k, 5),
 			(k), and (k). Dets are boxes with scores. Labels are 0-based.
 	"""
+	iou_thr = nms_cfg['iou_threshold']
 	num_classes = multi_scores.size(1) - 1
 	# exclude background category
 	if multi_bboxes.shape[1] > 4:
