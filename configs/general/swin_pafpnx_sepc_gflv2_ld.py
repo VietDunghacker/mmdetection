@@ -3,7 +3,9 @@ _base_ = [
 	'../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py'
 ]
 model = dict(
-	type='GFL',
+	type='KnowledgeDistillationSingleStageDetector',
+	teacher_config='configs/general/swin_pafpnx_sepc_gflv2.py',
+	teacher_ckpt='',
 	backbone=dict(
 		type='SwinTransformer',
 		embed_dims=128,
@@ -45,7 +47,7 @@ model = dict(
 			lcconv_padding=1)
 	],
 	bbox_head=dict(
-		type='GFLHead',
+		type='LDHead',
 		num_classes=34,
 		in_channels=256,
 		stacked_convs=0,
@@ -56,9 +58,10 @@ model = dict(
 			octave_base_scale=8,
 			scales_per_octave=1,
 			strides=[8, 16, 32, 64, 128]),
+		use_dgqp = True,
 		loss_cls=dict(type='QualityFocalLoss', use_sigmoid=False, beta=2.0, loss_weight=1.0),
 		loss_dfl=dict(type='DistributionFocalLoss', loss_weight=0.25),
-		use_dgqp = True,
+		loss_ld=dict(type='KnowledgeDistillationKLDivLoss', loss_weight=0.25, T=10),
 		loss_bbox=dict(type='CIoULoss', loss_weight=2.0)),
 	train_cfg = dict(
 		assigner=dict(type='ATSSAssigner', topk=9),
@@ -69,7 +72,7 @@ model = dict(
 		nms_pre=1000,
 		min_bbox_size=0,
 		score_thr=0.05,
-		nms=dict(type='voting_cluster_diounms', iou_threshold=0.6),
+		nms=dict(type='soft_nms', iou_threshold=0.6, method = 'gaussian'),
 		max_per_img=100)
 	)
 
