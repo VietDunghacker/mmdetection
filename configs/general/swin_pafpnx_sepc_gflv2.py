@@ -41,9 +41,7 @@ model = dict(
 			ibn=True,  # please set imgs/gpu >= 4
 			pnorm_eval=False,
 			lcnorm_eval=False,
-			lcconv_padding=1,
-			pnorm_cfg=dict(type='GN', num_groups=32, requires_grad=True),
-			lcnorm_cfg=dict(type='GN', num_groups=32, requires_grad=True))
+			lcconv_padding=1)
 	],
 	bbox_head=dict(
 		type='GFLHead',
