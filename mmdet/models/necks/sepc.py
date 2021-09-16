@@ -37,7 +37,6 @@ class SEPC(BaseModule):
 		self.out_channels = out_channels
 		self.num_ins = len(in_channels)
 		self.num_outs = num_outs
-		assert num_outs == 5
 		self.fp16_enabled = False
 		self.ibn = ibn
 		self.pnorm_cfg = pnorm_cfg
@@ -57,24 +56,24 @@ class SEPC(BaseModule):
 					part_deform=pconv_deform))
 
 		self.lconv = ModulatedSEPCConv(
-			256,
-			256,
+			out_channels,
+			out_channels,
 			kernel_size=3,
 			padding=lcconv_padding,
 			dilation=1,
 			part_deform=lcconv_deform)
 		self.cconv = ModulatedSEPCConv(
-			256,
-			256,
+			out_channels,
+			out_channels,
 			kernel_size=3,
 			padding=lcconv_padding,
 			dilation=1,
 			part_deform=lcconv_deform)
 		if self.ibn:
 			self.lnorm_name, lnorm = build_norm_layer(
-				self.lcnorm_cfg, 256, postfix='_loc')
+				self.lcnorm_cfg, out_channels, postfix='_loc')
 			self.cnorm_name, cnorm = build_norm_layer(
-				self.lcnorm_cfg, 256, postfix='_cls')
+				self.lcnorm_cfg, out_channels, postfix='_cls')
 			self.add_module(self.lnorm_name, lnorm)
 			self.add_module(self.cnorm_name, cnorm)
 		self.relu = nn.ReLU()

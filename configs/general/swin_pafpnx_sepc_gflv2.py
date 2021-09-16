@@ -36,6 +36,7 @@ model = dict(
 			in_channels=[256] * 4,
 			out_channels=256,
 			stacked_convs=4,
+			num_outs = 4,
 			pconv_deform=True,
 			lcconv_deform=True,
 			ibn=True,  # please set imgs/gpu >= 4
