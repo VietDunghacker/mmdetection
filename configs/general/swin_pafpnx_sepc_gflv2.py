@@ -30,7 +30,7 @@ model = dict(
 			num_outs=4,
 			relu_before_extra_convs=True,
 			pafpn_conv_cfg=dict(type='DCNv2'),
-			norm_cfg=dict(type='BN', requires_grad=True)),
+			norm_cfg=dict(type='GN', num_groups=32, requires_grad=True)),
 		dict(
 			type='SEPC',
 			in_channels=[256] * 4,
@@ -41,7 +41,9 @@ model = dict(
 			ibn=True,  # please set imgs/gpu >= 4
 			pnorm_eval=False,
 			lcnorm_eval=False,
-			lcconv_padding=1)
+			lcconv_padding=1,
+			pnorm_cfg=dict(type='GN', num_groups=32, requires_grad=True),
+			lcnorm_cfg=dict(type='GN', num_groups=32, requires_grad=True))
 	],
 	bbox_head=dict(
 		type='GFLHead',
