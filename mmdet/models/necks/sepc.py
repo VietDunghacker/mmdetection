@@ -5,7 +5,7 @@ from mmcv.cnn import build_norm_layer
 from mmcv.runner import BaseModule, ModuleList, auto_fp16
 from torch.nn.modules.batchnorm import _BatchNorm
 
-from mmdet.models.utils import SEPCConv
+from mmdet.models.utils import ModulatedSEPCConv
 from ..builder import NECKS
 
 
@@ -56,14 +56,14 @@ class SEPC(BaseModule):
 					norm_eval=self.pnorm_eval,
 					part_deform=pconv_deform))
 
-		self.lconv = SEPCConv(
+		self.lconv = ModulatedSEPCConv(
 			256,
 			256,
 			kernel_size=3,
 			padding=lcconv_padding,
 			dilation=1,
 			part_deform=lcconv_deform)
-		self.cconv = SEPCConv(
+		self.cconv = ModulatedSEPCConv(
 			256,
 			256,
 			kernel_size=3,
@@ -148,7 +148,7 @@ class PConvModule(BaseModule):
 		self.norm_eval = norm_eval
 		self.pconv = ModuleList()
 		self.pconv.append(
-			SEPCConv(
+			ModulatedSEPCConv(
 				in_channels,
 				out_channels,
 				kernel_size=kernel_size[0],
@@ -157,7 +157,7 @@ class PConvModule(BaseModule):
 				padding=(kernel_size[0] + (dilation[0] - 1) * 2) // 2,
 				part_deform=part_deform))
 		self.pconv.append(
-			SEPCConv(
+			ModulatedSEPCConv(
 				in_channels,
 				out_channels,
 				kernel_size=kernel_size[1],
@@ -166,7 +166,7 @@ class PConvModule(BaseModule):
 				padding=(kernel_size[1] + (dilation[1] - 1) * 2) // 2,
 				part_deform=part_deform))
 		self.pconv.append(
-			SEPCConv(
+			ModulatedSEPCConv(
 				in_channels,
 				out_channels,
 				kernel_size=kernel_size[2],
