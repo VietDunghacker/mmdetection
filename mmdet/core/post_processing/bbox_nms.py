@@ -34,20 +34,11 @@ def multiclass_nms(multi_bboxes,
 	"""
 	num_classes = multi_scores.size(1) - 1
 	# exclude background category
-	if multi_bboxes.shape[1] > 4:
-		bboxes = multi_bboxes.view(multi_scores.size(0), -1, 4)
-	else:
-		bboxes = multi_bboxes[:, None].expand(
-			multi_scores.size(0), num_classes, 4)
+	assert multi_bboxes.shape[1] == 4
+	bboxes = multi_bboxes
+	scores = multi_scores
 
-	scores = multi_scores[:, :-1]
-
-	labels = torch.arange(num_classes, dtype=torch.long, device=scores.device)
-	labels = labels.view(1, -1).expand_as(scores)
-
-	bboxes = bboxes.reshape(-1, 4)
-	scores = scores.reshape(-1)
-	labels = labels.reshape(-1)
+	scores, labels = torch.max(scores, dim = 1)
 
 	if not torch.onnx.is_in_onnx_export():
 		# NonZero not supported  in TensorRT
@@ -55,11 +46,8 @@ def multiclass_nms(multi_bboxes,
 		valid_mask = scores > score_thr
 	# multiply score_factor after threshold to preserve more bboxes, improve
 	# mAP by 1% for YOLOv3
+
 	if score_factors is not None:
-		# expand the shape to match original shape of score
-		score_factors = score_factors.view(-1, 1).expand(
-			multi_scores.size(0), num_classes)
-		score_factors = score_factors.reshape(-1)
 		scores = scores * score_factors
 
 	if not torch.onnx.is_in_onnx_export():
@@ -73,17 +61,10 @@ def multiclass_nms(multi_bboxes,
 		scores = torch.cat([scores, scores.new_zeros(1)], dim=0)
 		labels = torch.cat([labels, labels.new_zeros(1)], dim=0)
 
-	if bboxes.numel() == 0:
-		if torch.onnx.is_in_onnx_export():
-			raise RuntimeError('[ONNX Error] Can not record NMS '
-							   'as it has not been executed this time')
-		dets = torch.cat([bboxes, scores[:, None]], -1)
-		if return_inds:
-			return dets, labels, inds
-		else:
-			return dets, labels
-
-	dets, keep = batched_nms(bboxes, scores, labels, nms_cfg)
+	if not torch.onnx.is_in_onnx_export():
+		valid_mask = labels < num_classes
+		inds = valid_mask.nonzero(as_tuple=False).squeeze(1)
+		bboxes, scores, labels = bboxes[inds], scores[inds], labels[inds]
 
 	if max_num > 0:
 		dets = dets[:max_num]
