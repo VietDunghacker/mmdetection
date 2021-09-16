@@ -179,10 +179,7 @@ def multiclass_nms(multi_bboxes,
 			dets = dets[:max_num]
 			labels = labels[keep][:max_num]
 
-	if return_inds:
-		return dets, labels[keep], inds[keep]
-	else:
-		return dets, labels[keep]
+	return dets, labels
 
 
 def fast_nms(multi_bboxes,
