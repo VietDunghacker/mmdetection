@@ -80,7 +80,7 @@ model = dict(
 		shared_positional_encoding_outer=True),
 	train_cfg=dict(
 		bbox=dict(
-			assigner=dict(type='ATSSAssigner', topk=13),
+			assigner=dict(type='ATSSAssigner', topk=9),
 			allowed_border=-1,
 			pos_weight=-1,
 			debug=False),
