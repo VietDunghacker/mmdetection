@@ -98,7 +98,7 @@ class EvalHook(BaseEvalHook):
 
 	def evaluate(self, runner, results):
 		eval_res = self.dataloader.dataset.evaluate(results, logger=runner.logger, **self.eval_kwargs)
-		from mmdet.datasets.builder import ClassAwareSampler
+		'''from mmdet.datasets.builder import ClassAwareSampler
 		if isinstance(self.train_dataloader.sampler, ClassAwareSampler) and 'AP_per_class' in eval_res.keys():
 			for i, ap in enumerate(eval_res['AP_per_class']):
 				ap = 1 if ap >= 0.9 else ap
@@ -107,10 +107,10 @@ class EvalHook(BaseEvalHook):
 			for i in range(len(self.train_dataloader.dataset.CLASSES)):
 				self.train_dataloader.sampler.cw[i] /= sum_cw
 
-			'''txt = "New class weights:\n"
+			txt = "New class weights:\n"
 			for i, name in enumerate(self.train_dataloader.dataset.CLASSES):
 				txt += "{:40s}: {:.6f}\n".format(name, self.train_dataloader.sampler.cw[i])
-			print_log(txt)'''
+			print_log(txt)
 
 			num_columns = min(6, len(eval_res['AP_per_class']) * 2)
 			results_flatten = list(itertools.chain(*[(name, "{:.6f}".format(item)) for name, item in zip(self.train_dataloader.dataset.CLASSES, self.train_dataloader.sampler.cw)]))
@@ -119,7 +119,7 @@ class EvalHook(BaseEvalHook):
 			table_data = [headers]
 			table_data += [result for result in results_2d]
 			table = AsciiTable(table_data)
-			print_log('\n' + table.table, logger=runner.logger)
+			print_log('\n' + table.table, logger=runner.logger)'''
 
 		if 'AP_per_class' in eval_res.keys():
 			del eval_res['AP_per_class']
