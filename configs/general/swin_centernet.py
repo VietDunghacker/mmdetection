@@ -21,7 +21,7 @@ model = dict(
 		patch_norm=True,
 		out_indices=(3, ),
 		with_cp=True,
-		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/swin_base_224_b16x64_300e_imagenet_20210616_190742-93230b0d.pth')),
+		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
 	neck=None,
 	bbox_head=dict(
 		type='CenterNetHead',
@@ -32,7 +32,7 @@ model = dict(
 		loss_wh=dict(type='L1Loss', loss_weight=0.1),
 		loss_offset=dict(type='L1Loss', loss_weight=1.0)),
 	train_cfg=None,
-	test_cfg=dict(topk=100, local_maximum_kernel=3, max_per_img=32, threshold = 0.05, nms_cfg = dict(type='soft_nms', iou_threshold=0.5, method='gaussian')))
+	test_cfg=dict(topk=100, local_maximum_kernel=3, max_per_img=32, threshold = 0.05, nms_cfg = dict(type='voting_cluster_diounms', iou_threshold=0.6)))
 
 # data setting
 dataset_type = 'CocoDataset'
