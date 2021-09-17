@@ -106,11 +106,6 @@ class EvalHook(BaseEvalHook):
 			for i in range(len(self.train_dataloader.dataset.CLASSES)):
 				self.train_dataloader.sampler.cw[i] /= sum_cw
 
-			txt = "New class weights:\n"
-			for i, name in enumerate(self.train_dataloader.dataset.CLASSES):
-				txt += "{:40s}: {:.6f}\n".format(name, self.train_dataloader.sampler.cw[i])
-			print_log(txt)
-
 			num_columns = min(6, len(eval_res['AP_per_class']) * 2)
 			results_flatten = list(itertools.chain(*[(name, "{:.6f}".format(item)) for name, item in zip(self.train_dataloader.dataset.CLASSES, self.train_dataloader.sampler.cw)]))
 			headers = ['category', 'weight'] * (num_columns // 2)
