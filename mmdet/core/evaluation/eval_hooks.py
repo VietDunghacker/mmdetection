@@ -2,6 +2,7 @@
 import itertools
 import os.path as osp
 from math import inf
+from mmcv.utils import print_log
 
 from terminaltables import AsciiTable
 
