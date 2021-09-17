@@ -112,7 +112,7 @@ class EvalHook(BaseEvalHook):
 			print_log(txt)'''
 
 			num_columns = min(6, len(eval_res['AP_per_class']) * 2)
-			results_flatten = list(itertools.chain(*["{:.6f}".format(item) for item in self.train_dataloader.sampler.cw]))
+			results_flatten = list(itertools.chain(*[(name, "{:.6f}".format(item)) for name, item in zip(self.train_dataloader.dataset.CLASSES, self.train_dataloader.sampler.cw)]))
 			headers = ['category', 'weight'] * (num_columns // 2)
 			results_2d = itertools.zip_longest(*[results_flatten[i::num_columns] for i in range(num_columns)])
 			table_data = [headers]
