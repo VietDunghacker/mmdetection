@@ -32,7 +32,7 @@ model = dict(
 		loss_wh=dict(type='L1Loss', loss_weight=0.1),
 		loss_offset=dict(type='L1Loss', loss_weight=1.0)),
 	train_cfg=None,
-	test_cfg=dict(topk=100, local_maximum_kernel=3, max_per_img=32, threshold = 0.05, nms_cfg = dict(type='voting_cluster_diounms', iou_threshold=0.6)))
+	test_cfg=dict(topk=100, local_maximum_kernel=3, max_per_img=32, threshold = 0.05, nms_cfg = dict(type='soft_nms', iou_threshold=0.6, method = 'guassian')))
 
 # data setting
 dataset_type = 'CocoDataset'
