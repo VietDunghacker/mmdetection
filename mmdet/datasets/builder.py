@@ -100,7 +100,7 @@ class ClassAwareSampler(Sampler):
 			selected_celebrities = random.choices(self.dataset.CLASSES, k = 4)
 			for idx in range(len(self.dataset)):
 				cat_ids = set(self.dataset.get_cat_ids(idx))
-				ret.append(sum([1 for cat_id in cat_ids if cat_id in self.o.get_cat_ids(cat_names=selected_celebrities)]))
+				ret.append(sum([1 for cat_id in cat_ids if cat_id in self.coco.get_cat_ids(cat_names=selected_celebrities)]))
 			print("Selected celebrities: {}".format(', '.join(selected_celebrities)))
 			print(max(ret))
 		else:
