@@ -1,6 +1,9 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import itertools
 import os.path as osp
 from math import inf
+
+from terminaltables import AsciiTable
 
 import torch.distributed as dist
 from mmcv.runner import DistEvalHook as BaseDistEvalHook
@@ -97,6 +100,7 @@ class EvalHook(BaseEvalHook):
 		from mmdet.datasets.builder import ClassAwareSampler
 		if isinstance(self.train_dataloader.sampler, ClassAwareSampler) and 'AP_per_class' in eval_res.keys():
 			for i, ap in enumerate(eval_res['AP_per_class']):
+				#ap = 1 if ap >= 0.9 else ap
 				self.train_dataloader.sampler.cw[i] = self.train_dataloader.sampler.orig_cw[i] * (1.001 - ap) ** 2
 			sum_cw = sum(self.train_dataloader.sampler.cw)
 			for i in range(len(self.train_dataloader.dataset.CLASSES)):
@@ -106,6 +110,15 @@ class EvalHook(BaseEvalHook):
 			for i, name in enumerate(self.train_dataloader.dataset.CLASSES):
 				txt += "{:40s}: {:.6f}\n".format(name, self.train_dataloader.sampler.cw[i])
 			print_log(txt)'''
+
+			num_columns = min(6, len(eval_res['AP_per_class']) * 2)
+			results_flatten = list(itertools.chain(*[":.6f".format(item) for item in self.train_dataloader.sampler.cw]))
+			headers = ['category', 'weight'] * (num_columns // 2)
+			results_2d = itertools.zip_longest(*[results_flatten[i::num_columns] for i in range(num_columns)])
+			table_data = [headers]
+			table_data += [result for result in results_2d]
+			table = AsciiTable(table_data)
+			print_log('\n' + table.table, logger=runner.logger)
 
 		if 'AP_per_class' in eval_res.keys():
 			del eval_res['AP_per_class']

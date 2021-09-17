@@ -7,6 +7,7 @@ import torch
 from collections import defaultdict
 from functools import partial
 from mmcv.utils import print_log
+from terminaltables import AsciiTable
 
 import numpy as np
 from mmcv.parallel import collate
@@ -69,12 +70,14 @@ class ClassAwareSampler(Sampler):
 		self.cw /= sum(self.cw)
 		self.orig_cw = copy.deepcopy(self.cw)
 
-		print("Number of negative samples: {}".format(len(self.empty_gt)))
-
-		txt = "Original class weights:\n"
-		for i, name in enumerate(self.dataset.CLASSES):
-			txt += "{:40s}: {:.6f}\n".format(name, self.cw[i])
-		print_log(txt)
+		num_columns = min(6, len(self.cw * 2))
+		results_flatten = list(itertools.chain(*[":.6f".format(item) for item in self.cw]))
+		headers = ['category', 'weight'] * (num_columns // 2)
+		results_2d = itertools.zip_longest(*[results_flatten[i::num_columns] for i in range(num_columns)])
+		table_data = [headers]
+		table_data += [result for result in results_2d]
+		table = AsciiTable(table_data)
+		print_log('\n' + table.table, logger=runner.logger)
 
 		self.weights = self._get_class_balance_factor()
 
