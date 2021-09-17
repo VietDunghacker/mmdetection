@@ -70,14 +70,14 @@ class ClassAwareSampler(Sampler):
 		self.cw /= sum(self.cw)
 		self.orig_cw = copy.deepcopy(self.cw)
 
-		'''num_columns = min(6, len(self.cw * 2))
+		num_columns = min(6, len(self.cw * 2))
 		results_flatten = list(itertools.chain(*[(self.dataset.CLASSES[i], "{:.6f}".format(item)) for i, item in enumerate(self.cw)]))
 		headers = ['category', 'weight'] * (num_columns // 2)
 		results_2d = itertools.zip_longest(*[results_flatten[i::num_columns] for i in range(num_columns)])
 		table_data = [headers]
 		table_data += [result for result in results_2d]
 		table = AsciiTable(table_data)
-		print_log('\n' + table.table)'''
+		print_log('\n' + table.table)
 
 		self.weights = self._get_class_balance_factor()
 
@@ -97,10 +97,9 @@ class ClassAwareSampler(Sampler):
 		from .lvis import LVISDataset
 		if isinstance(self.dataset, CocoDataset) or isinstance(dataset, LVISDataset):
 			#ret = [1.0] * len(self.dataset)
-			selected_celebrities = random.sample(self.dataset.CLASSES, k = 4)
 			for idx in range(len(self.dataset)):
 				cat_ids = set(self.dataset.get_cat_ids(idx))
-				ret.append(sum([1 for cat_id in cat_ids if cat_id in self.dataset.coco.get_cat_ids(cat_names=selected_celebrities)]))
+				ret.append(sum([1 for cat_id in cat_ids if cat_id in self.dataset.cat_ids]))
 		else:
 			for idx in range(len(self.dataset)):
 				cat_ids = set(self.dataset.get_cat_ids(idx))

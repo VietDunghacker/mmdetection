@@ -636,8 +636,7 @@ class GFLHead(AnchorHead):
 				# Foreground is the first class
 				labels[pos_inds] = 0
 			else:
-				labels[pos_inds] = gt_labels[
-					sampling_result.pos_assigned_gt_inds]
+				labels[pos_inds] = gt_labels[sampling_result.pos_assigned_gt_inds]
 			if self.train_cfg.pos_weight <= 0:
 				label_weights[pos_inds] = 1.0
 			else:
