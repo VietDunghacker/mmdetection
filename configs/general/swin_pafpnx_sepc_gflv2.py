@@ -44,7 +44,7 @@ model = dict(
 			lcnorm_eval=False,
 			lcconv_padding=1,
 			pnorm_cfg=dict(type='GN', num_groups=32, requires_grad=True),
-			lnorm_cfg=dict(type='GN', num_groups=32, requires_grad=True))
+			lcnorm_cfg=dict(type='GN', num_groups=32, requires_grad=True))
 	],
 	bbox_head=dict(
 		type='GFLHead',
