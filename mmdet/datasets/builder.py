@@ -99,7 +99,7 @@ class ClassAwareSampler(Sampler):
 			#ret = [1.0] * len(self.dataset)
 			for idx in range(len(self.dataset)):
 				cat_ids = set(self.dataset.get_cat_ids(idx))
-				ret.append(sum([self.cw[cat_id] for cat_id in cat_ids if cat_id in self.dataset.cat_ids]))
+				ret.append(sum([self.cw[self.dataset.cat2label[cat_id]] for cat_id in cat_ids if cat_id in self.dataset.cat_ids]))
 		else:
 			for idx in range(len(self.dataset)):
 				cat_ids = set(self.dataset.get_cat_ids(idx))
