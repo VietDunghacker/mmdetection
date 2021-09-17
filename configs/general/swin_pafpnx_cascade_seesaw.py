@@ -54,8 +54,11 @@ model = dict(
 			featmap_strides=[4, 8, 16, 32]),
 		bbox_head=[
 			dict(
-				type='Shared2FCBBoxHead',
+				type='ConvFCBBoxHead',
+				num_shared_convs=4,
+				num_shared_fcs=1,
 				in_channels=256,
+				conv_out_channels=256,
 				fc_out_channels=1024,
 				roi_feat_size=7,
 				num_classes=34,
@@ -75,8 +78,11 @@ model = dict(
 				reg_decoded_bbox=True,
 				loss_bbox=dict(type='CIoULoss', loss_weight=12.0)),
 			dict(
-				type='Shared2FCBBoxHead',
+				type='ConvFCBBoxHead',
+				num_shared_convs=4,
+				num_shared_fcs=1,
 				in_channels=256,
+				conv_out_channels=256,
 				fc_out_channels=1024,
 				roi_feat_size=7,
 				num_classes=34,
@@ -96,8 +102,11 @@ model = dict(
 				reg_decoded_bbox=True,
 				loss_bbox=dict(type='CIoULoss', loss_weight=12.0)),
 			dict(
-				type='Shared2FCBBoxHead',
+				type='ConvFCBBoxHead',
+				num_shared_convs=4,
+				num_shared_fcs=1,
 				in_channels=256,
+				conv_out_channels=256,
 				fc_out_channels=1024,
 				roi_feat_size=7,
 				num_classes=34,
