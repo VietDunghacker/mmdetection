@@ -23,7 +23,6 @@ model = dict(
 	neck = dict(
 		type='PAFPNX',
 		in_channels=[128, 256, 512, 1024],
-		start_level = 1,
 		out_channels=256,
 		num_outs=5,
 		pafpn_conv_cfg=dict(type='DCNv2'),
@@ -36,7 +35,7 @@ model = dict(
 			type='AnchorGenerator',
 			scales=[8],
 			ratios=[0.5, 1.0, 2.0, 3.0, 4.0, 5.0],
-			strides=[8, 16, 32, 64, 128]),
+			strides=[4, 8, 16, 32, 64]),
 		bbox_coder=dict(
 			type='DeltaXYWHBBoxCoder',
 			target_means=[.0, .0, .0, .0],
@@ -52,7 +51,7 @@ model = dict(
 			type='SingleRoIExtractor',
 			roi_layer=dict(type='RoIAlign', output_size=7, sampling_ratio=0),
 			out_channels=256,
-			featmap_strides=[8, 16, 32, 64, 128]),
+			featmap_strides=[4, 8, 16, 32]),
 		bbox_head=[
 			dict(
 				type='Shared2FCBBoxHead',
