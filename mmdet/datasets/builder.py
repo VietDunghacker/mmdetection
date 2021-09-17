@@ -77,7 +77,7 @@ class ClassAwareSampler(Sampler):
 		table_data = [headers]
 		table_data += [result for result in results_2d]
 		table = AsciiTable(table_data)
-		print_log('\n' + table.table, logger=runner.logger)
+		print_log('\n' + table.table)
 
 		self.weights = self._get_class_balance_factor()
 
