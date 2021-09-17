@@ -24,7 +24,7 @@ model = dict(
 		type='PAFPNX',
 		in_channels=[128, 256, 512, 1024],
 		out_channels=256,
-		num_outs=4,
+		num_outs=5,
 		pafpn_conv_cfg=dict(type='DCNv2'),
 		norm_cfg=dict(type='GN', num_groups=32, requires_grad=True)),
 	rpn_head=dict(
@@ -34,7 +34,7 @@ model = dict(
 		anchor_generator=dict(
 			type='AnchorGenerator',
 			scales=[8],
-			ratios=[0.5, 1.0, 2.0],
+			ratios=[0.5, 1.0, 2.0, 3.0, 4.0, 5.0],
 			strides=[4, 8, 16, 32, 64]),
 		bbox_coder=dict(
 			type='DeltaXYWHBBoxCoder',

@@ -42,9 +42,7 @@ model = dict(
 			ibn=True,  # please set imgs/gpu >= 4
 			pnorm_eval=False,
 			lcnorm_eval=False,
-			lcconv_padding=1,
-			pnorm_cfg=dict(type='GN', num_groups=32, requires_grad=True),
-			lcnorm_cfg=dict(type='GN', num_groups=32, requires_grad=True))
+			lcconv_padding=1)
 	],
 	bbox_head=dict(
 		type='GFLHead',
@@ -71,7 +69,7 @@ model = dict(
 		nms_pre=1000,
 		min_bbox_size=0,
 		score_thr=0.05,
-		nms=dict(type='voting_cluster_diounms', iou_threshold=0.6),
+		nms=dict(type='nms', iou_threshold=0.6),
 		max_per_img=100)
 	)
 
