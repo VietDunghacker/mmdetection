@@ -71,14 +71,14 @@ model = dict(
 		nms_pre=1000,
 		min_bbox_size=0,
 		score_thr=0.05,
-		nms=dict(type='nms', iou_threshold=0.6),
+		nms=dict(type='voting_cluster_diounms', iou_threshold=0.6),
 		max_per_img=100)
 	)
 
 # data setting
 img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 albu_train_transforms = [
-	dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.0, rotate_limit=0, interpolation=1, p=0.5),
+	dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.1, rotate_limit=0, interpolation=1, p=0.5),
 	dict(
 		type='OneOf',
 		transforms=[
@@ -89,7 +89,7 @@ albu_train_transforms = [
 ]
 
 train_pipeline = [
-	dict(type='LoadImageFromFile', to_float32=True),
+	dict(type='LoadImageFromFile'),
 	dict(type='LoadAnnotations', with_bbox=True),
 	dict(
 		type='RandomCrop',
