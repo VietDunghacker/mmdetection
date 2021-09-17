@@ -21,11 +21,11 @@ model = dict(
 		with_cp=True,
 		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
 	neck=dict(
-        type='DilatedEncoder',
-        in_channels=1024,
-        out_channels=512,
-        block_mid_channels=128,
-        num_residual_blocks=6),
+		type='DilatedEncoder',
+		in_channels=1024,
+		out_channels=512,
+		block_mid_channels=128,
+		num_residual_blocks=6),
 	bbox_head=dict(
 		type='GFLHead',
 		num_classes=34,
@@ -35,9 +35,8 @@ model = dict(
 		anchor_generator=dict(
 			type='AnchorGenerator',
 			ratios=[1.0],
-			octave_base_scale=8,
-			scales_per_octave=1,
-			strides=[8, 16, 32, 64, 128]),
+			scales=[1, 2, 4, 8, 16],
+			strides=[32]),
 		loss_cls=dict(type='QualityFocalLoss', use_sigmoid=False, beta=2.0, loss_weight=1.0),
 		loss_dfl=dict(type='DistributionFocalLoss', loss_weight=0.25),
 		use_dgqp = True,
