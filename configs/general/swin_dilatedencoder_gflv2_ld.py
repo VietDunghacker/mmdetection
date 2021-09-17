@@ -3,7 +3,9 @@ _base_ = [
 	'../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py'
 ]
 model = dict(
-	type='GFL',
+	type='KnowledgeDistillationSingleStageDetector',
+	teacher_config='configs/general/swin_pafpnx_sepc_gflv2.py',
+	teacher_ckpt='/gdrive/My Drive/checkpoints/swin_pafpnx_sepc_gflv2.pth',
 	backbone=dict(
 		type='SwinTransformer',
 		embed_dims=128,
@@ -27,7 +29,7 @@ model = dict(
         block_mid_channels=128,
         num_residual_blocks=4),
 	bbox_head=dict(
-		type='GFLHead',
+		type='LDHead',
 		num_classes=34,
 		in_channels=512,
 		stacked_convs=4,
@@ -40,6 +42,7 @@ model = dict(
 		loss_cls=dict(type='QualityFocalLoss', use_sigmoid=False, beta=2.0, loss_weight=1.0),
 		loss_dfl=dict(type='DistributionFocalLoss', loss_weight=0.25),
 		use_dgqp = True,
+		loss_ld=dict(type='KnowledgeDistillationKLDivLoss', loss_weight=0.25, T=10),
 		loss_bbox=dict(type='CIoULoss', loss_weight=2.0)),
 	train_cfg = dict(
 		assigner=dict(type='ATSSAssigner', topk=15),
