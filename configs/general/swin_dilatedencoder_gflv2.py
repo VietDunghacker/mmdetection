@@ -25,7 +25,8 @@ model = dict(
         in_channels=1024,
         out_channels=512,
         block_mid_channels=128,
-        num_residual_blocks=4),
+        num_residual_blocks=4,
+        norm_cfg=dict(type='GN', num_groups=32, requires_grad=True)),
 	bbox_head=dict(
 		type='GFLHead',
 		num_classes=34,
