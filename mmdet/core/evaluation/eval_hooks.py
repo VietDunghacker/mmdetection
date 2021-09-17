@@ -100,7 +100,7 @@ class EvalHook(BaseEvalHook):
 		from mmdet.datasets.builder import ClassAwareSampler
 		if isinstance(self.train_dataloader.sampler, ClassAwareSampler) and 'AP_per_class' in eval_res.keys():
 			for i, ap in enumerate(eval_res['AP_per_class']):
-				#ap = 1 if ap >= 0.9 else ap
+				ap = 1 if ap >= 0.9 else ap
 				self.train_dataloader.sampler.cw[i] = self.train_dataloader.sampler.orig_cw[i] * (1.001 - ap) ** 2
 			sum_cw = sum(self.train_dataloader.sampler.cw)
 			for i in range(len(self.train_dataloader.dataset.CLASSES)):
