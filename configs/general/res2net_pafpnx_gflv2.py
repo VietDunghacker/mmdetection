@@ -15,6 +15,7 @@ model = dict(
         norm_cfg=dict(type='BN', requires_grad=True),
         norm_eval=False,
         style='pytorch',
+        with_cp = True,
         dcn=dict(type='DCNv2', deform_groups=1, fallback_on_stride=False),
         stage_with_dcn=(False, True, True, True),
 		init_cfg=dict(
