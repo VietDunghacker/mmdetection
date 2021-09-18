@@ -84,8 +84,7 @@ model = dict(
 					type='HungarianAssigner',
 					cls_cost=dict(type='FocalLossCost', weight=2.0),
 					reg_cost=dict(type='BBoxL1Cost', weight=5.0),
-					iou_cost=dict(type='IoUCost', iou_mode='giou',
-								  weight=2.0)),
+					iou_cost=dict(type='IoUCost', iou_mode='giou', weight=2.0)),
 				sampler=dict(type='PseudoSampler'),
 				pos_weight=1) for _ in range(num_stages)
 		]),
@@ -185,7 +184,6 @@ optimizer = dict(
 	type='AdamW',
 	lr=0.000025,
 	betas=(0.9, 0.999),
-	weight_decay=0.05,
 	paramwise_cfg=dict(
 		custom_keys={
 			'absolute_pos_embed': dict(decay_mult=0.),
