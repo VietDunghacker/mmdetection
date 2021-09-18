@@ -335,10 +335,4 @@ class SparseRoIHead(CascadeRoIHead):
 
 		out_bboxes, keep = batched_nms(bboxes[:, :4].contiguous(), bboxes[:, -1].contiguous(), labels, cfg.nms)
 		out_labels = labels[keep]
-
-		if len(out_bboxes) > 0:
-			idx = torch.argsort(out_bboxes[:, -1], descending=True)
-			idx = idx[:cfg.nms_max_per_img]
-			out_bboxes = out_bboxes[idx]
-			out_labels = out_labels[idx]
 		return out_bboxes, out_labels
