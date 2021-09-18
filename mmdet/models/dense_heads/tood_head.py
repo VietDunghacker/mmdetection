@@ -526,8 +526,7 @@ class TOODHead(AnchorHead):
 		assert len(cls_scores) == len(bbox_preds)
 		mlvl_bboxes = []
 		mlvl_scores = []
-		for cls_score, bbox_pred, stride in zip(
-				cls_scores, bbox_preds, self.anchor_generator.strides):
+		for cls_score, bbox_pred, stride in zip(cls_scores, bbox_preds, self.anchor_generator.strides):
 			assert cls_score.size()[-2:] == bbox_pred.size()[-2:]
 			assert stride[0] == stride[1]
 
