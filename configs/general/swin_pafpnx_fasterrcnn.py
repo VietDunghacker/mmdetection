@@ -25,8 +25,8 @@ model = dict(
 		in_channels=[128, 256, 512, 1024],
 		out_channels=256,
 		num_outs=5,
-		pafpn_conv_cfg=dict(type='DCNv2'),
-		norm_cfg=dict(type='GN', num_groups=32, requires_grad=True)),
+		relu_before_extra_convs=True,
+		pafpn_conv_cfg=dict(type='DCNv2')),
 	rpn_head=dict(
 		type='RPNHead',
 		in_channels=256,
