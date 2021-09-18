@@ -216,8 +216,7 @@ class SparseRoIHead(CascadeRoIHead):
 				*bbox_targets,
 				imgs_whwh=imgs_whwh)
 			for key, value in single_stage_loss.items():
-				all_stage_loss[f'stage{stage}_{key}'] = value * \
-									self.stage_loss_weights[stage]
+				all_stage_loss[f'stage{stage + 1}_{key}'] = value * self.stage_loss_weights[stage]
 			object_feats = bbox_results['object_feats']
 
 		return all_stage_loss
@@ -285,13 +284,24 @@ class SparseRoIHead(CascadeRoIHead):
 
 		for img_id in range(num_imgs):
 			cls_score_per_img = cls_score[img_id]
-			scores_per_img, topk_indices = cls_score_per_img.flatten(0, 1).topk(self.test_cfg.max_per_img, sorted=False)
-			labels_per_img = topk_indices % num_classes
-			bbox_pred_per_img = proposal_list[img_id][topk_indices // num_classes]
+
+			if self.bbox_head[-1].loss_cls.use_sigmoid:			
+				scores_per_img, topk_indices = cls_score_per_img.flatten(0, 1).topk(self.test_cfg.max_per_img, sorted=False)
+				labels_per_img = topk_indices % num_classes
+				bbox_pred_per_img = proposal_list[img_id][topk_indices // num_classes]
+			else:
+				scores_per_img, labels_per_img = cls_score_per_img.max(-1)
+				scores_per_img, topk_indices = scores_per_img.topk(self.test_cfg.max_per_img)
+				bbox_pred_per_img = bbox_pred_per_img[topk_indices]
+				labels_per_img = labels_per_img[topk_indices]
+
 			if rescale:
 				scale_factor = img_metas[img_id]['scale_factor']
 				bbox_pred_per_img /= bbox_pred_per_img.new_tensor(scale_factor)
-			det_bboxes.append(torch.cat([bbox_pred_per_img, scores_per_img[:, None]], dim=1))
+			bboxes_per_img = torch.cat([bbox_pred_per_img, scores_per_img[:, None]], dim=1)
+			bboxes_per_img, labels_per_img = self._bboxes_nms(bboxes_per_img, labels_per_img, self.test_cfg)
+
+			det_bboxes.append(bboxes_per_img)
 			det_labels.append(labels_per_img)
 
 		bbox_results = [
@@ -318,3 +328,17 @@ class SparseRoIHead(CascadeRoIHead):
 				proposal_list = bbox_results['detach_proposal_list']
 				object_feats = bbox_results['object_feats']
 		return all_stage_bbox_results
+
+	def _bboxes_nms(self, bboxes, labels, cfg):
+		if labels.numel() == 0:
+			return bboxes, labels
+
+		out_bboxes, keep = batched_nms(bboxes[:, :4].contiguous(), bboxes[:, -1].contiguous(), labels, cfg.nms)
+		out_labels = labels[keep]
+
+		if len(out_bboxes) > 0:
+			idx = torch.argsort(out_bboxes[:, -1], descending=True)
+			idx = idx[:cfg.nms_max_per_img]
+			out_bboxes = out_bboxes[idx]
+			out_labels = out_labels[idx]
+		return out_bboxes, out_labels
