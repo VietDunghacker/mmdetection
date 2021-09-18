@@ -31,6 +31,7 @@ from .rpn import RPN
 from .scnet import SCNet
 from .single_stage import SingleStageDetector
 from .sparse_rcnn import SparseRCNN
+from .tood import TOOD
 from .trident_faster_rcnn import TridentFasterRCNN
 from .two_stage import TwoStageDetector
 from .vfnet import VFNet
@@ -47,5 +48,6 @@ __all__ = [
     'NASFCOS', 'PointRend', 'GFL', 'CornerNet', 'PAA', 'YOLOV3', 'YOLACT',
     'VFNet', 'DETR', 'TridentFasterRCNN', 'SparseRCNN', 'SCNet',
     'DeformableDETR', 'AutoAssign', 'YOLOF', 'CenterNet', 'YOLOX',
-    'TwoStagePanopticSegmentor', 'PanopticFPN', 'RepPointsV2Detector', 'BVR'
+    'TwoStagePanopticSegmentor', 'PanopticFPN', 'RepPointsV2Detector', 'BVR',
+    'TOOD'
 ]
