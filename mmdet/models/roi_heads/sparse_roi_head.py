@@ -293,7 +293,7 @@ class SparseRoIHead(CascadeRoIHead):
 			else:
 				scores_per_img, labels_per_img = cls_score_per_img.max(-1)
 				scores_per_img, topk_indices = scores_per_img.topk(self.test_cfg.max_per_img)
-				bbox_pred_per_img = bbox_pred_per_img[topk_indices]
+				bbox_pred_per_img = proposal_list[img_id][topk_indices]
 				labels_per_img = labels_per_img[topk_indices]
 
 			if rescale:
