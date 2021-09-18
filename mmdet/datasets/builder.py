@@ -70,7 +70,7 @@ class ClassAwareSampler(Sampler):
 		self.cw /= sum(self.cw)
 		self.orig_cw = copy.deepcopy(self.cw)
 
-		num_columns = min(6, len(self.cw * 2))
+		num_columns = min(6, len(self.cw)  * 2)
 		results_flatten = list(itertools.chain(*[(self.dataset.CLASSES[i], "{:.6f}".format(item)) for i, item in enumerate(self.cw)]))
 		headers = ['category', 'weight'] * (num_columns // 2)
 		results_2d = itertools.zip_longest(*[results_flatten[i::num_columns] for i in range(num_columns)])
