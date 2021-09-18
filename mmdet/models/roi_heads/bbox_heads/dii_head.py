@@ -93,12 +93,9 @@ class DIIHead(BBoxHead):
 
 		self.cls_fcs = nn.ModuleList()
 		for _ in range(num_cls_fcs):
-			self.cls_fcs.append(
-				nn.Linear(in_channels, in_channels, bias=False))
-			self.cls_fcs.append(
-				build_norm_layer(dict(type='LN'), in_channels)[1])
-			self.cls_fcs.append(
-				build_activation_layer(dict(type='ReLU', inplace=True)))
+			self.cls_fcs.append(nn.Linear(in_channels, in_channels, bias=False))
+			self.cls_fcs.append(build_norm_layer(dict(type='LN'), in_channels)[1])
+			self.cls_fcs.append(build_activation_layer(dict(type='ReLU', inplace=True)))
 
 		# over load the self.fc_cls in BBoxHead
 		if self.loss_cls.use_sigmoid:
@@ -108,12 +105,9 @@ class DIIHead(BBoxHead):
 
 		self.reg_fcs = nn.ModuleList()
 		for _ in range(num_reg_fcs):
-			self.reg_fcs.append(
-				nn.Linear(in_channels, in_channels, bias=False))
-			self.reg_fcs.append(
-				build_norm_layer(dict(type='LN'), in_channels)[1])
-			self.reg_fcs.append(
-				build_activation_layer(dict(type='ReLU', inplace=True)))
+			self.reg_fcs.append(nn.Linear(in_channels, in_channels, bias=False))
+			self.reg_fcs.append(build_norm_layer(dict(type='LN'), in_channels)[1])
+			self.reg_fcs.append(build_activation_layer(dict(type='ReLU', inplace=True)))
 		# over load the self.fc_cls in BBoxHead
 		self.fc_reg = nn.Linear(in_channels, 4)
 
