@@ -89,7 +89,7 @@ class ClassAwareSampler(Sampler):
 			ids = torch.multinomial(self.weights, self._size * 10, replacement=False)
 
 			yield from ids
-			#self.weights = self._get_class_balance_factor()
+			self.weights = self._get_class_balance_factor()
 
 	def _get_class_balance_factor(self):
 		ret = []
