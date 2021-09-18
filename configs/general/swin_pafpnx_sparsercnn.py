@@ -26,8 +26,8 @@ model = dict(
 		type='PAFPNX',
 		in_channels=[128, 256, 512, 1024],
 		out_channels=256,
-		start_level=1,
-		add_extra_convs='on_output',
+		start_level=0,
+		add_extra_convs='on_input',
 		num_outs=4,
 		relu_before_extra_convs=True,
 		pafpn_conv_cfg=dict(type='DCNv2'),
@@ -45,7 +45,7 @@ model = dict(
 			type='SingleRoIExtractor',
 			roi_layer=dict(type='RoIAlign', output_size=7, sampling_ratio=2),
 			out_channels=256,
-			featmap_strides=[8, 16, 32, 64]),
+			featmap_strides=[4, 8, 16, 32]),
 		bbox_head=[
 			dict(
 				type='DIIHead',
@@ -89,33 +89,18 @@ model = dict(
 				sampler=dict(type='PseudoSampler'),
 				pos_weight=1) for _ in range(num_stages)
 		]),
-	test_cfg=dict(rpn=None, rcnn=dict(max_per_img=num_proposals, nms = dict(type='nms', iou_threshold=0.6))))
+	test_cfg=dict(rpn=None, rcnn=dict(max_per_img=num_proposals)))
 
 # data setting
 dataset_type = 'CocoDataset'
 data_root = '/content/data/'
 img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 albu_train_transforms = [
-	dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.1, rotate_limit=3, interpolation=1, p=0.5, border_mode = 0),
-	dict(type='RandomBrightnessContrast', brightness_limit=[0.1, 0.3], contrast_limit=[0.1, 0.3], p=0.2),
-	dict(
-		type='OneOf',
-		transforms=[
-			dict(
-				type='RGBShift',
-				r_shift_limit=10,
-				g_shift_limit=10,
-				b_shift_limit=10,
-				p=1.0),
-			dict(
-				type='HueSaturationValue',
-				hue_shift_limit=20,
-				sat_shift_limit=30,
-				val_shift_limit=20,
-				p=1.0)
-		],
-		p=0.1),
-	dict(type='ChannelShuffle', p=0.1),
+	dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.15, rotate_limit=3, interpolation=1, p=0.5, border_mode = 0),
+	dict(type='RandomBrightnessContrast', brightness_limit=0.1, contrast_limit=0.1),
+	dict(type='RGBShift', r_shift_limit=10, g_shift_limit=10, b_shift_limit=10),
+	dict(type='HueSaturationValue', hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20)
+	dict(type='ChannelShuffle'),
 	dict(
 		type='OneOf',
 		transforms=[
