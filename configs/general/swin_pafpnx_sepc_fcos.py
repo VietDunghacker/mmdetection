@@ -124,7 +124,8 @@ train_pipeline = [
 		crop_size=(0.9, 0.9)),
 	dict(
 		type='Resize',
-		img_scale=(800, 800),
+		img_scale=[(640, 640), (800, 800)],
+		multiscale_mode='range',
 		keep_ratio=True),
 	dict(
 		type='CutOut',
