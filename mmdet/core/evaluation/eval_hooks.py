@@ -98,7 +98,7 @@ class EvalHook(BaseEvalHook):
 
 	def evaluate(self, runner, results):
 		eval_res = self.dataloader.dataset.evaluate(results, logger=runner.logger, **self.eval_kwargs)
-		'''from mmdet.datasets.builder import ClassAwareSampler
+		from mmdet.datasets.builder import ClassAwareSampler
 		if isinstance(self.train_dataloader.sampler, ClassAwareSampler) and 'AP_per_class' in eval_res.keys():
 			for i, ap in enumerate(eval_res['AP_per_class']):
 				self.train_dataloader.sampler.cw[i] = self.train_dataloader.sampler.orig_cw[i] * (1.001 - ap) ** 2
@@ -113,7 +113,7 @@ class EvalHook(BaseEvalHook):
 			table_data = [headers]
 			table_data += [result for result in results_2d]
 			table = AsciiTable(table_data)
-			print_log('\n' + table.table, logger=runner.logger)'''
+			print_log('\n' + table.table, logger=runner.logger)
 
 		if 'AP_per_class' in eval_res.keys():
 			del eval_res['AP_per_class']
