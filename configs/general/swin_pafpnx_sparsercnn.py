@@ -184,6 +184,7 @@ optimizer = dict(
 	type='AdamW',
 	lr=0.000025,
 	betas=(0.9, 0.999),
+	weight_decay=0.0001,
 	paramwise_cfg=dict(
 		custom_keys={
 			'absolute_pos_embed': dict(decay_mult=0.),
