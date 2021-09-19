@@ -197,13 +197,11 @@ class SparseRoIHead(CascadeRoIHead):
 			cls_pred_list = bbox_results['detach_cls_score_list']
 			proposal_list = bbox_results['detach_proposal_list']
 			for i in range(num_imgs):
-				normalize_bbox_ccwh = bbox_xyxy_to_cxcywh(proposal_list[i] /
-														  imgs_whwh[i])
+				normalize_bbox_ccwh = bbox_xyxy_to_cxcywh(proposal_list[i] / imgs_whwh[i])
 				assign_result = self.bbox_assigner[stage].assign(
 					normalize_bbox_ccwh, cls_pred_list[i], gt_bboxes[i],
 					gt_labels[i], img_metas[i])
-				sampling_result = self.bbox_sampler[stage].sample(
-					assign_result, proposal_list[i], gt_bboxes[i])
+				sampling_result = self.bbox_sampler[stage].sample(assign_result, proposal_list[i], gt_bboxes[i])
 				sampling_results.append(sampling_result)
 			bbox_targets = self.bbox_head[stage].get_targets(
 				sampling_results, gt_bboxes, gt_labels, self.train_cfg[stage],
@@ -286,7 +284,7 @@ class SparseRoIHead(CascadeRoIHead):
 		for img_id in range(num_imgs):
 			cls_score_per_img = cls_score[img_id]
 
-			if self.bbox_head[-1].loss_cls.use_sigmoid:			
+			if False:			
 				scores_per_img, topk_indices = cls_score_per_img.flatten(0, 1).topk(self.test_cfg.max_per_img, sorted=False)
 				labels_per_img = topk_indices % num_classes
 				bbox_pred_per_img = proposal_list[img_id][topk_indices // num_classes]

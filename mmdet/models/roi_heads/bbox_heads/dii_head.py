@@ -252,10 +252,8 @@ class DIIHead(BBoxHead):
 			# 0~self.num_classes-1 are FG, self.num_classes is BG
 			# do not perform bounding box regression for BG anymore.
 			if pos_inds.any():
-				pos_bbox_pred = bbox_pred.reshape(bbox_pred.size(0),
-												  4)[pos_inds.type(torch.bool)]
-				imgs_whwh = imgs_whwh.reshape(bbox_pred.size(0),
-											  4)[pos_inds.type(torch.bool)]
+				pos_bbox_pred = bbox_pred.reshape(bbox_pred.size(0), 4)[pos_inds.type(torch.bool)]
+				imgs_whwh = imgs_whwh.reshape(bbox_pred.size(0), 4)[pos_inds.type(torch.bool)]
 				losses['loss_bbox'] = self.loss_bbox(
 					pos_bbox_pred / imgs_whwh,
 					bbox_targets[pos_inds.type(torch.bool)] / imgs_whwh,

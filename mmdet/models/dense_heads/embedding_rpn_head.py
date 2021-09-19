@@ -38,8 +38,7 @@ class EmbeddingRPNHead(BaseModule):
 	def _init_layers(self):
 		"""Initialize a sparse set of proposal boxes and proposal features."""
 		self.init_proposal_bboxes = nn.Embedding(self.num_proposals, 4)
-		self.init_proposal_features = nn.Embedding(
-			self.num_proposals, self.proposal_feature_channel)
+		self.init_proposal_features = nn.Embedding(self.num_proposals, self.proposal_feature_channel)
 
 	def init_weights(self):
 		"""Initialize the init_proposal_bboxes as normalized.
