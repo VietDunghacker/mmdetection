@@ -284,7 +284,7 @@ class SparseRoIHead(CascadeRoIHead):
 		for img_id in range(num_imgs):
 			cls_score_per_img = cls_score[img_id]
 
-			if False:			
+			if self.bbox_head[-1].loss_cls.use_sigmoid:			
 				scores_per_img, topk_indices = cls_score_per_img.flatten(0, 1).topk(self.test_cfg.max_per_img, sorted=False)
 				labels_per_img = topk_indices % num_classes
 				bbox_pred_per_img = proposal_list[img_id][topk_indices // num_classes]
