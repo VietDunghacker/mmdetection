@@ -43,7 +43,7 @@ model = dict(
 		proposal_feature_channel=256,
 		bbox_roi_extractor=dict(
 			type='SingleRoIExtractor',
-			roi_layer=dict(type='RoIAlign', output_size=14, sampling_ratio=0),
+			roi_layer=dict(type='RoIAlign', output_size=14, sampling_ratio=2),
 			out_channels=256,
 			featmap_strides=[4, 8, 16, 32]),
 		bbox_head=[
