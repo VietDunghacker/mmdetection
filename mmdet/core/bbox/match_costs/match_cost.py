@@ -25,10 +25,12 @@ class BBoxL1Cost:
 		 tensor([[1.6172, 1.6422]])
 	"""
 
-	def __init__(self, weight=1., box_format='xyxy'):
+	def __init__(self, weight=1., box_format='xyxy', smooth = False, beta = 1.0):
 		self.weight = weight
 		assert box_format in ['xyxy', 'xywh']
 		self.box_format = box_format
+		self.smooth = smooth
+		self.beta = beta
 
 	def __call__(self, bbox_pred, gt_bboxes):
 		"""
@@ -47,6 +49,8 @@ class BBoxL1Cost:
 		elif self.box_format == 'xyxy':
 			bbox_pred = bbox_cxcywh_to_xyxy(bbox_pred)
 		bbox_cost = torch.cdist(bbox_pred, gt_bboxes, p=1)
+		if self.smooth:
+			bbox_cost = torch.where(bbox_cost < self.beta, 0.5 * bbox_cost * bbox_cost / self.beta, bbox_cost - 0.5 * self.beta)
 		return bbox_cost * self.weight
 
 @MATCH_COST.register_module()
