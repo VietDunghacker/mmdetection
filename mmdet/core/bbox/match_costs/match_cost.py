@@ -49,7 +49,6 @@ class BBoxL1Cost:
 		bbox_cost = torch.cdist(bbox_pred, gt_bboxes, p=1)
 		return bbox_cost * self.weight
 
-
 @MATCH_COST.register_module()
 class FocalLossCost:
 	"""FocalLossCost.
@@ -91,10 +90,8 @@ class FocalLossCost:
 			torch.Tensor: cls_cost value with weight
 		"""
 		cls_pred = cls_pred.sigmoid()
-		neg_cost = -(1 - cls_pred + self.eps).log() * (
-			1 - self.alpha) * cls_pred.pow(self.gamma)
-		pos_cost = -(cls_pred + self.eps).log() * self.alpha * (
-			1 - cls_pred).pow(self.gamma)
+		neg_cost = -(1 - cls_pred + self.eps).log() * (1 - self.alpha) * cls_pred.pow(self.gamma)
+		pos_cost = -(cls_pred + self.eps).log() * self.alpha * (1 - cls_pred).pow(self.gamma)
 		cls_cost = pos_cost[:, gt_labels] - neg_cost[:, gt_labels]
 		return cls_cost * self.weight
 

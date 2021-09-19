@@ -103,8 +103,7 @@ class HungarianAssigner(BaseAssigner):
 			if num_gts == 0:
 				# No ground truth, assign all to background
 				assigned_gt_inds[:] = 0
-			return AssignResult(
-				num_gts, assigned_gt_inds, None, labels=assigned_labels)
+			return AssignResult(num_gts, assigned_gt_inds, None, labels=assigned_labels)
 		img_h, img_w, _ = img_meta['img_shape']
 		factor = gt_bboxes.new_tensor([img_w, img_h, img_w, img_h]).unsqueeze(0)
 
@@ -126,10 +125,8 @@ class HungarianAssigner(BaseAssigner):
 			raise ImportError('Please run "pip install scipy" '
 							  'to install scipy first.')
 		matched_row_inds, matched_col_inds = linear_sum_assignment(cost)
-		matched_row_inds = torch.from_numpy(matched_row_inds).to(
-			bbox_pred.device)
-		matched_col_inds = torch.from_numpy(matched_col_inds).to(
-			bbox_pred.device)
+		matched_row_inds = torch.from_numpy(matched_row_inds).to(bbox_pred.device)
+		matched_col_inds = torch.from_numpy(matched_col_inds).to(bbox_pred.device)
 
 		# 4. assign backgrounds and foregrounds
 		# assign all indices to backgrounds first

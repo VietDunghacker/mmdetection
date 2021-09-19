@@ -66,7 +66,7 @@ model = dict(
 					input_feat_shape=7,
 					act_cfg=dict(type='ReLU', inplace=True),
 					norm_cfg=dict(type='LN')),
-				loss_bbox=dict(type='L1Loss', loss_weight=5.0),
+				loss_bbox=dict(type='SmoothL1Loss', beta = 1.0 / 9.0, loss_weight=5.0),
 				loss_iou=dict(type='CIoULoss', loss_weight=2.0),
 				loss_cls=dict(type='FocalLoss', use_sigmoid=True, gamma=2.0, alpha=0.25, loss_weight=2.0),
 				bbox_coder=dict(
