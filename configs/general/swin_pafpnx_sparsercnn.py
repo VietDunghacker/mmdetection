@@ -3,7 +3,7 @@ _base_ = [
 	'../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py'
 ]
 num_stages = 6
-num_proposals = 32
+num_proposals = 64
 model = dict(
 	type='SparseRCNN',
 	backbone=dict(
@@ -26,7 +26,7 @@ model = dict(
 		type='PAFPNX',
 		in_channels=[128, 256, 512, 1024],
 		out_channels=256,
-		start_level=1,
+		start_level=0,
 		add_extra_convs='on_input',
 		num_outs=4,
 		relu_before_extra_convs=True,
@@ -45,7 +45,7 @@ model = dict(
 			type='SingleRoIExtractor',
 			roi_layer=dict(type='RoIAlign', output_size=7, sampling_ratio=0),
 			out_channels=256,
-			featmap_strides=[8, 16, 32, 64]),
+			featmap_strides=[4, 8, 16, 32]),
 		bbox_head=[
 			dict(
 				type='DIIHead',
