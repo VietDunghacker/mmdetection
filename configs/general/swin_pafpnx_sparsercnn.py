@@ -88,7 +88,7 @@ model = dict(
 				sampler=dict(type='PseudoSampler'),
 				pos_weight=1) for _ in range(num_stages)
 		]),
-	test_cfg=dict(rpn=None, rcnn=dict(max_per_img=num_proposals)))
+	test_cfg=dict(rpn=None, rcnn=dict(max_per_img=num_proposals, nms = dict(type='nms', iou_threshold=0.6))))
 
 # data setting
 dataset_type = 'CocoDataset'
