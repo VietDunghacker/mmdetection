@@ -288,8 +288,6 @@ class SparseRoIHead(CascadeRoIHead):
 				cls_score_per_img = cls_score_per_img[keep_inds][..., :-1]
 				bbox_pred_per_img = bbox_pred_per_img[keep_inds]
 
-			print(cls_score_per_img.shape)
-
 			scores_per_img, topk_indices = cls_score_per_img.flatten(0, 1).topk(self.test_cfg.max_per_img, sorted=False)
 			labels_per_img = topk_indices % num_classes
 			bbox_pred_per_img = bbox_pred_per_img[topk_indices // num_classes]
