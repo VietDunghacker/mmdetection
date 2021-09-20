@@ -277,7 +277,7 @@ class SparseRoIHead(CascadeRoIHead):
 		if self.bbox_head[-1].loss_cls.use_sigmoid:
 			cls_score = cls_score.sigmoid()
 		else:
-			cls_score = cls_score.softmax(-1)
+			cls_score = cls_score.softmax(-1)[..., :-1]
 
 		for img_id in range(num_imgs):
 			cls_score_per_img = cls_score[img_id]
