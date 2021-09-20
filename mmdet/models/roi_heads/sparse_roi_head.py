@@ -288,6 +288,10 @@ class SparseRoIHead(CascadeRoIHead):
 				cls_score_per_img = cls_score_per_img[keep_inds][..., :-1]
 				bbox_pred_per_img = bbox_pred_per_img[keep_inds]
 
+			if len(keep_inds) == 0:
+				det_bboxes.append(torch.zeros((0, 5)))
+				det_labels.append(torch.zeros((0, 1)))
+
 			scores_per_img, topk_indices = cls_score_per_img.flatten(0, 1).topk(self.test_cfg.max_per_img, sorted=False)
 			labels_per_img = topk_indices % num_classes
 			bbox_pred_per_img = bbox_pred_per_img[topk_indices // num_classes]
