@@ -290,7 +290,11 @@ class SparseRoIHead(CascadeRoIHead):
 				scale_factor = img_metas[img_id]['scale_factor']
 				bbox_pred_per_img /= bbox_pred_per_img.new_tensor(scale_factor)
 			bboxes_per_img = torch.cat([bbox_pred_per_img, scores_per_img[:, None]], dim=1)
-			bboxes_per_img, labels_per_img = self._bboxes_nms(bboxes_per_img, labels_per_img, self.test_cfg)
+			keep = bboxes_per_img[:, -1] > self.test_cfg.score_threshold
+			bboxes_per_img = bboxes_per_img[keep]
+			labels_per_img = labels_per_img[keep]
+
+			#bboxes_per_img, labels_per_img = self._bboxes_nms(bboxes_per_img, labels_per_img, self.test_cfg)
 
 			det_bboxes.append(bboxes_per_img)
 			det_labels.append(labels_per_img)
@@ -323,10 +327,6 @@ class SparseRoIHead(CascadeRoIHead):
 	def _bboxes_nms(self, bboxes, labels, cfg):
 		if labels.numel() == 0:
 			return bboxes, labels
-
-		keep = bboxes[:, -1] > cfg.score_threshold
-		bboxes = bboxes[keep]
-		labels = labels[keep]
 
 		out_bboxes, keep = batched_nms(bboxes[:, :4].contiguous(), bboxes[:, -1].contiguous(), labels, cfg.nms)
 		out_labels = labels[keep]
