@@ -3,7 +3,7 @@ _base_ = [
 	'../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py'
 ]
 num_stages = 6
-num_proposals = 100
+num_proposals = 16
 model = dict(
 	type='SparseRCNN',
 	backbone=dict(
@@ -68,7 +68,7 @@ model = dict(
 					norm_cfg=dict(type='LN')),
 				loss_bbox=dict(type='L1Loss', loss_weight=5.0),
 				loss_iou=dict(type='GIoULoss', loss_weight=2.0),
-				loss_cls=dict(type='FocalLoss', use_sigmoid=True, gamma=2.0, alpha=0.25, loss_weight=2.0),
+				loss_cls=dict(type='CrossEntropyLoss', use_sigmoid=False, loss_weight=2.0),
 				bbox_coder=dict(
 					type='DeltaXYWHBBoxCoder',
 					clip_border=False,
@@ -82,7 +82,7 @@ model = dict(
 			dict(
 				assigner=dict(
 					type='HungarianAssigner',
-					cls_cost=dict(type='FocalLossCost', weight=2.0),
+					cls_cost=dict(type='ClassificationCost', weight=2.0),
 					reg_cost=dict(type='BBoxL1Cost', weight=5.0),
 					iou_cost=dict(type='IoUCost', iou_mode='giou', weight=2.0)),
 				sampler=dict(type='PseudoSampler'),
