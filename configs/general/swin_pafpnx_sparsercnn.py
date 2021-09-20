@@ -68,7 +68,7 @@ model = dict(
 					norm_cfg=dict(type='LN')),
 				loss_bbox=dict(type='L1Loss', loss_weight=5.0),
 				loss_iou=dict(type='GIoULoss', loss_weight=2.0),
-				loss_cls=dict(type='CrossEntropyLoss', use_sigmoid=False, loss_weight=2.0),
+				loss_cls=dict(type='CrossEntropyLoss', use_sigmoid=False, loss_weight=1.0),
 				bbox_coder=dict(
 					type='DeltaXYWHBBoxCoder',
 					clip_border=False,
@@ -82,7 +82,7 @@ model = dict(
 			dict(
 				assigner=dict(
 					type='HungarianAssigner',
-					cls_cost=dict(type='ClassificationCost', weight=2.0),
+					cls_cost=dict(type='ClassificationCost', weight=1.0),
 					reg_cost=dict(type='BBoxL1Cost', weight=5.0),
 					iou_cost=dict(type='IoUCost', iou_mode='giou', weight=2.0)),
 				sampler=dict(type='PseudoSampler'),
