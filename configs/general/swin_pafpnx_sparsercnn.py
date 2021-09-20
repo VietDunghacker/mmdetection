@@ -3,7 +3,7 @@ _base_ = [
 	'../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py'
 ]
 num_stages = 6
-num_proposals = 10
+num_proposals = 100
 model = dict(
 	type='SparseRCNN',
 	backbone=dict(
