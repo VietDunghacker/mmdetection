@@ -240,14 +240,8 @@ class DIIHead(BBoxHead):
 		avg_factor = reduce_mean(num_pos)
 		if cls_score is not None:
 			if cls_score.numel() > 0:
-				losses['loss_cls'] = self.loss_cls(
-					cls_score,
-					labels,
-					label_weights,
-					avg_factor=avg_factor,
-					reduction_override=reduction_override)
-				losses['pos_acc'] = accuracy(cls_score[pos_inds],
-											 labels[pos_inds])
+				losses['loss_cls'] = self.loss_cls(cls_score, labels, label_weights, avg_factor=avg_factor, reduction_override=reduction_override)
+				losses['pos_acc'] = accuracy(cls_score[pos_inds], labels[pos_inds])
 		if bbox_pred is not None:
 			# 0~self.num_classes-1 are FG, self.num_classes is BG
 			# do not perform bounding box regression for BG anymore.
@@ -331,8 +325,7 @@ class DIIHead(BBoxHead):
 			pos_weight = 1.0 if cfg.pos_weight <= 0 else cfg.pos_weight
 			label_weights[pos_inds] = pos_weight
 			if not self.reg_decoded_bbox:
-				pos_bbox_targets = self.bbox_coder.encode(
-					pos_bboxes, pos_gt_bboxes)
+				pos_bbox_targets = self.bbox_coder.encode(pos_bboxes, pos_gt_bboxes)
 			else:
 				pos_bbox_targets = pos_gt_bboxes
 			bbox_targets[pos_inds, :] = pos_bbox_targets
