@@ -277,20 +277,14 @@ class SparseRoIHead(CascadeRoIHead):
 		if self.bbox_head[-1].loss_cls.use_sigmoid:
 			cls_score = cls_score.sigmoid()
 		else:
-			cls_score = cls_score.softmax(-1)
+			cls_score = cls_score.softmax(-1)[..., :-1]
 
 		for img_id in range(num_imgs):
 			cls_score_per_img = cls_score[img_id]
-			bbox_pred_per_img = proposal_list[img_id]
 
-			if not self.bbox_head[-1].loss_cls.use_sigmoid:
-				keep_inds = cls_score_per_img.max(-1)[1] < num_classes
-				cls_score_per_img = cls_score_per_img[keep_inds][..., :-1]
-				bbox_pred_per_img = bbox_pred_per_img[keep_inds]
-
-			scores_per_img, topk_indices = cls_score_per_img.flatten(0, 1).topk(min(self.test_cfg.max_per_img, len(keep_inds) * num_classes), sorted=False)
+			scores_per_img, topk_indices = cls_score_per_img.flatten(0, 1).topk(self.test_cfg.max_per_img, sorted=False)
 			labels_per_img = topk_indices % num_classes
-			bbox_pred_per_img = bbox_pred_per_img[topk_indices // num_classes]
+			bbox_pred_per_img = proposal_list[img_id][topk_indices // num_classes]
 
 			if rescale:
 				scale_factor = img_metas[img_id]['scale_factor']
@@ -329,6 +323,10 @@ class SparseRoIHead(CascadeRoIHead):
 	def _bboxes_nms(self, bboxes, labels, cfg):
 		if labels.numel() == 0:
 			return bboxes, labels
+
+		keep = bboxes[:, -1] > cfg.score_threshold
+		bboxes = bboxes[keep]
+		labels = labels[keep]
 
 		out_bboxes, keep = batched_nms(bboxes[:, :4].contiguous(), bboxes[:, -1].contiguous(), labels, cfg.nms)
 		out_labels = labels[keep]
