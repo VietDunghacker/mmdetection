@@ -283,7 +283,7 @@ class SparseRoIHead(CascadeRoIHead):
 			cls_score_per_img = cls_score[img_id]
 
 			if not self.bbox_head[-1].loss_cls.use_sigmoid:
-				keep_inds = cls_score_per_img.max(-1)[1] < self.num_classes
+				keep_inds = cls_score_per_img.max(-1)[1] < num_classes
 				cls_score_per_img = cls_score_per_img[keep_inds][..., :-1]
 
 			scores_per_img, topk_indices = cls_score_per_img.flatten(0, 1).topk(self.test_cfg.max_per_img, sorted=False)
