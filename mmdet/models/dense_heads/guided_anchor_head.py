@@ -227,7 +227,6 @@ class GuidedAnchorHead(AnchorHead):
 			mask = loc_pred.sigmoid()[0] >= self.loc_filter_thr
 		else:
 			mask = None
-		print(x.shape)
 		cls_score = self.conv_cls(x, mask)
 		bbox_pred = self.conv_reg(x, mask)
 		return cls_score, bbox_pred, shape_pred, loc_pred
