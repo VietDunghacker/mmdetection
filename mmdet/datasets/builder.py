@@ -70,6 +70,8 @@ class ClassAwareSampler(Sampler):
 		self.cw /= sum(self.cw)
 		self.orig_cw = copy.deepcopy(self.cw)
 
+		print("Number of negative samples: {}".format(len(self.empty_gt)))
+
 		num_columns = min(6, len(self.cw)  * 2)
 		results_flatten = list(itertools.chain(*[(self.dataset.CLASSES[i], "{:.6f}".format(item)) for i, item in enumerate(self.cw)]))
 		headers = ['category', 'weight'] * (num_columns // 2)
@@ -87,7 +89,12 @@ class ClassAwareSampler(Sampler):
 	def _infinite_indices(self):
 		while True:
 			ids = torch.multinomial(self.weights, self._size * 10, replacement=False)
-
+			if len(self.empty_gt) > 0:
+				ids = ids.numpy().tolist()
+				random_negative_sample = random.choices(self.empty_gt, k = self._size // 10)
+				ids.extend(random_negative_sample)
+				ids = np.random.permutation(ids)
+				ids = torch.tensor(ids)
 			yield from ids
 			self.weights = self._get_class_balance_factor()
 

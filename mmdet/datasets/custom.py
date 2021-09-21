@@ -63,7 +63,7 @@ class CustomDataset(Dataset):
 				 seg_prefix=None,
 				 proposal_file=None,
 				 test_mode=False,
-				 filter_empty_gt=True):
+				 filter_empty_gt=False):
 		self.ann_file = ann_file
 		self.data_root = data_root
 		self.img_prefix = img_prefix
@@ -94,7 +94,7 @@ class CustomDataset(Dataset):
 			self.proposals = None
 
 		# filter images too small and containing no annotations
-		if True:
+		if not test_mode:
 			valid_inds = self._filter_imgs()
 			self.data_infos = [self.data_infos[i] for i in valid_inds]
 			if self.proposals is not None:
