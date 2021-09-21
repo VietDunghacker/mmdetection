@@ -59,7 +59,7 @@ model = dict(
 			use_sigmoid=True,
 			gamma=2.0,
 			loss_weight=1.0),
-		loss_bbox=dict(type='GIoULoss', loss_weight=2.0),
+		loss_bbox=dict(type='CIoULoss', loss_weight=2.0),
 	),
 	train_cfg = dict(
 		initial_iter=300,
