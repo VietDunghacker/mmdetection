@@ -226,8 +226,15 @@ class GuidedAnchorHead(AnchorHead):
 			mask = loc_pred.sigmoid()[0] >= self.loc_filter_thr
 		else:
 			mask = None
-		cls_score = self.conv_cls(x, mask)
-		bbox_pred = self.conv_reg(x, mask)
+
+		cls_score = self.conv_cls(x, None)
+		bbox_pred = self.conv_reg(x, None)
+		print(loc_pred.shape)
+		print(mask.shape)
+		assert False
+		if not self.training:
+			cls_score *= mask.unsqueeze(0)
+			bbox_pred *= mask.unsqueeze(0)
 		return cls_score, bbox_pred, shape_pred, loc_pred
 
 	def forward(self, feats):
