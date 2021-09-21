@@ -40,8 +40,7 @@ class FeatureAdaption(BaseModule):
 						 type='Normal', name='conv_adaption', std=0.01))):
 		super(FeatureAdaption, self).__init__(init_cfg)
 		offset_channels = kernel_size * kernel_size * 2
-		self.conv_offset = nn.Conv2d(
-			2, deform_groups * offset_channels, 1, bias=False)
+		self.conv_offset = nn.Conv2d(2, deform_groups * offset_channels, 1, bias=False)
 		self.conv_adaption = DeformConv2d(
 			in_channels,
 			out_channels,
@@ -249,8 +248,7 @@ class GuidedAnchorHead(AnchorHead):
 
 		# since feature map sizes of all images are the same, we only compute
 		# approxes for one time
-		multi_level_approxs = self.approx_anchor_generator.grid_anchors(
-			featmap_sizes, device=device)
+		multi_level_approxs = self.approx_anchor_generator.grid_anchors(featmap_sizes, device=device)
 		approxs_list = [multi_level_approxs for _ in range(num_imgs)]
 
 		# for each image, we compute inside flags of multi level approxes
@@ -260,10 +258,7 @@ class GuidedAnchorHead(AnchorHead):
 			multi_level_approxs = approxs_list[img_id]
 
 			# obtain valid flags for each approx first
-			multi_level_approx_flags = self.approx_anchor_generator \
-				.valid_flags(featmap_sizes,
-							 img_meta['pad_shape'],
-							 device=device)
+			multi_level_approx_flags = self.approx_anchor_generator.valid_flags(featmap_sizes, img_meta['pad_shape'], device=device)
 
 			for i, flags in enumerate(multi_level_approx_flags):
 				approxs = multi_level_approxs[i]
@@ -278,8 +273,7 @@ class GuidedAnchorHead(AnchorHead):
 					inside_flags_list.append(inside_flags)
 				# inside_flag for a position is true if any anchor in this
 				# position is true
-				inside_flags = (
-					torch.stack(inside_flags_list, 0).sum(dim=0) > 0)
+				inside_flags = (torch.stack(inside_flags_list, 0).sum(dim=0) > 0)
 				multi_level_flags.append(inside_flags)
 			inside_flag_list.append(multi_level_flags)
 		return approxs_list, inside_flag_list
@@ -364,8 +358,7 @@ class GuidedAnchorHead(AnchorHead):
 			-1, 2).detach()[mask]
 		bbox_deltas = anchor_deltas.new_full(squares.size(), 0)
 		bbox_deltas[:, 2:] = anchor_deltas
-		guided_anchors = self.anchor_coder.decode(
-			squares, bbox_deltas, wh_ratio_clip=1e-6)
+		guided_anchors = self.anchor_coder.decode(squares, bbox_deltas, wh_ratio_clip=1e-6)
 		return guided_anchors, mask
 
 	def ga_loc_targets(self, gt_bboxes_list, featmap_sizes):

@@ -130,8 +130,7 @@ class TwoStageDetector(BaseDetector):
 
 		# RPN forward and loss
 		if self.with_rpn:
-			proposal_cfg = self.train_cfg.get('rpn_proposal',
-											  self.test_cfg.rpn)
+			proposal_cfg = self.train_cfg.get('rpn_proposal', self.test_cfg.rpn)
 			rpn_losses, proposal_list = self.rpn_head.forward_train(
 				x,
 				img_metas,
