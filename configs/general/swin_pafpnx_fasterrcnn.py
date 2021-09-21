@@ -30,40 +30,39 @@ model = dict(
 		relu_before_extra_convs=True,
 		pafpn_conv_cfg=dict(type='DCNv2'),
 		norm_cfg=dict(type='GN', num_groups=32, requires_grad=True)),
-    rpn_head=dict(
-        type='GARPNHead',
-        in_channels=256,
-        feat_channels=256,
-        approx_anchor_generator=dict(
-            type='AnchorGenerator',
-            octave_base_scale=8,
-            scales_per_octave=3,
-            ratios=[0.5, 1.0, 2.0, 3.0, 4.0, 5.0],
-            strides=[4, 8, 16, 32, 64]),
-        square_anchor_generator=dict(
-            type='AnchorGenerator',
-            ratios=[1.0],
-            scales=[8],
-            strides=[4, 8, 16, 32, 64]),
-        anchor_coder=dict(
-            type='DeltaXYWHBBoxCoder',
-            target_means=[.0, .0, .0, .0],
-            target_stds=[0.07, 0.07, 0.14, 0.14]),
-        bbox_coder=dict(
-            type='DeltaXYWHBBoxCoder',
-            target_means=[.0, .0, .0, .0],
-            target_stds=[0.07, 0.07, 0.11, 0.11]),
-        loc_filter_thr=0.01,
-        loss_loc=dict(
-            type='FocalLoss',
-            use_sigmoid=True,
-            gamma=2.0,
-            alpha=0.25,
-            loss_weight=1.0),
-        loss_shape=dict(type='BoundedIoULoss', beta=0.2, loss_weight=1.0),
-        loss_cls=dict(
-            type='CrossEntropyLoss', use_sigmoid=True, loss_weight=1.0),
-        loss_bbox=dict(type='SmoothL1Loss', beta=1.0, loss_weight=1.0)),
+	rpn_head=dict(
+		type='GARPNHead',
+		in_channels=256,
+		feat_channels=256,
+		approx_anchor_generator=dict(
+			type='AnchorGenerator',
+			octave_base_scale=8,
+			scales_per_octave=3,
+			ratios=[0.5, 1.0, 2.0, 3.0, 4.0, 5.0],
+			strides=[4, 8, 16, 32, 64]),
+		square_anchor_generator=dict(
+			type='AnchorGenerator',
+			ratios=[1.0],
+			scales=[8],
+			strides=[4, 8, 16, 32, 64]),
+		anchor_coder=dict(
+			type='DeltaXYWHBBoxCoder',
+			target_means=[.0, .0, .0, .0],
+			target_stds=[0.07, 0.07, 0.14, 0.14]),
+		bbox_coder=dict(
+			type='DeltaXYWHBBoxCoder',
+			target_means=[.0, .0, .0, .0],
+			target_stds=[0.07, 0.07, 0.11, 0.11]),
+		loc_filter_thr=0.01,
+		loss_loc=dict(
+			type='FocalLoss',
+			use_sigmoid=True,
+			gamma=2.0,
+			alpha=0.25,
+			loss_weight=1.0),
+		loss_shape=dict(type='BoundedIoULoss', beta=0.2, loss_weight=1.0),
+		loss_cls=dict(type='CrossEntropyLoss', use_sigmoid=True, loss_weight=1.0),
+		loss_bbox=dict(type='SmoothL1Loss', beta=1.0, loss_weight=1.0)),
 	roi_head=dict(
 		type='StandardRoIHead',
 		bbox_roi_extractor=dict(
@@ -87,22 +86,22 @@ model = dict(
 			loss_bbox=dict(type='CIoULoss', loss_weight=12.0))),
 	# model training and testing settings
 	train_cfg=dict(
-        rpn=dict(
-            ga_assigner=dict(
-                type='ApproxMaxIoUAssigner',
-                pos_iou_thr=0.7,
-                neg_iou_thr=0.3,
-                min_pos_iou=0.3,
-                ignore_iof_thr=-1),
-            ga_sampler=dict(
-                type='RandomSampler',
-                num=256,
-                pos_fraction=0.5,
-                neg_pos_ub=-1,
-                add_gt_as_proposals=False),
-            allowed_border=-1,
-            center_ratio=0.2,
-            ignore_ratio=0.5),
+		rpn=dict(
+			ga_assigner=dict(
+				type='ApproxMaxIoUAssigner',
+				pos_iou_thr=0.7,
+				neg_iou_thr=0.3,
+				min_pos_iou=0.3,
+				ignore_iof_thr=-1),
+			ga_sampler=dict(
+				type='RandomSampler',
+				num=256,
+				pos_fraction=0.5,
+				neg_pos_ub=-1,
+				add_gt_as_proposals=False),
+			allowed_border=-1,
+			center_ratio=0.2,
+			ignore_ratio=0.5),
 		rpn_proposal=dict(
 			nms_pre=2000,
 			nms_post=1000,
@@ -142,6 +141,8 @@ dataset_type = 'CocoDataset'
 data_root = '/content/data/'
 img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 albu_train_transforms = [
+
+
 	dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.1, rotate_limit=3, interpolation=1, p=0.5, border_mode = 0),
 	dict(type='RandomBrightnessContrast', brightness_limit=[0.1, 0.3], contrast_limit=[0.1, 0.3], p=0.2),
 	dict(
