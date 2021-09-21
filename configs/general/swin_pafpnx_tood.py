@@ -3,7 +3,7 @@ _base_ = [
 	'../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py'
 ]
 model = dict(
-	type='GFL',
+	type='TOOD',
 	backbone=dict(
 		type='SwinTransformer',
 		embed_dims=128,
@@ -119,7 +119,7 @@ train_pipeline = [
 		crop_size=(0.9, 0.9)),
 	dict(
 		type='Resize',
-		img_scale=[(640, 640), (960, 960)],
+		img_scale=[(640, 640), (800, 800)],
 		multiscale_mode='range',
 		keep_ratio=True),
 	dict(
