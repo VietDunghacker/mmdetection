@@ -88,10 +88,10 @@ class ClassAwareSampler(Sampler):
 
 	def _infinite_indices(self):
 		while True:
-			ids = torch.multinomial(self.weights, self._size * 10, replacement=False)
+			ids = torch.multinomial(self.weights, self._size * 9, replacement=False)
 			if len(self.empty_gt) > 0:
 				ids = ids.numpy().tolist()
-				random_negative_sample = random.choices(self.empty_gt, k = self._size // 10)
+				random_negative_sample = random.choices(self.empty_gt, k = self._size)
 				ids.extend(random_negative_sample)
 				ids = np.random.permutation(ids)
 				ids = torch.tensor(ids)
