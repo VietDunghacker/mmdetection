@@ -62,7 +62,7 @@ model = dict(
 		loss_bbox=dict(type='CIoULoss', loss_weight=2.0),
 	),
 	train_cfg = dict(
-		initial_iter=300,
+		initial_iter=250,
 		initial_assigner=dict(type='ATSSAssigner', topk=9),
 		assigner=dict(type='TaskAlignedAssigner', topk=13),
 		alpha=1,
@@ -81,26 +81,11 @@ model = dict(
 # data setting
 img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 albu_train_transforms = [
-	dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.1, rotate_limit=3, interpolation=1, p=0.5, border_mode = 0),
-	dict(type='RandomBrightnessContrast', brightness_limit=[0.1, 0.3], contrast_limit=[0.1, 0.3], p=0.2),
-	dict(
-		type='OneOf',
-		transforms=[
-			dict(
-				type='RGBShift',
-				r_shift_limit=10,
-				g_shift_limit=10,
-				b_shift_limit=10,
-				p=1.0),
-			dict(
-				type='HueSaturationValue',
-				hue_shift_limit=20,
-				sat_shift_limit=30,
-				val_shift_limit=20,
-				p=1.0)
-		],
-		p=0.1),
-	dict(type='ChannelShuffle', p=0.1),
+	dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.15, rotate_limit=3, interpolation=1, p=0.5, border_mode = 0),
+	dict(type='RandomBrightnessContrast', brightness_limit=0.1, contrast_limit=0.1),
+	dict(type='RGBShift', r_shift_limit=10, g_shift_limit=10, b_shift_limit=10),
+	dict(type='HueSaturationValue', hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20),
+	dict(type='ChannelShuffle'),
 	dict(
 		type='OneOf',
 		transforms=[
