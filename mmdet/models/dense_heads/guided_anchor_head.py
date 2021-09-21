@@ -229,9 +229,6 @@ class GuidedAnchorHead(AnchorHead):
 
 		cls_score = self.conv_cls(x, None)
 		bbox_pred = self.conv_reg(x, None)
-		print(loc_pred.shape)
-		print(mask.shape)
-		assert False
 		if not self.training:
 			cls_score *= mask.float()
 			bbox_pred *= mask.float()
