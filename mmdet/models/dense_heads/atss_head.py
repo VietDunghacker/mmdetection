@@ -128,8 +128,12 @@ class ATSSHead(AnchorHead):
 				centerness (Tensor): Centerness for a single scale level, the
 					channel number is (N, num_anchors * 1, H, W).
 		"""
-		cls_feat = x
-		reg_feat = x
+		if isinstance(x, list):
+			cls_feat = x[0]
+			reg_feat = x[1]
+		else:
+			cls_feat = x
+			reg_feat = x
 		for cls_conv in self.cls_convs:
 			cls_feat = cls_conv(cls_feat)
 		for reg_conv in self.reg_convs:

@@ -94,7 +94,7 @@ class CustomDataset(Dataset):
 			self.proposals = None
 
 		# filter images too small and containing no annotations
-		if not test_mode:
+		if True:
 			valid_inds = self._filter_imgs()
 			self.data_infos = [self.data_infos[i] for i in valid_inds]
 			if self.proposals is not None:

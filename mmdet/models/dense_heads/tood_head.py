@@ -363,8 +363,7 @@ class TOODHead(AnchorHead):
 		assert len(featmap_sizes) == self.anchor_generator.num_levels
 
 		device = cls_scores[0].device
-		anchor_list, valid_flag_list = self.get_anchors(
-			featmap_sizes, img_metas, device=device)
+		anchor_list, valid_flag_list = self.get_anchors(featmap_sizes, img_metas, device=device)
 		label_channels = self.cls_out_channels if self.use_sigmoid_cls else 1
 
 		cls_reg_targets = self.get_targets(
