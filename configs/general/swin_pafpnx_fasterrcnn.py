@@ -21,15 +21,10 @@ model = dict(
 		with_cp=True,
 		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
 	neck=dict(
-		type='PAFPNX',
+		type='FPN',
 		in_channels=[128, 256, 512, 1024],
 		out_channels=256,
-		start_level=0,
-		add_extra_convs='on_input',
-		num_outs=5,
-		relu_before_extra_convs=True,
-		pafpn_conv_cfg=dict(type='DCNv2'),
-		norm_cfg=dict(type='GN', num_groups=32, requires_grad=True)),
+		num_outs=5),
 	rpn_head=dict(
 		type='GARPNHead',
 		in_channels=256,
@@ -38,7 +33,7 @@ model = dict(
 			type='AnchorGenerator',
 			octave_base_scale=8,
 			scales_per_octave=3,
-			ratios=[0.5, 1.0, 2.0, 3.0, 4.0, 5.0],
+			ratios=[0.5, 1.0, 2.0],
 			strides=[4, 8, 16, 32, 64]),
 		square_anchor_generator=dict(
 			type='AnchorGenerator',
