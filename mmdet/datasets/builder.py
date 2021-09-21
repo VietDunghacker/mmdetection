@@ -49,11 +49,10 @@ class ClassAwareSampler(Sampler):
 		self.multiple_gt = set()
 		from .coco import CocoDataset
 		from .lvis import LVISDataset
-		print(len(self.dataset))
 		if isinstance(dataset, CocoDataset) or isinstance(dataset, LVISDataset):
 			for idx in range(len(self.dataset)):
 				cat_ids = set(self.dataset.get_cat_ids(idx))
-				if len(cat_ids) == 0:
+				if len([cat_id for cat_id in cat_ids if cat_id in self.dataset.cat_ids]) == 0:
 					self.empty_gt.add(idx)
 				for cat_id in cat_ids:
 					if cat_id in self.dataset.cat_ids:
