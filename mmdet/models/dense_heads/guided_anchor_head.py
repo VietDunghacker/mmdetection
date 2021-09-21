@@ -223,7 +223,7 @@ class GuidedAnchorHead(AnchorHead):
 		x = self.feature_adaption(x, shape_pred)
 		# masked conv is only used during inference for speed-up
 		if not self.training:
-			mask = loc_pred.sigmoid()[0] >= self.loc_filter_thr
+			mask = loc_pred.sigmoid() >= self.loc_filter_thr
 		else:
 			mask = None
 
@@ -233,8 +233,8 @@ class GuidedAnchorHead(AnchorHead):
 		print(mask.shape)
 		assert False
 		if not self.training:
-			cls_score *= mask.unsqueeze(0)
-			bbox_pred *= mask.unsqueeze(0)
+			cls_score *= mask.float()
+			bbox_pred *= mask.float()
 		return cls_score, bbox_pred, shape_pred, loc_pred
 
 	def forward(self, feats):
