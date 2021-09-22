@@ -78,59 +78,59 @@ class OATHead(GFLHead):
 		self.scales = nn.ModuleList([Scale(1.0) for _ in self.anchor_generator.strides])
 		self.refine_scales = nn.ModuleList([Scale(1.0) for _ in self.anchor_generator.strides])
 
-		def forward(self, feats):
-			return multi_apply(self.forward_single, feats, self.scales, self.refine_scales, self.anchor_generator.strides)
+	def forward(self, feats):
+		return multi_apply(self.forward_single, feats, self.scales, self.refine_scales, self.anchor_generator.strides)
 
-		def forward_single(self, x, scale, refine_scale, stride):
-			cls_feat = x
-			reg_feat = x
+	def forward_single(self, x, scale, refine_scale, stride):
+		cls_feat = x
+		reg_feat = x
 
-			for cls_layer in self.cls_convs:
-				cls_feat = cls_layer(cls_feat)
+		for cls_layer in self.cls_convs:
+			cls_feat = cls_layer(cls_feat)
 
-			for reg_layer in self.reg_convs:
-				reg_feat = reg_layer(reg_feat)
+		for reg_layer in self.reg_convs:
+			reg_feat = reg_layer(reg_feat)
 
-			reg_feat_init = self.relu(self.rfa_reg_conv(reg_feat))
-			bbox_pred = scale(self.relu(self.rfa_reg(reg_feat_init)))
-			point_offset = self.rfa_offset(reg_feat_init).sigmoid()
+		reg_feat_init = self.relu(self.rfa_reg_conv(reg_feat))
+		bbox_pred = scale(self.relu(self.rfa_reg(reg_feat_init)))
+		point_offset = self.rfa_offset(reg_feat_init).sigmoid()
 
-			dcn_offset = self.gen_dcn_offset(bbox_pred, point_offset, stride)
-			reg_dcn_offset = dcn_offset - self.dcn_base_offset.type_as(bbox_pred)
-			reg_feat = self.oat_reg_dconv(reg_feat, reg_dcn_offset)
-			bbox_pred_refine = refine_scale(self.oat_reg_refine(reg_feat))
+		dcn_offset = self.gen_dcn_offset(bbox_pred, point_offset, stride)
+		reg_dcn_offset = dcn_offset - self.dcn_base_offset.type_as(bbox_pred)
+		reg_feat = self.oat_reg_dconv(reg_feat, reg_dcn_offset)
+		bbox_pred_refine = refine_scale(self.oat_reg_refine(reg_feat))
 
-			cls_feat_init = self.relu(self.cfa_cls_conv(cls_feat + x))
-			distanglement_vector = self.relu(self.cfa_distanglement(cls_feat_init))
-			cls_dcn_offset = distanglement_vector.exp() * dcn_offset.detach() - self.dcn_base_offset.type_as(bbox_pred)
-			cls_feat = self.oat_cls_dconv(cls_feat, cls_dcn_offset)
-			cls_score = self.oat_cls(cls_feat)
-			return cls_score, bbox_pred, bbox_pred_refine
+		cls_feat_init = self.relu(self.cfa_cls_conv(cls_feat + x))
+		distanglement_vector = self.relu(self.cfa_distanglement(cls_feat_init))
+		cls_dcn_offset = distanglement_vector.exp() * dcn_offset.detach() - self.dcn_base_offset.type_as(bbox_pred)
+		cls_feat = self.oat_cls_dconv(cls_feat, cls_dcn_offset)
+		cls_score = self.oat_cls(cls_feat)
+		return cls_score, bbox_pred, bbox_pred_refine
 
-		def gen_dcn_offset(self, bbox_pred, point_offset, stride):
-			bbox_pred = bbox_pred / stride
-			N, C, H, W = bbox_pred.shape
+	def gen_dcn_offset(self, bbox_pred, point_offset, stride):
+		bbox_pred = bbox_pred / stride
+		N, C, H, W = bbox_pred.shape
 
-			l = bbox_pred[:, 0, :, :]
-			t = bbox_pred[:, 1, :, :]
-			r = bbox_pred[:, 2, :, :]
-			b = bbox_pred[:, 3, :, :]
-			w = r + l
-			h = b + t
+		l = bbox_pred[:, 0, :, :]
+		t = bbox_pred[:, 1, :, :]
+		r = bbox_pred[:, 2, :, :]
+		b = bbox_pred[:, 3, :, :]
+		w = r + l
+		h = b + t
 
-			dcn_offset = torch.zeros((N, 2 * self.num_points, H, W), device = bbox_pred.device)
-			dcn_offset[:, 0, :, :] = -1 * t
-			dcn_offset[:, 1, :, :] = w * point_offset[:, 0, :, :] - l
-			dcn_offset[:, 2, :, :] = h * point_offset[:, 1, :, :] - t
-			dcn_offset[:, 3, :, :] = -1 * l
-			dcn_offset[:, 4, :, :] = -1 * b
-			dcn_offset[:, 5, :, :] = w * point_offset[:, 2, :, :] - l
-			dcn_offset[:, 6, :, :] = h * point_offset[:, 3, :, :] - t
-			dcn_offset[:, 7, :, :] = -1 * r
-			for i in range(4, self.num_points):
-				dcn_offset[:, 2 * i, :, :] = h * point_offset[:, 2 * i - 4, :, :] - t
-				dcn_offset[:, 2 * i + 1, :, :] = w * point_offset[:, 2 * i - 3, :, :] - l
-			return dcn_offset
+		dcn_offset = torch.zeros((N, 2 * self.num_points, H, W), device = bbox_pred.device)
+		dcn_offset[:, 0, :, :] = -1 * t
+		dcn_offset[:, 1, :, :] = w * point_offset[:, 0, :, :] - l
+		dcn_offset[:, 2, :, :] = h * point_offset[:, 1, :, :] - t
+		dcn_offset[:, 3, :, :] = -1 * l
+		dcn_offset[:, 4, :, :] = -1 * b
+		dcn_offset[:, 5, :, :] = w * point_offset[:, 2, :, :] - l
+		dcn_offset[:, 6, :, :] = h * point_offset[:, 3, :, :] - t
+		dcn_offset[:, 7, :, :] = -1 * r
+		for i in range(4, self.num_points):
+			dcn_offset[:, 2 * i, :, :] = h * point_offset[:, 2 * i - 4, :, :] - t
+			dcn_offset[:, 2 * i + 1, :, :] = w * point_offset[:, 2 * i - 3, :, :] - l
+		return dcn_offset
 
 	def loss_single(self, anchors, cls_score, bbox_pred, bbox_pred_refine, labels, label_weights,
 					bbox_targets, stride, num_total_samples):
