@@ -84,9 +84,9 @@ class OATHead(GFLHead):
 			self.reg_conf = nn.Sequential(*conf_vector)
 
 	def forward(self, feats):
-		return multi_apply(self.forward_single, feats, self.scales, self.refine_scales, self.anchor_generator.strides)
+		return multi_apply(self.forward_single, feats, self.scales, self.refine_scales)
 
-	def forward_single(self, x, scale, refine_scale, stride):
+	def forward_single(self, x, scale, refine_scale):
 		cls_feat = x
 		reg_feat = x
 
@@ -100,7 +100,7 @@ class OATHead(GFLHead):
 		bbox_pred = scale(self.relu(self.rfa_reg(reg_feat_init)))
 		point_offset = self.rfa_offset(reg_feat_init).sigmoid()
 
-		dcn_offset = self.gen_dcn_offset(bbox_pred, point_offset, stride)
+		dcn_offset = self.gen_dcn_offset(bbox_pred, point_offset)
 		reg_dcn_offset = dcn_offset - self.dcn_base_offset.type_as(bbox_pred)
 		reg_feat = self.oat_reg_dconv(reg_feat, reg_dcn_offset)
 		bbox_pred_refine = refine_scale(self.oat_reg_refine(reg_feat))
@@ -123,7 +123,7 @@ class OATHead(GFLHead):
 			cls_score = cls_score.sigmoid() * quality_score
 		return cls_score, bbox_pred, bbox_pred_refine
 
-	def gen_dcn_offset(self, bbox_pred, point_offset, stride):
+	def gen_dcn_offset(self, bbox_pred, point_offset):
 		N, C, H, W = bbox_pred.shape
 		bbox_pred = bbox_pred.permute(0, 2, 3, 1).contiguous().view(-1, C)
 		bbox_pred = self.integral(bbox_pred).view(N, H, W, 4).permute(0, 3, 1, 2).contiguous()
