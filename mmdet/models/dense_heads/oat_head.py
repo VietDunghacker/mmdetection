@@ -65,7 +65,7 @@ class OATHead(GFLHead):
 					norm_cfg=self.norm_cfg))
 		assert self.num_anchors == 1, 'anchor free version'
 		self.rfa_reg_conv = nn.Conv2d(self.feat_channels, self.feat_channels, 3, stride = 1, padding = 1)
-		self.rfa_reg = nn.Conv2d(self.feat_channels, 4, 3, stride = 1, padding = 1)
+		self.rfa_reg = nn.Conv2d(self.feat_channels, 4 * (self.reg_max + 1), 3, stride = 1, padding = 1)
 		self.rfa_offset = nn.Conv2d(self.feat_channels, 2 * self.num_points - 4, 3, stride = 1, padding = 1)
 		self.cfa_cls_conv = nn.Conv2d(self.feat_channels, self.feat_channels, 3, stride = 1, padding = 1)
 		self.cfa_distanglement = nn.Conv2d(self.feat_channels, 2 * self.num_points, 3, stride = 1, padding = 1)
@@ -95,7 +95,7 @@ class OATHead(GFLHead):
 		bbox_pred = scale(self.relu(self.rfa_reg(reg_feat_init)))
 		point_offset = self.rfa_offset(reg_feat_init).sigmoid()
 
-		dcn_offset = self.gen_dcn_offset(bbox_pred, point_offset, stride)
+		dcn_offset = self.gen_dcn_offset(self.integral(bbox_pred), point_offset, stride)
 		reg_dcn_offset = dcn_offset - self.dcn_base_offset.type_as(bbox_pred)
 		reg_feat = self.oat_reg_dconv(reg_feat, reg_dcn_offset)
 		bbox_pred_refine = refine_scale(self.oat_reg_refine(reg_feat))
@@ -161,7 +161,7 @@ class OATHead(GFLHead):
 		assert stride[0] == stride[1], 'h stride is not equal to w stride!'
 		anchors = anchors.reshape(-1, 4)
 		cls_score = cls_score.permute(0, 2, 3, 1).reshape(-1, self.cls_out_channels)
-		bbox_pred = bbox_pred.permute(0, 2, 3, 1).reshape(-1, 4)
+		bbox_pred = bbox_pred.permute(0, 2, 3, 1).reshape(-1, 4 * (self.reg_max + 1))
 		bbox_pred_refine = bbox_pred_refine.permute(0, 2, 3, 1).reshape(-1, 4 * (self.reg_max + 1))
 		bbox_targets = bbox_targets.reshape(-1, 4)
 		labels = labels.reshape(-1)
@@ -184,7 +184,8 @@ class OATHead(GFLHead):
 			if not self.use_dgqp:
 				weight_targets = weight_targets.sigmoid()
 			weight_targets = weight_targets.max(dim=1)[0][pos_inds]
-			pos_decode_bbox_pred = distance2bbox(pos_anchor_centers, pos_bbox_pred)
+			pos_bbox_pred_corners = self.integral(pos_bbox_pred)
+			pos_decode_bbox_pred = distance2bbox(pos_anchor_centers, pos_bbox_pred_corners)
 			loss_bbox = self.loss_bbox(pos_decode_bbox_pred, pos_decode_bbox_targets, weight=weight_targets, avg_factor=1.0)
 
 			pos_bbox_pred_refine_corners = self.integral(pos_bbox_pred_refine)
