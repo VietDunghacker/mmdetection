@@ -24,7 +24,6 @@ class OATHead(GFLHead):
 						 std=0.01,
 						 bias_prob=0.01)),
 				 **kwargs):
-		super(OATHead, self).__init__(init_cfg=init_cfg, **kwargs)
 		self.num_points = num_points
 		self.loss_bbox_refine = build_loss(loss_bbox_refine)
 
@@ -37,6 +36,7 @@ class OATHead(GFLHead):
 		dcn_base_x = np.tile(dcn_base, self.dcn_kernel)
 		dcn_base_offset = np.stack([dcn_base_y, dcn_base_x], axis=1).reshape((-1))
 		self.dcn_base_offset = torch.tensor(dcn_base_offset).view(1, -1, 1, 1)
+		super(OATHead, self).__init__(init_cfg=init_cfg, **kwargs)
 
 	def _init_layers(self):
 		self.relu = nn.ReLU(inplace=True)
