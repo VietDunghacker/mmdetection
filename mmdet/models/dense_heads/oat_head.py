@@ -95,7 +95,7 @@ class OATHead(GFLHead):
 		bbox_pred = scale(self.relu(self.rfa_reg(reg_feat_init)))
 		point_offset = self.rfa_offset(reg_feat_init).sigmoid()
 
-		dcn_offset = self.gen_dcn_offset(self.integral(bbox_pred), point_offset, stride)
+		dcn_offset = self.gen_dcn_offset(bbox_pred, point_offset, stride)
 		reg_dcn_offset = dcn_offset - self.dcn_base_offset.type_as(bbox_pred)
 		reg_feat = self.oat_reg_dconv(reg_feat, reg_dcn_offset)
 		bbox_pred_refine = refine_scale(self.oat_reg_refine(reg_feat))
@@ -110,6 +110,8 @@ class OATHead(GFLHead):
 	def gen_dcn_offset(self, bbox_pred, point_offset, stride):
 		bbox_pred = bbox_pred / stride[0]
 		N, C, H, W = bbox_pred.shape
+		bbox_pred = bbox_pred.permute(0, 2, 3, 1).view(-1, C)
+		bbox_pred = self.integral(bbox_pred).view(N, H, W, 4).permute(0, 3, 1, 2)
 
 		l = bbox_pred[:, 0, :, :]
 		t = bbox_pred[:, 1, :, :]
