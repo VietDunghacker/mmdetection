@@ -187,7 +187,6 @@ class OATHead(GFLHead):
 			weight_targets = weight_targets.max(dim=1)[0][pos_inds]
 			pos_bbox_pred_corners = self.integral(pos_bbox_pred)
 			pos_decode_bbox_pred = distance2bbox(pos_anchor_centers, pos_bbox_pred_corners)
-			print(weight_targets.shape, pos_decode_bbox_targets.shape)
 			loss_bbox = self.loss_bbox(pos_decode_bbox_pred, pos_decode_bbox_targets, weight=weight_targets, avg_factor=1.0)
 
 			pos_bbox_pred_refine_corners = self.integral(pos_bbox_pred_refine)

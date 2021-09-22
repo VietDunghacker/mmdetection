@@ -40,6 +40,7 @@ def weight_reduce_loss(loss, weight=None, reduction='mean', avg_factor=None):
     """
     # if weight is specified, apply element-wise weight
     if weight is not None:
+        print(loss.shape, weight.shape)
         loss = loss * weight
 
     # if avg_factor is not specified, just reduce the loss
