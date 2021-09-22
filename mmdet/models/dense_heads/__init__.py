@@ -22,6 +22,7 @@ from .guided_anchor_head import FeatureAdaption, GuidedAnchorHead
 from .keypoint_head import KeypointHead
 from .ld_head import LDHead
 from .nasfcos_head import NASFCOSHead
+from .oat_head import OATHead
 from .paa_head import PAAHead
 from .pisa_retinanet_head import PISARetinaHead
 from .pisa_ssd_head import PISASSDHead
@@ -50,5 +51,5 @@ __all__ = [
 	'CascadeRPNHead', 'EmbeddingRPNHead', 'LDHead', 'CascadeRPNHead',
 	'AutoAssignHead', 'DETRHead', 'YOLOFHead', 'DeformableDETRHead',
 	'CenterNetHead', 'YOLOXHead', 'GFLSEPCHead', 'RepPointsV2Head',
-	'BVRHead', 'KeypointHead', 'TOODHead'
+	'BVRHead', 'KeypointHead', 'TOODHead', "OATHead"
 ]

@@ -274,19 +274,15 @@ class RepPointsHead(AnchorFreeHead):
 		for reg_conv in self.reg_convs:
 			pts_feat = reg_conv(pts_feat)
 		# initialize reppoints
-		pts_out_init = self.reppoints_pts_init_out(
-			self.relu(self.reppoints_pts_init_conv(pts_feat)))
+		pts_out_init = self.reppoints_pts_init_out(self.relu(self.reppoints_pts_init_conv(pts_feat)))
 		if self.use_grid_points:
-			pts_out_init, bbox_out_init = self.gen_grid_from_reg(
-				pts_out_init, bbox_init.detach())
+			pts_out_init, bbox_out_init = self.gen_grid_from_reg(pts_out_init, bbox_init.detach())
 		else:
 			pts_out_init = pts_out_init + points_init
 		# refine and classify reppoints
-		pts_out_init_grad_mul = (1 - self.gradient_mul) * pts_out_init.detach(
-		) + self.gradient_mul * pts_out_init
+		pts_out_init_grad_mul = (1 - self.gradient_mul) * pts_out_init.detach() + self.gradient_mul * pts_out_init
 		dcn_offset = pts_out_init_grad_mul - dcn_base_offset
-		cls_out = self.reppoints_cls_out(
-			self.relu(self.reppoints_cls_conv(cls_feat, dcn_offset)))
+		cls_out = self.reppoints_cls_out(self.relu(self.reppoints_cls_conv(cls_feat, dcn_offset)))
 		pts_out_refine = self.reppoints_pts_refine_out(
 			self.relu(self.reppoints_pts_refine_conv(pts_feat, dcn_offset)))
 		if self.use_grid_points:

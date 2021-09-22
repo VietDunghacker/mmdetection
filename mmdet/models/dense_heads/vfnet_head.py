@@ -188,8 +188,7 @@ class VFNetHead(ATSSHead, FCOSHead):
 			self.dcn_kernel,
 			1,
 			padding=self.dcn_pad)
-		self.vfnet_cls = nn.Conv2d(
-			self.feat_channels, self.cls_out_channels, 3, padding=1)
+		self.vfnet_cls = nn.Conv2d(self.feat_channels, self.cls_out_channels, 3, padding=1)
 
 	def forward(self, feats):
 		"""Forward features from the upstream network.
@@ -245,24 +244,20 @@ class VFNetHead(ATSSHead, FCOSHead):
 		# predict the bbox_pred of different level
 		reg_feat_init = self.vfnet_reg_conv(reg_feat)
 		if self.bbox_norm_type == 'reg_denom':
-			bbox_pred = scale(
-				self.vfnet_reg(reg_feat_init)).float().exp() * reg_denom
+			bbox_pred = scale(self.vfnet_reg(reg_feat_init)).float().exp() * reg_denom
 		elif self.bbox_norm_type == 'stride':
-			bbox_pred = scale(
-				self.vfnet_reg(reg_feat_init)).float().exp() * stride
+			bbox_pred = scale(self.vfnet_reg(reg_feat_init)).float().exp() * stride
 		else:
 			raise NotImplementedError
 
 		# compute star deformable convolution offsets
 		# converting dcn_offset to reg_feat.dtype thus VFNet can be
 		# trained with FP16
-		dcn_offset = self.star_dcn_offset(bbox_pred, self.gradient_mul,
-										  stride).to(reg_feat.dtype)
+		dcn_offset = self.star_dcn_offset(bbox_pred, self.gradient_mul,  stride).to(reg_feat.dtype)
 
 		# refine the bbox_pred
 		reg_feat = self.relu(self.vfnet_reg_refine_dconv(reg_feat, dcn_offset))
-		bbox_pred_refine = scale_refine(
-			self.vfnet_reg_refine(reg_feat)).float().exp()
+		bbox_pred_refine = scale_refine(self.vfnet_reg_refine(reg_feat)).float().exp()
 		bbox_pred_refine = bbox_pred_refine * bbox_pred.detach()
 
 		# predict the iou-aware cls score
@@ -284,8 +279,7 @@ class VFNetHead(ATSSHead, FCOSHead):
 			dcn_offsets (Tensor): The offsets for deformable convolution.
 		"""
 		dcn_base_offset = self.dcn_base_offset.type_as(bbox_pred)
-		bbox_pred_grad_mul = (1 - gradient_mul) * bbox_pred.detach() + \
-			gradient_mul * bbox_pred
+		bbox_pred_grad_mul = (1 - gradient_mul) * bbox_pred.detach() +  gradient_mul * bbox_pred
 		# map to the feature map scale
 		bbox_pred_grad_mul = bbox_pred_grad_mul / stride
 		N, C, H, W = bbox_pred.size()
@@ -294,8 +288,7 @@ class VFNetHead(ATSSHead, FCOSHead):
 		y1 = bbox_pred_grad_mul[:, 1, :, :]
 		x2 = bbox_pred_grad_mul[:, 2, :, :]
 		y2 = bbox_pred_grad_mul[:, 3, :, :]
-		bbox_pred_grad_mul_offset = bbox_pred.new_zeros(
-			N, 2 * self.num_dconv_points, H, W)
+		bbox_pred_grad_mul_offset = bbox_pred.new_zeros(N, 2 * self.num_dconv_points, H, W)
 		bbox_pred_grad_mul_offset[:, 0, :, :] = -1.0 * y1  # -y1
 		bbox_pred_grad_mul_offset[:, 1, :, :] = -1.0 * x1  # -x1
 		bbox_pred_grad_mul_offset[:, 2, :, :] = -1.0 * y1  # -y1

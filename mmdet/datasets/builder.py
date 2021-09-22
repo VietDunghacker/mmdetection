@@ -64,6 +64,9 @@ class ClassAwareSampler(Sampler):
 					if cat_id in self.dataset.cat_ids:
 						category_freq[self.dataset.cat2label[cat_id]] += 1
 		self.empty_gt = list(self.empty_gt)
+		for key, value in category_freq.items():
+			if value >= 100:
+				category_freq[key] = 100
 		for i in sorted(category_freq.keys()):
 			self.cw.append(1. / category_freq[i])
 		self.cw = np.array(self.cw)

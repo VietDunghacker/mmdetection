@@ -440,9 +440,7 @@ class GFLHead(AnchorHead):
 
 		mlvl_bboxes = []
 		mlvl_scores = []
-		for cls_score, bbox_pred, stride, anchors in zip(
-				cls_scores, bbox_preds, self.anchor_generator.strides,
-				mlvl_anchors):
+		for cls_score, bbox_pred, stride, anchors in zip(cls_scores, bbox_preds, self.anchor_generator.strides, mlvl_anchors):
 			assert cls_score.size()[-2:] == bbox_pred.size()[-2:]
 			assert stride[0] == stride[1]
 			scores_shape = (batch_size, -1, self.cls_out_channels)

@@ -20,6 +20,7 @@ from .kd_one_stage import KnowledgeDistillationSingleStageDetector
 from .mask_rcnn import MaskRCNN
 from .mask_scoring_rcnn import MaskScoringRCNN
 from .nasfcos import NASFCOS
+from .oat import OATNet
 from .paa import PAA
 from .panoptic_fpn import PanopticFPN
 from .panoptic_two_stage_segmentor import TwoStagePanopticSegmentor
@@ -49,5 +50,5 @@ __all__ = [
     'VFNet', 'DETR', 'TridentFasterRCNN', 'SparseRCNN', 'SCNet',
     'DeformableDETR', 'AutoAssign', 'YOLOF', 'CenterNet', 'YOLOX',
     'TwoStagePanopticSegmentor', 'PanopticFPN', 'RepPointsV2Detector', 'BVR',
-    'TOOD'
+    'TOOD', 'OATNet'
 ]
