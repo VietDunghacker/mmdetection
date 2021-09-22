@@ -23,7 +23,7 @@ class OATHead(GFLHead):
 						 name='oat_cls',
 						 std=0.01,
 						 bias_prob=0.01)),
-				 **kwargs)
+				 **kwargs):
 		super(OATHead, self).__init__(init_cfg=init_cfg, **kwargs)
 		self.num_points = num_points
 		self.loss_bbox_refine = build_loss(loss_bbox_refine)
