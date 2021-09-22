@@ -161,7 +161,8 @@ class OATHead(GFLHead):
 		assert stride[0] == stride[1], 'h stride is not equal to w stride!'
 		anchors = anchors.reshape(-1, 4)
 		cls_score = cls_score.permute(0, 2, 3, 1).reshape(-1, self.cls_out_channels)
-		bbox_pred = bbox_pred.permute(0, 2, 3, 1).reshape(-1, 4 * (self.reg_max + 1))
+		bbox_pred = bbox_pred.permute(0, 2, 3, 1).reshape(-1, 4)
+		bbox_pred_refine = bbox_pred_refine.permute(0, 2, 3, 1).reshape(-1, 4 * (self.reg_max + 1))
 		bbox_targets = bbox_targets.reshape(-1, 4)
 		labels = labels.reshape(-1)
 		label_weights = label_weights.reshape(-1)
@@ -183,8 +184,7 @@ class OATHead(GFLHead):
 			if not self.use_dgqp:
 				weight_targets = weight_targets.sigmoid()
 			weight_targets = weight_targets.max(dim=1)[0][pos_inds]
-			pos_bbox_pred_corners = self.integral(pos_bbox_pred)
-			pos_decode_bbox_pred = distance2bbox(pos_anchor_centers, pos_bbox_pred_corners)
+			pos_decode_bbox_pred = distance2bbox(pos_anchor_centers, pos_bbox_pred)
 			loss_bbox = self.loss_bbox(pos_decode_bbox_pred, pos_decode_bbox_targets, weight=weight_targets, avg_factor=1.0)
 
 			pos_bbox_pred_refine_corners = self.integral(pos_bbox_pred_refine)
