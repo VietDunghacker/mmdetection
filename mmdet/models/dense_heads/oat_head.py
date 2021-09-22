@@ -110,8 +110,8 @@ class OATHead(GFLHead):
 	def gen_dcn_offset(self, bbox_pred, point_offset, stride):
 		bbox_pred = bbox_pred / stride[0]
 		N, C, H, W = bbox_pred.shape
-		bbox_pred = bbox_pred.permute(0, 2, 3, 1).view(-1, C)
-		bbox_pred = self.integral(bbox_pred).view(N, H, W, 4).permute(0, 3, 1, 2)
+		bbox_pred = bbox_pred.permute(0, 2, 3, 1).contiguous().view(-1, C)
+		bbox_pred = self.integral(bbox_pred).view(N, H, W, 4).permute(0, 3, 1, 2).contiguous()
 
 		l = bbox_pred[:, 0, :, :]
 		t = bbox_pred[:, 1, :, :]
