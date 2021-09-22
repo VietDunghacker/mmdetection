@@ -298,6 +298,7 @@ class GFLHead(AnchorHead):
 										   self.reg_max).reshape(-1)
 
 			# regression loss
+			print(weight_targets.shape, pos_decode_bbox_pred.shape)
 			loss_bbox = self.loss_bbox(
 				pos_decode_bbox_pred,
 				pos_decode_bbox_targets,
