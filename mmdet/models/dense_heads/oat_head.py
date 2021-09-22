@@ -1,7 +1,6 @@
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from mmcv.cnn import ConvModule, Scale
 from mmcv.ops import DeformConv2d
 from mmcv.runner import force_fp32
@@ -67,7 +66,7 @@ class OATHead(GFLHead):
 		self.rfa_reg_conv = nn.Conv2d(self.feat_channels, self.feat_channels, 3, stride = 1, padding = 1)
 		self.rfa_reg = nn.Conv2d(self.feat_channels, 4 * (self.reg_max + 1), 3, stride = 1, padding = 1)
 		self.rfa_offset = nn.Conv2d(self.feat_channels, 2 * self.num_points - 4, 3, stride = 1, padding = 1)
-		self.cfa_cls_conv = nn.Conv2d(self.feat_channels * 2, self.feat_channels, 3, stride = 1, padding = 1)
+		self.cfa_cls_conv = nn.Conv2d(self.feat_channels, self.feat_channels, 3, stride = 1, padding = 1)
 		self.cfa_distanglement = nn.Conv2d(self.feat_channels, 2 * self.num_points, 3, stride = 1, padding = 1)
 
 		self.oat_reg_dconv = DeformConv2d(self.feat_channels, self.feat_channels, self.dcn_kernel, 1, padding=self.dcn_pad)
@@ -77,11 +76,6 @@ class OATHead(GFLHead):
 
 		self.scales = nn.ModuleList([Scale(1.0) for _ in self.anchor_generator.strides])
 		self.refine_scales = nn.ModuleList([Scale(1.0) for _ in self.anchor_generator.strides])
-		if self.use_dgqp:
-			conf_vector = [nn.Conv2d(4 * self.total_dim, self.reg_channels, 1)]
-			conf_vector += [self.relu]
-			conf_vector += [nn.Conv2d(self.reg_channels, 1, 1), nn.Sigmoid()]
-			self.reg_conf = nn.Sequential(*conf_vector)
 
 	def forward(self, feats):
 		return multi_apply(self.forward_single, feats, self.scales, self.refine_scales, self.anchor_generator.strides)
@@ -105,22 +99,11 @@ class OATHead(GFLHead):
 		reg_feat = self.oat_reg_dconv(reg_feat, reg_dcn_offset)
 		bbox_pred_refine = refine_scale(self.oat_reg_refine(reg_feat))
 
-		cls_feat_init = self.relu(self.cfa_cls_conv(torch.cat((cls_feat, x), dim = 1)))
+		cls_feat_init = self.relu(self.cfa_cls_conv(cls_feat + x))
 		distanglement_vector = self.relu(self.cfa_distanglement(cls_feat_init))
 		cls_dcn_offset = distanglement_vector.exp() * dcn_offset.detach() - self.dcn_base_offset.type_as(bbox_pred)
 		cls_feat = self.oat_cls_dconv(cls_feat, cls_dcn_offset)
 		cls_score = self.oat_cls(cls_feat)
-		if self.use_dgqp:
-			N, C, H, W = bbox_pred_refine.size()
-			prob = F.softmax(bbox_pred_refine.reshape(N, 4, self.reg_max + 1, H, W), dim=2)
-			prob_topk, _ = prob.topk(self.reg_topk, dim=2)
-			if self.add_mean:
-				prob_topk_mean = prob_topk.mean(dim=2, keepdim=True)
-				stat = torch.cat([prob_topk, prob_topk_mean], dim=2)
-			else:
-				stat = prob_topk
-			quality_score = self.reg_conf(stat.type_as(reg_feat).reshape(N, -1, H, W))
-			cls_score = cls_score.sigmoid() * quality_score
 		return cls_score, bbox_pred, bbox_pred_refine
 
 	def gen_dcn_offset(self, bbox_pred, point_offset, stride):
@@ -199,8 +182,7 @@ class OATHead(GFLHead):
 			pos_anchor_centers = self.anchor_center(pos_anchors) / stride[0]
 
 			weight_targets = cls_score.detach()
-			if not self.use_dgqp:
-				weight_targets = weight_targets.sigmoid()
+			weight_targets = weight_targets.sigmoid()
 			weight_targets = weight_targets.max(dim=1)[0][pos_inds]
 			pos_bbox_pred_corners = self.integral(pos_bbox_pred)
 			pos_decode_bbox_pred = distance2bbox(pos_anchor_centers, pos_bbox_pred_corners)
@@ -228,7 +210,7 @@ class OATHead(GFLHead):
 
 		# cls (qfl) loss
 		loss_cls = self.loss_cls(
-			cls_score, (labels, score),
+			cls_score.sigmoid(), (labels, score),
 			weight=label_weights,
 			avg_factor=num_total_samples)
 
@@ -395,9 +377,7 @@ class OATHead(GFLHead):
 			assert cls_score.size()[-2:] == bbox_pred_refine.size()[-2:]
 			assert stride[0] == stride[1]
 			scores_shape = (batch_size, -1, self.cls_out_channels)
-			scores = cls_score.permute(0, 2, 3, 1).reshape(scores_shape)
-			if not self.use_dgqp:
-				scores = scores.sigmoid()
+			scores = cls_score.permute(0, 2, 3, 1).reshape(scores_shape).sigmoid()
 
 			bbox_pred_refine = bbox_pred_refine.permute(0, 2, 3, 1)
 
