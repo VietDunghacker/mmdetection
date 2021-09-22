@@ -13,7 +13,6 @@ from .gfl_head import GFLHead
 @HEADS.register_module()
 class OATHead(GFLHead):
 	def __init__(self,
-				 num_dcn_on_head = 3,
 				 num_points = 9,
 				 loss_bbox_refine = dict(type='GIoULoss', loss_weight=2.0),
 				 init_cfg=dict(
@@ -26,7 +25,6 @@ class OATHead(GFLHead):
 						 std=0.01,
 						 bias_prob=0.01)),
 				 **kwargs):
-		self.num_dcn_on_head = num_dcn_on_head
 		self.num_points = num_points
 
 		self.dcn_kernel = int(np.sqrt(num_points))
@@ -46,10 +44,6 @@ class OATHead(GFLHead):
 		self.cls_convs = nn.ModuleList()
 		self.reg_convs = nn.ModuleList()
 		for i in range(self.stacked_convs):
-			if i >= self.stacked_convs - self.num_dcn_on_head:
-				conv_cfg = dict(type='DCNv2')
-			else:
-				conv_cfg = self.conv_cfg
 			chn = self.in_channels if i == 0 else self.feat_channels
 			self.cls_convs.append(
 				ConvModule(
@@ -58,7 +52,7 @@ class OATHead(GFLHead):
 					3,
 					stride=1,
 					padding=1,
-					conv_cfg=conv_cfg,
+					conv_cfg=self.conv_cfg,
 					norm_cfg=self.norm_cfg))
 			self.reg_convs.append(
 				ConvModule(
@@ -67,7 +61,7 @@ class OATHead(GFLHead):
 					3,
 					stride=1,
 					padding=1,
-					conv_cfg=conv_cfg,
+					conv_cfg=self.conv_cfg,
 					norm_cfg=self.norm_cfg))
 		assert self.num_anchors == 1, 'anchor free version'
 		self.rfa_reg_conv = nn.Conv2d(self.feat_channels, self.feat_channels, 3, stride = 1, padding = 1)
