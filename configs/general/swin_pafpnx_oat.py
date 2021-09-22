@@ -43,10 +43,10 @@ model = dict(
 			scales_per_octave=1,
 			strides=[8, 16, 32, 64, 128]),
 		add_mean = True,
-		use_dgqp = True,
-		num_dcn_on_head = 0,
+		use_dgqp = False,
+		num_dcn_on_head = 3,
 		num_points = 9,
-		loss_cls=dict(type='QualityFocalLoss', use_sigmoid=False, beta=2.0, loss_weight=1.0),
+		loss_cls=dict(type='QualityFocalLoss', use_sigmoid=True, beta=2.0, loss_weight=1.0),
 		loss_dfl=dict(type='DistributionFocalLoss', loss_weight=0.5),
 		loss_bbox=dict(type='CIoULoss', loss_weight=1.0),
 		loss_bbox_refine=dict(type='CIoULoss', loss_weight=2.0)),
@@ -59,7 +59,7 @@ model = dict(
 		nms_pre=1000,
 		min_bbox_size=0,
 		score_thr=0.05,
-		nms=dict(type='voting_cluster_diounms', iou_threshold=0.6),
+		nms=dict(type='nms', iou_threshold=0.6),
 		max_per_img=100)
 	)
 

@@ -15,7 +15,6 @@ class OATHead(GFLHead):
 	def __init__(self,
 				 num_dcn_on_head = 3,
 				 num_points = 9,
-				 gradient_mul=0.1,
 				 loss_bbox_refine = dict(type='GIoULoss', loss_weight=2.0),
 				 init_cfg=dict(
 					 type='Normal',
@@ -29,7 +28,6 @@ class OATHead(GFLHead):
 				 **kwargs):
 		self.num_dcn_on_head = num_dcn_on_head
 		self.num_points = num_points
-		self.gradient_mul = gradient_mul
 
 		self.dcn_kernel = int(np.sqrt(num_points))
 		self.dcn_pad = int((self.dcn_kernel - 1) / 2)
