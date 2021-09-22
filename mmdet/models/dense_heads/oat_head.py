@@ -72,7 +72,7 @@ class OATHead(GFLHead):
 
 		self.oat_reg_dconv = DeformConv2d(self.feat_channels, self.feat_channels, self.dcn_kernel, 1, padding=self.dcn_pad)
 		self.oat_cls_dconv = DeformConv2d(self.feat_channels, self.feat_channels, self.dcn_kernel, 1, padding=self.dcn_pad)
-		self.oat_reg_refine = nn.Conv2d(self.feat_channels, 4, 3, stride = 1, padding = 1)
+		self.oat_reg_refine = nn.Conv2d(self.feat_channels, 4 * (self.reg_max + 1), 3, stride = 1, padding = 1)
 		self.oat_cls = nn.Conv2d(self.feat_channels, self.cls_out_channels, 3, stride = 1, padding = 1)
 
 		self.scales = nn.ModuleList([Scale(1.0) for _ in self.anchor_generator.strides])
