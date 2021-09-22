@@ -13,7 +13,6 @@ from .gfl_head import GFLHead
 class OATHead(GFLHead):
 	def __init__(self,
 				 num_points = 9,
-				 loss_bbox = dict(type='GIoULoss', loss_weight=1.0),
 				 loss_bbox_refine = dict(type='GIoULoss', loss_weight=2.0),
 				 init_cfg=dict(
 					 type='Normal',

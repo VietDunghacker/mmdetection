@@ -455,8 +455,7 @@ class CIoULoss(nn.Module):
 				weight = weight.unsqueeze(1)
 			return (pred * weight).sum()  # 0
 		assert reduction_override in (None, 'none', 'mean', 'sum')
-		reduction = (
-			reduction_override if reduction_override else self.reduction)
+		reduction = (reduction_override if reduction_override else self.reduction)
 		if weight is not None and weight.dim() > 1:
 			# TODO: remove this in the future
 			# reduce the weight of shape (n, 4) to (n,) to match the
