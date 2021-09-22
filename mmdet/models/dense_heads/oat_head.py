@@ -14,6 +14,7 @@ class OATHead(GFLHead):
 	def __init__(self,
 				 num_points = 9,
 				 loss_bbox_refine = dict(type='GIoULoss', loss_weight=2.0),
+				 gradient_mul=0.1,
 				 init_cfg=dict(
 					 type='Normal',
 					 layer='Conv2d',
@@ -25,6 +26,7 @@ class OATHead(GFLHead):
 						 bias_prob=0.01)),
 				 **kwargs):
 		self.num_points = num_points
+		self.gradient_mul = gradient_mul
 
 		self.dcn_kernel = int(np.sqrt(num_points))
 		self.dcn_pad = int((self.dcn_kernel - 1) / 2)
@@ -110,16 +112,17 @@ class OATHead(GFLHead):
 		N, C, H, W = bbox_pred.shape
 		bbox_pred = bbox_pred.permute(0, 2, 3, 1).contiguous().view(-1, C)
 		bbox_pred = self.integral(bbox_pred).view(N, H, W, 4).permute(0, 3, 1, 2).contiguous()
-		bbox_pred = bbox_pred / stride[0]
+		bbox_pred_grad_mul = (1 - self.gradient_mul) * bbox_pred.detach() + self.gradient_mul * bbox_pred
+		bbox_pred_grad_mul = bbox_pred_grad_mul / stride[0]
 
-		l = bbox_pred[:, 0, :, :]
-		t = bbox_pred[:, 1, :, :]
-		r = bbox_pred[:, 2, :, :]
-		b = bbox_pred[:, 3, :, :]
+		l = bbox_pred_grad_mul[:, 0, :, :]
+		t = bbox_pred_grad_mul[:, 1, :, :]
+		r = bbox_pred_grad_mul[:, 2, :, :]
+		b = bbox_pred_grad_mul[:, 3, :, :]
 		w = r + l
 		h = b + t
 
-		dcn_offset = torch.zeros((N, 2 * self.num_points, H, W), device = bbox_pred.device)
+		dcn_offset = torch.zeros((N, 2 * self.num_points, H, W), device = bbox_pred_grad_mul.device)
 		dcn_offset[:, 0, :, :] = -1 * t
 		dcn_offset[:, 1, :, :] = w * point_offset[:, 0, :, :] - l
 		dcn_offset[:, 2, :, :] = h * point_offset[:, 1, :, :] - t
@@ -313,28 +316,18 @@ class OATHead(GFLHead):
 		mlvl_bbox_preds_refine = [bbox_preds_refine[i].detach() for i in range(num_levels)]
 
 		if torch.onnx.is_in_onnx_export():
-			assert len(
-				img_metas
-			) == 1, 'Only support one input image while in exporting to ONNX'
+			assert len(img_metas) == 1, 'Only support one input image while in exporting to ONNX'
 			img_shapes = img_metas[0]['img_shape_for_onnx']
 		else:
-			img_shapes = [
-				img_metas[i]['img_shape']
-				for i in range(cls_scores[0].shape[0])
-			]
-		scale_factors = [
-			img_metas[i]['scale_factor'] for i in range(cls_scores[0].shape[0])
-		]
+			img_shapes = [img_metas[i]['img_shape'] for i in range(cls_scores[0].shape[0])]
+		scale_factors = [img_metas[i]['scale_factor'] for i in range(cls_scores[0].shape[0])]
 
 		if with_nms:
 			result_list = self._get_bboxes(mlvl_cls_scores, mlvl_bbox_preds, mlvl_bbox_preds_refine,
-										   mlvl_anchors, img_shapes,
-										   scale_factors, cfg, rescale)
+										   mlvl_anchors, img_shapes, scale_factors, cfg, rescale)
 		else:
 			result_list = self._get_bboxes(mlvl_cls_scores, mlvl_bbox_preds, mlvl_bbox_preds_refine,
-										   mlvl_anchors, img_shapes,
-										   scale_factors, cfg, rescale,
-										   with_nms)
+										   mlvl_anchors, img_shapes, scale_factors, cfg, rescale, with_nms)
 		return result_list
 
 	def _get_bboxes(self,

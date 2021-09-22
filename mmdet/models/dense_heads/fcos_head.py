@@ -236,8 +236,7 @@ class FCOSHead(AnchorFreeHead):
 		pos_bbox_targets = flatten_bbox_targets[pos_inds]
 		pos_centerness_targets = self.centerness_target(pos_bbox_targets)
 		# centerness weighted iou loss
-		centerness_denorm = max(
-			reduce_mean(pos_centerness_targets.sum().detach()), 1e-6)
+		centerness_denorm = max(reduce_mean(pos_centerness_targets.sum().detach()), 1e-6)
 
 		if len(pos_inds) > 0:
 			pos_points = flatten_points[pos_inds]
@@ -249,8 +248,7 @@ class FCOSHead(AnchorFreeHead):
 				pos_decoded_target_preds,
 				weight=pos_centerness_targets,
 				avg_factor=centerness_denorm)
-			loss_centerness = self.loss_centerness(
-				pos_centerness, pos_centerness_targets, avg_factor=num_pos)
+			loss_centerness = self.loss_centerness(pos_centerness, pos_centerness_targets, avg_factor=num_pos)
 		else:
 			loss_bbox = pos_bbox_preds.sum()
 			loss_centerness = pos_centerness.sum()
