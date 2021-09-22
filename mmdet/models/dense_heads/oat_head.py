@@ -295,7 +295,7 @@ class OATHead(GFLHead):
 	def get_bboxes(self,
 				   cls_scores,
 				   bbox_preds,
-				   bbox_preds_refine
+				   bbox_preds_refine,
 				   img_metas,
 				   cfg=None,
 				   rescale=False,
