@@ -108,7 +108,7 @@ class OATHead(GFLHead):
 		return cls_score, bbox_pred, bbox_pred_refine
 
 	def gen_dcn_offset(self, bbox_pred, point_offset, stride):
-		bbox_pred = bbox_pred / stride
+		bbox_pred = bbox_pred / stride[0]
 		N, C, H, W = bbox_pred.shape
 
 		l = bbox_pred[:, 0, :, :]
