@@ -71,7 +71,7 @@ model = dict(
 			gamma=2.0,
 			alpha=0.25,
 			loss_weight=1.0),
-		loss_bbox=dict(type='GIoULoss', loss_weight=1.3),
+		loss_bbox=dict(type='CIoULoss', loss_weight=1.3),
 		loss_centerness=dict(type='CrossEntropyLoss', use_sigmoid=True, loss_weight=0.5)),
 	train_cfg=dict(
 		assigner=dict(
