@@ -327,11 +327,11 @@ class OATHead(GFLHead):
 		]
 
 		if with_nms:
-			result_list = self._get_bboxes(mlvl_cls_scores, mlvl_bbox_preds, mlvl_bbox_preds_refine
+			result_list = self._get_bboxes(mlvl_cls_scores, mlvl_bbox_preds, mlvl_bbox_preds_refine,
 										   mlvl_anchors, img_shapes,
 										   scale_factors, cfg, rescale)
 		else:
-			result_list = self._get_bboxes(mlvl_cls_scores, mlvl_bbox_preds, mlvl_bbox_preds_refine
+			result_list = self._get_bboxes(mlvl_cls_scores, mlvl_bbox_preds, mlvl_bbox_preds_refine,
 										   mlvl_anchors, img_shapes,
 										   scale_factors, cfg, rescale,
 										   with_nms)
