@@ -216,11 +216,11 @@ class OATHead(GFLHead):
 
 		return loss_cls, loss_bbox, loss_bbox_refine, loss_dfl, weight_targets.sum()
 
-	@force_fp32(apply_to=('cls_scores', 'bbox_preds', 'bbox_pred_refines'))
+	@force_fp32(apply_to=('cls_scores', 'bbox_preds', 'bbox_preds_refine'))
 	def loss(self,
 			 cls_scores,
 			 bbox_preds,
-			 bbox_pred_refines,
+			 bbox_preds_refine,
 			 gt_bboxes,
 			 gt_labels,
 			 img_metas,
@@ -232,7 +232,7 @@ class OATHead(GFLHead):
 			bbox_preds (list[Tensor]): Box distribution logits for each scale
 				level with shape (N, 4*(n+1), H, W), n is max value of integral
 				set.
-			bbox_pred_refines (list[Tensor]): Refined box distribution logits for each scale
+			bbox_preds_refine (list[Tensor]): Refined box distribution logits for each scale
 				level with shape (N, 4*(n+1), H, W), n is max value of integral
 				set.
 			gt_bboxes (list[Tensor]): Ground truth bboxes for each image with
@@ -277,7 +277,7 @@ class OATHead(GFLHead):
 				anchor_list,
 				cls_scores,
 				bbox_preds,
-				bbox_pred_refines,
+				bbox_preds_refine,
 				labels_list,
 				label_weights_list,
 				bbox_targets_list,
@@ -291,10 +291,56 @@ class OATHead(GFLHead):
 		losses_dfl = list(map(lambda x: x / avg_factor, losses_dfl))
 		return dict(loss_cls=losses_cls, loss_bbox=losses_bbox, loss_bbox_refine=losses_bbox_refine, loss_dfl=losses_dfl)
 
+	@force_fp32(apply_to=('cls_scores', 'bbox_preds', 'bbox_preds_refine'))
+	def get_bboxes(self,
+				   cls_scores,
+				   bbox_preds,
+				   bbox_preds_refine
+				   img_metas,
+				   cfg=None,
+				   rescale=False,
+				   with_nms=True):
+		assert len(cls_scores) == len(bbox_preds)
+		num_levels = len(cls_scores)
+
+		device = cls_scores[0].device
+		featmap_sizes = [cls_scores[i].shape[-2:] for i in range(num_levels)]
+		mlvl_anchors = self.anchor_generator.grid_priors(
+			featmap_sizes, device=device)
+
+		mlvl_cls_scores = [cls_scores[i].detach() for i in range(num_levels)]
+		mlvl_bbox_preds = [bbox_preds[i].detach() for i in range(num_levels)]
+		mlvl_bbox_preds_refine = [bbox_preds_refine[i].detach() for i in range(num_levels)]
+
+		if torch.onnx.is_in_onnx_export():
+			assert len(
+				img_metas
+			) == 1, 'Only support one input image while in exporting to ONNX'
+			img_shapes = img_metas[0]['img_shape_for_onnx']
+		else:
+			img_shapes = [
+				img_metas[i]['img_shape']
+				for i in range(cls_scores[0].shape[0])
+			]
+		scale_factors = [
+			img_metas[i]['scale_factor'] for i in range(cls_scores[0].shape[0])
+		]
+
+		if with_nms:
+			result_list = self._get_bboxes(mlvl_cls_scores, mlvl_bbox_preds, mlvl_bbox_preds_refine
+										   mlvl_anchors, img_shapes,
+										   scale_factors, cfg, rescale)
+		else:
+			result_list = self._get_bboxes(mlvl_cls_scores, mlvl_bbox_preds, mlvl_bbox_preds_refine
+										   mlvl_anchors, img_shapes,
+										   scale_factors, cfg, rescale,
+										   with_nms)
+		return result_list
+
 	def _get_bboxes(self,
 					cls_scores,
 					bbox_preds,
-					bbox_pred_refines,
+					bbox_preds_refine,
 					mlvl_anchors,
 					img_shapes,
 					scale_factors,
@@ -308,7 +354,7 @@ class OATHead(GFLHead):
 			bbox_preds (list[Tensor]): Box distribution logits for a single
 				scale level with shape (N, 4*(n+1), H, W), n is max value of
 				integral set.
-			bbox_pred_refines (list[Tensor]): Refined box distribution logits for a single
+			bbox_preds_refine (list[Tensor]): Refined box distribution logits for a single
 				scale level with shape (N, 4*(n+1), H, W), n is max value of
 				integral set.
 			mlvl_anchors (list[Tensor]): Box reference for a single scale level
@@ -337,7 +383,7 @@ class OATHead(GFLHead):
 
 		mlvl_bboxes = []
 		mlvl_scores = []
-		for cls_score, bbox_pred_refine, stride, anchors in zip(cls_scores, bbox_pred_refines, self.anchor_generator.strides, mlvl_anchors):
+		for cls_score, bbox_pred_refine, stride, anchors in zip(cls_scores, bbox_preds_refine, self.anchor_generator.strides, mlvl_anchors):
 			assert cls_score.size()[-2:] == bbox_pred_refine.size()[-2:]
 			assert stride[0] == stride[1]
 			scores_shape = (batch_size, -1, self.cls_out_channels)
