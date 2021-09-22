@@ -156,7 +156,7 @@ class AnchorHead(BaseDenseHead, BBoxTestMixin):
 
         # since feature map sizes of all images are the same, we only compute
         # anchors for one time
-        multi_level_anchors = self.anchor_generator.grid_anchors(
+        multi_level_anchors = self.anchor_generator.grid_priors(
             featmap_sizes, device)
         anchor_list = [multi_level_anchors for _ in range(num_imgs)]
 
@@ -555,7 +555,7 @@ class AnchorHead(BaseDenseHead, BBoxTestMixin):
 
         device = cls_scores[0].device
         featmap_sizes = [cls_scores[i].shape[-2:] for i in range(num_levels)]
-        mlvl_anchors = self.anchor_generator.grid_anchors(
+        mlvl_anchors = self.anchor_generator.grid_priors(
             featmap_sizes, device=device)
 
         mlvl_cls_scores = [cls_scores[i].detach() for i in range(num_levels)]

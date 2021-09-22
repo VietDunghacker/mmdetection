@@ -353,7 +353,7 @@ class ATSSHead(AnchorHead):
 		num_levels = len(cls_scores)
 		device = cls_scores[0].device
 		featmap_sizes = [cls_scores[i].shape[-2:] for i in range(num_levels)]
-		mlvl_anchors = self.anchor_generator.grid_anchors(
+		mlvl_anchors = self.anchor_generator.grid_priors(
 			featmap_sizes, device=device)
 
 		cls_score_list = [cls_scores[i].detach() for i in range(num_levels)]
