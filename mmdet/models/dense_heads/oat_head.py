@@ -67,7 +67,7 @@ class OATHead(GFLHead):
 		self.rfa_reg_conv = nn.Conv2d(self.feat_channels, self.feat_channels, 3, stride = 1, padding = 1)
 		self.rfa_reg = nn.Conv2d(self.feat_channels, 4 * (self.reg_max + 1), 3, stride = 1, padding = 1)
 		self.rfa_offset = nn.Conv2d(self.feat_channels, 2 * self.num_points - 4, 3, stride = 1, padding = 1)
-		self.cfa_cls_conv = nn.Conv2d(self.feat_channels, self.feat_channels, 3, stride = 1, padding = 1)
+		self.cfa_cls_conv = nn.Conv2d(self.feat_channels * 2, self.feat_channels, 3, stride = 1, padding = 1)
 		self.cfa_distanglement = nn.Conv2d(self.feat_channels, 2 * self.num_points, 3, stride = 1, padding = 1)
 
 		self.oat_reg_dconv = DeformConv2d(self.feat_channels, self.feat_channels, self.dcn_kernel, 1, padding=self.dcn_pad)
@@ -105,7 +105,7 @@ class OATHead(GFLHead):
 		reg_feat = self.oat_reg_dconv(reg_feat, reg_dcn_offset)
 		bbox_pred_refine = refine_scale(self.oat_reg_refine(reg_feat))
 
-		cls_feat_init = self.relu(self.cfa_cls_conv(cls_feat + x))
+		cls_feat_init = self.relu(self.cfa_cls_conv(torch.cat((cls_feat, x), dim = 1)))
 		distanglement_vector = self.relu(self.cfa_distanglement(cls_feat_init))
 		cls_dcn_offset = distanglement_vector.exp() * dcn_offset.detach() - self.dcn_base_offset.type_as(bbox_pred)
 		cls_feat = self.oat_cls_dconv(cls_feat, cls_dcn_offset)
