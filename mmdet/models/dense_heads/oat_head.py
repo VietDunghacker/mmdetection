@@ -127,7 +127,6 @@ class OATHead(GFLHead):
 		N, C, H, W = bbox_pred.shape
 		bbox_pred = bbox_pred.permute(0, 2, 3, 1).contiguous().view(-1, C)
 		bbox_pred = self.integral(bbox_pred).view(N, H, W, 4).permute(0, 3, 1, 2).contiguous()
-		bbox_pred = bbox_pred / stride[0]
 
 		l = bbox_pred[:, 0, :, :]
 		t = bbox_pred[:, 1, :, :]
@@ -208,7 +207,7 @@ class OATHead(GFLHead):
 
 			pos_bbox_pred_refine_corners = self.integral(pos_bbox_pred_refine)
 			pos_decode_bbox_pred_refine = distance2bbox(pos_anchor_centers, pos_bbox_pred_refine_corners)
-			loss_bbox_refine = self.loss_bbox_refine(pos_decode_bbox_pred_refine, pos_decode_bbox_targets, weight=weight_targets, avg_factor=1.0)
+			loss_bbox_refine = self.loss_bbox_refine(pos_decode_bbox_pred_refine, pos_decode_bbox_targets, weight=weight_targets, avg_factor= 1.0)
 
 			score[pos_inds] = bbox_overlaps(pos_decode_bbox_pred_refine.detach(), pos_decode_bbox_targets, is_aligned=True)
 			pred_corners = pos_bbox_pred_refine.reshape(-1, self.reg_max + 1)

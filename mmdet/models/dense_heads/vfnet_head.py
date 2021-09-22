@@ -595,19 +595,14 @@ class VFNetHead(ATSSHead, FCOSHead):
 						   flatten=False):
 		"""Get points according to feature map sizes."""
 		h, w = featmap_size
-		x_range = torch.arange(
-			0, w * stride, stride, dtype=dtype, device=device)
-		y_range = torch.arange(
-			0, h * stride, stride, dtype=dtype, device=device)
+		x_range = torch.arange(0, w * stride, stride, dtype=dtype, device=device)
+		y_range = torch.arange(0, h * stride, stride, dtype=dtype, device=device)
 		y, x = torch.meshgrid(y_range, x_range)
 		# to be compatible with anchor points in ATSS
 		if self.use_atss:
-			points = torch.stack(
-				(x.reshape(-1), y.reshape(-1)), dim=-1) + \
-					 stride * self.anchor_center_offset
+			points = torch.stack((x.reshape(-1), y.reshape(-1)), dim=-1) + stride * self.anchor_center_offset
 		else:
-			points = torch.stack(
-				(x.reshape(-1), y.reshape(-1)), dim=-1) + stride // 2
+			points = torch.stack((x.reshape(-1), y.reshape(-1)), dim=-1) + stride // 2
 		return points
 
 	def get_targets(self, cls_scores, mlvl_points, gt_bboxes, gt_labels,
