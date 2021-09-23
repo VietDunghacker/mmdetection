@@ -20,7 +20,12 @@ model = dict(
 		out_indices=(0, 1, 2, 3),
 		with_cp=True,
 		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
-	neck=dict(type='NASFPN', stack_times=7, norm_cfg=dict(type='GN', num_groups=32, requires_grad=True)),
+	neck=dict(type='NASFPN',
+		in_channels = [128, 256, 512, 1024],
+		out_channels = 256,
+		num_outs = 5,
+		stack_times = 7,
+		norm_cfg = dict(type='GN', num_groups=32, requires_grad=True)),
 	bbox_head=dict(
 		type='GFLHead',
 		num_classes=34,
