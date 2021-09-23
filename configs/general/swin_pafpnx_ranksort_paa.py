@@ -3,9 +3,7 @@ _base_ = [
 	'../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py'
 ]
 model = dict(
-	type='KnowledgeDistillationSingleStageDetector',
-	teacher_config='configs/general/swin_pafpnx_sepc_gflv2.py',
-	teacher_ckpt='/gdrive/My Drive/checkpoints/swin_pafpnx_sepc_gflv2.pth',
+	type='PAA',
 	backbone=dict(
 		type='SwinTransformer',
 		embed_dims=128,
@@ -19,36 +17,56 @@ model = dict(
 		attn_drop_rate=0.,
 		drop_path_rate=0.3,
 		patch_norm=True,
-		out_indices=(3, ),
+		out_indices=(0, 1, 2, 3),
 		with_cp=True,
 		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
 	neck=dict(
-        type='DilatedEncoder',
-        in_channels=1024,
-        out_channels=512,
-        block_mid_channels=128,
-        num_residual_blocks=4),
+		type='PAFPNX',
+		in_channels=[128, 256, 512, 1024],
+		out_channels=256,
+		start_level=1,
+		add_extra_convs='on_output',
+		num_outs=5,
+		relu_before_extra_convs=True,
+		pafpn_conv_cfg=dict(type='DCNv2'),
+		norm_cfg=dict(type='GN', num_groups=32, requires_grad=True)),
 	bbox_head=dict(
-		type='LDHead',
-		num_classes=34,
-		in_channels=512,
+		type='RankBasedPAAHead',
+		reg_decoded_bbox=True,
+		score_voting=True,
+		topk=9,
+		num_classes=80,
+		in_channels=256,
 		stacked_convs=4,
-		feat_channels=512,
+		feat_channels=256,
 		anchor_generator=dict(
 			type='AnchorGenerator',
 			ratios=[1.0],
-			scales=[16],
-			strides=[32]),
-		loss_cls=dict(type='QualityFocalLoss', use_sigmoid=False, beta=2.0, loss_weight=1.0),
-		loss_dfl=dict(type='DistributionFocalLoss', loss_weight=0.25),
-		use_dgqp = True,
-		loss_ld=dict(type='KnowledgeDistillationKLDivLoss', loss_weight=0.25, T=10),
-		loss_bbox=dict(type='CIoULoss', loss_weight=2.0)),
+			octave_base_scale=8,
+			scales_per_octave=1,
+			strides=[8, 16, 32, 64, 128]),
+		bbox_coder=dict(
+			type='DeltaXYWHBBoxCoder',
+			target_means=[.0, .0, .0, .0],
+			target_stds=[0.1, 0.1, 0.2, 0.2]),
+		loss_cls=dict(
+			type='FocalLoss',
+			use_sigmoid=True,
+			gamma=2.0,
+			alpha=0.25,
+			loss_weight=1.0),
+		loss_bbox=dict(type='CIoULoss', reduction='none'),
+		rank_loss_type = 'RankSort'),
 	train_cfg = dict(
-		assigner=dict(type='ATSSAssigner', topk=15),
+		assigner=dict(
+			type='MaxIoUAssigner',
+			pos_iou_thr=0.1,
+			neg_iou_thr=0.1,
+			min_pos_iou=0,
+			ignore_iof_thr=-1),
 		allowed_border=-1,
 		pos_weight=-1,
-		debug=False),
+		debug=False)
 	test_cfg = dict(
 		nms_pre=1000,
 		min_bbox_size=0,
@@ -60,26 +78,11 @@ model = dict(
 # data setting
 img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 albu_train_transforms = [
-	dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.1, rotate_limit=3, interpolation=1, p=0.5, border_mode = 0),
-	dict(type='RandomBrightnessContrast', brightness_limit=[0.1, 0.3], contrast_limit=[0.1, 0.3], p=0.2),
-	dict(
-		type='OneOf',
-		transforms=[
-			dict(
-				type='RGBShift',
-				r_shift_limit=10,
-				g_shift_limit=10,
-				b_shift_limit=10,
-				p=1.0),
-			dict(
-				type='HueSaturationValue',
-				hue_shift_limit=20,
-				sat_shift_limit=30,
-				val_shift_limit=20,
-				p=1.0)
-		],
-		p=0.1),
-	dict(type='ChannelShuffle', p=0.1),
+	dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0, rotate_limit=0, interpolation=1, p=0.5, border_mode = 0),
+	dict(type='RandomBrightnessContrast', brightness_limit=0.1, contrast_limit=0.1),
+	dict(type='RGBShift', r_shift_limit=10, g_shift_limit=10, b_shift_limit=10),
+	dict(type='HueSaturationValue', hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20),
+	dict(type='ChannelShuffle'),
 	dict(
 		type='OneOf',
 		transforms=[
@@ -98,7 +101,7 @@ train_pipeline = [
 		crop_size=(0.9, 0.9)),
 	dict(
 		type='Resize',
-		img_scale=[(640, 640), (880, 880)],
+		img_scale=[(640, 640), (800, 800)],
 		multiscale_mode='range',
 		keep_ratio=True),
 	dict(

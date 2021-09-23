@@ -3,7 +3,7 @@ _base_ = [
 	'../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py'
 ]
 model = dict(
-	type='OATNet',
+	type='GFL',
 	backbone=dict(
 		type='SwinTransformer',
 		embed_dims=128,
@@ -21,20 +21,22 @@ model = dict(
 		with_cp=True,
 		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
 	neck=dict(
-		type='PAFPNX',
-		in_channels=[128, 256, 512, 1024],
-		out_channels=256,
-		start_level=1,
-		add_extra_convs='on_output',
+		type='BiFPN',
+		in_channels=[256, 512, 1024],
+		out_channels=288,
 		num_outs=5,
-		relu_before_extra_convs=True,
-		pafpn_conv_cfg=dict(type='DCNv2'),
-		norm_cfg=dict(type='GN', num_groups=32, requires_grad=True)),
+		strides=[8, 16, 32],
+		num_layers=7,
+		weight_method='fast_attn',
+		act_cfg='silu',
+		separable_conv=True,
+		epsilon=0.0001
+	),
 	bbox_head=dict(
-		type='OATHead',
+		type='GFLHead',
 		num_classes=34,
 		in_channels=256,
-		stacked_convs=3,
+		stacked_convs=4,
 		feat_channels=256,
 		anchor_generator=dict(
 			type='AnchorGenerator',
@@ -42,13 +44,10 @@ model = dict(
 			octave_base_scale=8,
 			scales_per_octave=1,
 			strides=[8, 16, 32, 64, 128]),
-		add_mean = True,
-		use_dgqp = False,
-		num_points = 9,
-		loss_cls=dict(type='QualityFocalLoss', use_sigmoid=True, beta=2.0, loss_weight=1.0),
-		loss_dfl=dict(type='DistributionFocalLoss', loss_weight=0.5),
-		loss_bbox=dict(type='CIoULoss', loss_weight=1.0),
-		loss_bbox_refine=dict(type='CIoULoss', loss_weight=2.0)),
+		loss_cls=dict(type='QualityFocalLoss', use_sigmoid=False, beta=2.0, loss_weight=1.0),
+		loss_dfl=dict(type='DistributionFocalLoss', loss_weight=0.25),
+		use_dgqp = True,
+		loss_bbox=dict(type='CIoULoss', loss_weight=2.0)),
 	train_cfg = dict(
 		assigner=dict(type='ATSSAssigner', topk=9),
 		allowed_border=-1,
@@ -58,7 +57,7 @@ model = dict(
 		nms_pre=1000,
 		min_bbox_size=0,
 		score_thr=0.05,
-		nms=dict(type='nms', iou_threshold=0.6),
+		nms=dict(type='voting_cluster_diounms', iou_threshold=0.6),
 		max_per_img=100)
 	)
 
