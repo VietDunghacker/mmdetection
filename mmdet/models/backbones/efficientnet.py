@@ -239,7 +239,7 @@ class MBConvBlock(BaseModule):
 				 batch_norm_momentum,
 				 batch_norm_epsilon,
 				 image_size,
-                 init_cfg = None):
+				 init_cfg = None):
 		super(MBConvBlock, self).__init__(init_cfg = init_cfg)
 		self._block_args = block_args
 		self._bn_mom = 1 - batch_norm_momentum
@@ -339,8 +339,7 @@ class EfficientNet(BaseModule):
 		assert model_type in EfficientNet._PARAMS_DICT
 		assert 0 <= max(out_indices) <= 6 and 0 <= min(out_indices) <= 6
 		assert len(out_indices) > 0
-		width_coefficient, depth_coefficient, image_size, dropout_rate = \
-			EfficientNet._PARAMS_DICT[model_type]
+		width_coefficient, depth_coefficient, image_size, dropout_rate = EfficientNet._PARAMS_DICT[model_type]
 		self._model_name = model_type
 
 		self._create(
