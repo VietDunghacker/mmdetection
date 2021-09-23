@@ -23,6 +23,7 @@ model = dict(
 	neck=dict(
 		type='BiFPN',
 		in_channels=[256, 512, 1024],
+        input_indices=(1,2,3),
 		out_channels=288,
 		num_outs=5,
 		strides=[8, 16, 32],
