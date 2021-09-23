@@ -22,7 +22,7 @@ class ActLayer(nn.Module):
 	def forward(self, nodes):
 		# Activation function
 		if (self.act_fn == "silu"):
-			nodes = nodes * torch.sigmoid(nodes)
+			nodes = F.silu(nodes)
 
 		# # Quantization-friendly hard swish
 		elif (self.act_fn == "swish"):
