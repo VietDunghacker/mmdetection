@@ -11,6 +11,7 @@ from .iou_loss import (BoundedIoULoss, CIoULoss, DIoULoss, GIoULoss, IoULoss, bo
 from .kd_loss import KnowledgeDistillationKLDivLoss
 from .mse_loss import MSELoss, mse_loss
 from .pisa_loss import carl_loss, isr_p
+from .ranking_losses import aLRPLoss, APLoss, RankSort
 from .seesaw_loss import SeesawLoss
 from .smooth_l1_loss import L1Loss, SmoothL1Loss, l1_loss, smooth_l1_loss
 from .task_aligned_focal_loss import FocalLossWithProb, TaskAlignedFocalLoss
@@ -27,5 +28,5 @@ __all__ = [
 	'l1_loss', 'isr_p', 'carl_loss', 'AssociativeEmbeddingLoss',
 	'GaussianFocalLoss', 'QualityFocalLoss', 'DistributionFocalLoss',
 	'VarifocalLoss', 'KnowledgeDistillationKLDivLoss', 'SeesawLoss', 'SEPFocalLoss',
-	'TaskAlignedFocalLoss', 'FocalLossWithProb'
+	'TaskAlignedFocalLoss', 'FocalLossWithProb', 'aLRPLoss', 'APLoss', 'RankSort'
 ]

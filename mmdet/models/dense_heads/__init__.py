@@ -26,6 +26,8 @@ from .oat_head import OATHead
 from .paa_head import PAAHead
 from .pisa_retinanet_head import PISARetinaHead
 from .pisa_ssd_head import PISASSDHead
+from .qfl_head import QFLHead
+from .rank_based_paa_head import RankBasedPAAHead
 from .reppoints_head import RepPointsHead
 from .reppoints_v2_head import RepPointsV2Head
 from .retina_head import RetinaHead
@@ -51,5 +53,5 @@ __all__ = [
 	'CascadeRPNHead', 'EmbeddingRPNHead', 'LDHead', 'CascadeRPNHead',
 	'AutoAssignHead', 'DETRHead', 'YOLOFHead', 'DeformableDETRHead',
 	'CenterNetHead', 'YOLOXHead', 'GFLSEPCHead', 'RepPointsV2Head',
-	'BVRHead', 'KeypointHead', 'TOODHead', "OATHead"
+	'BVRHead', 'KeypointHead', 'TOODHead', "OATHead", 'QFLHead', 'RankBasedPAAHead'
 ]
