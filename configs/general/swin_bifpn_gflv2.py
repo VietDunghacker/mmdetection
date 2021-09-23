@@ -29,7 +29,7 @@ model = dict(
 		strides=[8, 16, 32],
 		num_layers=3,
 		weight_method='fast_attn',
-		act_cfg='silu',
+		act_cfg='relu',
 		separable_conv=True,
 		epsilon=0.0001
 	),

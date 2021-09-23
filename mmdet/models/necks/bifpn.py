@@ -5,7 +5,7 @@ import numpy
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from mmcv.runner import auto_fp16
+from mmcv.runner import BaseModule, auto_fp16
 
 from ..builder import NECKS
 
@@ -209,7 +209,7 @@ class BiFPNBlock(nn.Module):
 
 
 @NECKS.register_module('BiFPN')
-class BiFPN(nn.Module):
+class BiFPN(BaseModule):
 
 	def __init__(self,
 				 in_channels,
@@ -222,8 +222,10 @@ class BiFPN(nn.Module):
 				 act_cfg="silu",
 				 separable_conv=True,
 				 epsilon=0.0001,
-				 reduction_ratio=2.0):
-		super(BiFPN, self).__init__()
+				 reduction_ratio=2.0,
+				 init_cfg=dict(
+					 type='Xavier', layer='Conv2d', distribution='uniform')):
+		super(BiFPN, self).__init__(init_cfg = init_cfg)
 		assert isinstance(in_channels, list)
 		self.num_backbone_features = len(in_channels)
 
@@ -293,12 +295,6 @@ class BiFPN(nn.Module):
 				BiFPNBlock(input_channels, self.num_backbone_features, self.num_outs, out_channels, weight_method,
 						   act_cfg, separable_conv, epsilon, input_offsets, reduction)
 			)
-
-	# default init_weights for conv(msra) and norm in ConvModule
-	def init_weights(self):
-		for m in self.modules():
-			if isinstance(m, nn.Conv2d):
-				xavier_init(m, distribution='uniform')
 
 	@auto_fp16()
 	def forward(self, inputs):
