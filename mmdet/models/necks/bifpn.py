@@ -40,7 +40,7 @@ class ActLayer(nn.Module):
 	def forward(self, nodes):
 		# Activation function
 		if (self.act_fn == "silu"):
-			nodes = MemoryEfficientSwish(nodes)
+			nodes = MemoryEfficientSwish()(x)
 
 		# # Quantization-friendly hard swish
 		elif (self.act_fn == "swish"):
