@@ -19,30 +19,6 @@ BlockArgs = collections.namedtuple('BlockArgs', [
 BlockArgs.__new__.__defaults__ = (None,) * len(BlockArgs._fields)
 
 
-class SwishImplementation(torch.autograd.Function):
-	@staticmethod
-	def forward(ctx, i):
-		result = i * torch.sigmoid(i)
-		ctx.save_for_backward(i)
-		return result
-
-	@staticmethod
-	def backward(ctx, grad_output):
-		i = ctx.saved_variables[0]
-		sigmoid_i = torch.sigmoid(i)
-		return grad_output * (sigmoid_i * (1 + i * (1 - sigmoid_i)))
-
-
-class MemoryEfficientSwish(nn.Module):
-	def forward(self, x):
-		return SwishImplementation.apply(x)
-
-
-class Swish(nn.Module):
-	def forward(self, x):
-		return x * torch.sigmoid(x)
-
-
 def round_filters(filters, width_coefficient, depth_divisor, min_depth):
 	""" Calculate and round number of filters based on depth multiplier. """
 	multiplier = width_coefficient
@@ -275,7 +251,7 @@ class MBConvBlock(BaseModule):
 		final_oup = self._block_args.output_filters
 		self._project_conv = Conv2d(in_channels=oup, out_channels=final_oup, kernel_size=1, bias=False)
 		self._bn2 = nn.BatchNorm2d(num_features=final_oup, momentum=self._bn_mom, eps=self._bn_eps)
-		self._swish = MemoryEfficientSwish()
+		self._swish = nn.Silu()
 
 	def forward(self, inputs, drop_connect_rate=None):
 		"""
@@ -308,7 +284,7 @@ class MBConvBlock(BaseModule):
 
 	def set_swish(self, memory_efficient=True):
 		"""Sets swish function as memory efficient (for training) or standard (for export)"""
-		self._swish = MemoryEfficientSwish() if memory_efficient else Swish()
+		self._swish = nn.Silu() if memory_efficient else Swish()
 
 
 @BACKBONES.register_module()
@@ -442,11 +418,11 @@ class EfficientNet(BaseModule):
 		self._conv_head = Conv2d(in_channels, out_channels, kernel_size=1, bias=False)
 		self._bn1 = nn.BatchNorm2d(num_features=out_channels, momentum=bn_mom, eps=bn_eps)
 
-		self._swish = MemoryEfficientSwish()
+		self._swish = nn.Silu()
 
 	def set_swish(self, memory_efficient=True):
 		"""Sets swish function as memory efficient (for training) or standard (for export)"""
-		self._swish = MemoryEfficientSwish() if memory_efficient else Swish()
+		self._swish = nn.Silu() if memory_efficient else Swish()
 		for block in self._blocks:
 			block.set_swish(memory_efficient)
 

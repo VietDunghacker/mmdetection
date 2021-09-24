@@ -13,19 +13,6 @@ from mmcv.cnn import normal_init, xavier_init, ConvModule
 
 act_fn_list = ["silu", "swish", "hswish", "relu", "relu6", "mish", "srelu"]
 
-class SwishImplementation(torch.autograd.Function):
-	@staticmethod
-	def forward(ctx, i):
-		result = i * torch.sigmoid(i)
-		ctx.save_for_backward(i)
-		return result
-
-	@staticmethod
-	def backward(ctx, grad_output):
-		i = ctx.saved_variables[0]
-		sigmoid_i = torch.sigmoid(i)
-		return grad_output * (sigmoid_i * (1 + i * (1 - sigmoid_i)))
-
 class ActLayer(nn.Module):
 	def __init__(self, act_name):
 		super(ActLayer, self).__init__()
@@ -35,7 +22,7 @@ class ActLayer(nn.Module):
 	def forward(self, nodes):
 		# Activation function
 		if (self.act_fn == "silu"):
-			nodes = SwishImplementation.apply(nodes)
+			nodes = F.silu(nodes)
 
 		# # Quantization-friendly hard swish
 		elif (self.act_fn == "swish"):
