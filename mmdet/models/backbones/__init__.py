@@ -3,6 +3,7 @@ from .csp_darknet import CSPDarknet
 from .darknet import Darknet
 from .detectors_resnet import DetectoRS_ResNet
 from .detectors_resnext import DetectoRS_ResNeXt
+from .dla import DLA
 from .efficientnet import EfficientNet
 from .hourglass import HourglassNet
 from .hrnet import HRNet
@@ -20,5 +21,5 @@ __all__ = [
     'RegNet', 'ResNet', 'ResNetV1d', 'ResNeXt', 'SSDVGG', 'HRNet',
     'MobileNetV2', 'Res2Net', 'HourglassNet', 'DetectoRS_ResNet',
     'DetectoRS_ResNeXt', 'Darknet', 'ResNeSt', 'TridentResNet', 'CSPDarknet',
-    'SwinTransformer', 'EfficientNet'
+    'SwinTransformer', 'EfficientNet', 'DLA'
 ]

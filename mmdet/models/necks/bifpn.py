@@ -14,35 +14,6 @@ from mmcv.cnn import normal_init, xavier_init, ConvModule
 
 act_fn_list = ["silu", "swish", "hswish", "relu", "relu6", "mish", "srelu"]
 
-@torch.jit.script
-def swish_jit_fwd(x):
-	return x.mul(torch.sigmoid(x))
-
-
-@torch.jit.script
-def swish_jit_bwd(x, grad_output):
-	x_sigmoid = torch.sigmoid(x)
-	return grad_output * (x_sigmoid * (1 + x * (1 - x_sigmoid)))
-
-class SwishJitAutoFn(torch.autograd.Function):
-	""" torch.jit.script optimised Swish w/ memory-efficient checkpoint
-	Inspired by conversation btw Jeremy Howard & Adam Pazske
-	https://twitter.com/jeremyphoward/status/1188251041835315200
-	"""
-	@staticmethod
-	def symbolic(g, x):
-		return g.op("Mul", x, g.op("Sigmoid", x))
-
-	@staticmethod
-	def forward(ctx, x):
-		ctx.save_for_backward(x)
-		return swish_jit_fwd(x)
-
-	@staticmethod
-	def backward(ctx, grad_output):
-		x = ctx.saved_tensors[0]
-		return swish_jit_bwd(x, grad_output)
-
 class ActLayer(nn.Module):
 	def __init__(self, act_name):
 		super(ActLayer, self).__init__()
@@ -60,16 +31,16 @@ class ActLayer(nn.Module):
 			nodes = nodes * torch.sigmoid(nodes)
 
 		elif (self.act_fn == "hswish"):
-			nodes = nodes * F.relu6(nodes + 3) / 6
+			nodes = F.hardswish(nodes, inplace = True)
 
 		elif (self.act_fn == "relu"):
-			nodes = F.relu(nodes)
+			nodes = F.relu(nodes, inplace = True)
 
 		elif (self.act_fn == "relu6"):
-			nodes = F.relu6(nodes)
+			nodes = F.relu6(nodes, inplace = True)
 
 		elif (self.act_fn == "mish"):
-			nodes = nodes * F.tanh(F.softplus(nodes))
+			nodes = F.mish(nodes, inplace = True)
 
 		elif (self.act_fn == "srelu"):
 			beta = numpy.array([20.0])
@@ -151,9 +122,7 @@ class BiFPNNode(nn.Module):
 			edge_weights = F.relu(self.edge_weights.type(dtype))
 			weights_sum = torch.sum(edge_weights)
 
-			nodes = torch.stack(
-				[(nodes[i] * edge_weights[i]) / (weights_sum + self.epsilon)
-				 for i in range(len(nodes))], dim=-1)
+			nodes = torch.stack([(nodes[i] * edge_weights[i]) / (weights_sum + self.epsilon) for i in range(len(nodes))], dim=-1)
 
 		elif self.weight_method == "sum":
 			nodes = torch.stack(nodes, dim=-1)
