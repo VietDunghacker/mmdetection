@@ -164,3 +164,6 @@ fp16 = dict(loss_scale = 512.)
 load_from = None
 resume_from = None
 workflow = [('train', 1)]
+custom_hooks = [
+    dict(type='YOLOXModeSwitchHook', num_last_epochs=10, priority=48),
+]
