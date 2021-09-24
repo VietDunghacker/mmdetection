@@ -5,6 +5,7 @@
 # pre-trained weights.
 
 from collections import OrderedDict
+import torch
 
 def pvt_convert(ckpt):
 	new_ckpt = OrderedDict()
