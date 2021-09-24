@@ -80,6 +80,7 @@ class ActLayer(nn.Module):
 
 		return nodes
 
+
 class BiFPNNode(nn.Module):
 	def __init__(self, input_channels, output_channel, num_backbone_features,
 				 weight_method, act_fn, separable_conv, epsilon, input_offsets,
@@ -104,33 +105,28 @@ class BiFPNNode(nn.Module):
 			reduction_ratio = target_reduction / input_reduction
 
 			if used_input != output_channel:
-				conv = ConvModule(used_input, output_channel, kernel_size=1,
-								  norm_cfg=dict(type='BN'), act_cfg=None)
+				conv = ConvModule(used_input, output_channel, kernel_size=1, norm_cfg=dict(type='BN', requires_grad = True), act_cfg=None)
 				offset_nodes.add_module("conv", conv)
 
 			if reduction_ratio > 1:
 				stride_size = int(reduction_ratio)
-				offset_nodes.add_module("max_pool", nn.MaxPool2d(
-					kernel_size=stride_size + 1, stride=stride_size, padding=1
-				))
+				offset_nodes.add_module("max_pool", nn.MaxPool2d(kernel_size=stride_size + 1, stride=stride_size, padding=1))
 
 			elif reduction_ratio < 1:
 				scale = int(1 // reduction_ratio)
-				offset_nodes.add_module("upsample", nn.UpsamplingNearest2d(
-					scale_factor=scale))
+				offset_nodes.add_module("upsample", nn.UpsamplingNearest2d(scale_factor=scale))
 
 			self.input_layer[str(offset)] = offset_nodes
 
 		if self.weight_method != "sum":
 			self.edge_weights = nn.Parameter(torch.ones(len(input_offsets)), requires_grad=True)
 
-		conv_kwargs = dict(in_channels=output_channel, out_channels=output_channel, kernel_size=3,
-						   act_cfg=None, norm_cfg=dict(type='BN'))
+		conv_kwargs = dict(in_channels=output_channel, out_channels=output_channel, kernel_size=3, stride = 1, padding = 1, dilation = 1, act_cfg=None, norm_cfg=dict(type='BN', requires_grad = True))
 
 		if separable_conv:
 			self.fusion_convs = DepthwiseSeparableConvModule(**conv_kwargs)
 		else:
-			self.fusion_convs = ConvModule(padding=1, **conv_kwargs)
+			self.fusion_convs = ConvModule(**conv_kwargs)
 
 	def forward(self, inputs):
 		# Create node inputs
@@ -163,11 +159,8 @@ class BiFPNNode(nn.Module):
 			nodes = torch.stack(nodes, dim=-1)
 
 		nodes = torch.sum(nodes, dim=-1)
-
 		nodes = self.act_layer(nodes)
-
 		nodes = self.fusion_convs(nodes)
-
 		return nodes
 
 
@@ -269,8 +262,7 @@ class BiFPN(BaseModule):
 			if input_channels != out_channels:
 				self.extra_convs.append(
 					nn.Sequential(
-						ConvModule(input_channels, out_channels, kernel_size=1,
-								   norm_cfg=dict(type='BN'), act_cfg=None),
+						ConvModule(input_channels, out_channels, kernel_size=1, norm_cfg=dict(type='BN', requires_grad = True), act_cfg=None),
 						nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
 					)
 				)
