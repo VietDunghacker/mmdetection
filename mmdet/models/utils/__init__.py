@@ -9,19 +9,20 @@ from .make_divisible import make_divisible
 from .misc import interpolate_as
 from .normed_predictor import NormedConv2d, NormedLinear
 from .positional_encoding import (LearnedPositionalEncoding,
-                                  SinePositionalEncoding)
+								  SinePositionalEncoding)
 from .res_layer import ResLayer, SimplifiedBasicBlock
 from .se_layer import SELayer
 from .sepc_dconv import ModulatedSEPCConv, SEPCConv
 from .transformer import (DetrTransformerDecoder, DetrTransformerDecoderLayer,
-                          DynamicConv, Transformer)
+						  DynamicConv, PatchEmbed, Transformer, nchw_to_nlc,
+						  nlc_to_nchw)
 
 __all__ = [
-    'ResLayer', 'gaussian_radius', 'gen_gaussian_target',
-    'DetrTransformerDecoderLayer', 'DetrTransformerDecoder', 'Transformer',
-    'build_transformer', 'build_linear_layer', 'SinePositionalEncoding',
-    'LearnedPositionalEncoding', 'DynamicConv', 'SimplifiedBasicBlock',
-    'NormedLinear', 'NormedConv2d', 'make_divisible', 'InvertedResidual',
-    'SELayer', 'interpolate_as', 'ConvUpsample', 'CSPLayer', "ModulatedSEPCConv", 'SEPCConv',
-    'BRPool', 'TLPool'
+	'ResLayer', 'gaussian_radius', 'gen_gaussian_target',
+	'DetrTransformerDecoderLayer', 'DetrTransformerDecoder', 'Transformer',
+	'build_transformer', 'build_linear_layer', 'SinePositionalEncoding',
+	'LearnedPositionalEncoding', 'DynamicConv', 'SimplifiedBasicBlock',
+	'NormedLinear', 'NormedConv2d', 'make_divisible', 'InvertedResidual',
+	'SELayer', 'interpolate_as', 'ConvUpsample', 'CSPLayer', "ModulatedSEPCConv", 'SEPCConv',
+	'BRPool', 'TLPool', 'PatchEmbed', 'nchw_to_nlc', 'nlc_to_nchw'
 ]
