@@ -35,7 +35,7 @@ class SwishImplementation(torch.autograd.Function):
 
 class MemoryEfficientSwish(nn.Module):
 	def forward(self, x):
-		return F.relu(x)
+		return SwishImplementation.apply(x)
 
 
 class Swish(nn.Module):
