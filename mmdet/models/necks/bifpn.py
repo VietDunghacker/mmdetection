@@ -52,7 +52,7 @@ class ActLayer(nn.Module):
 	def forward(self, nodes):
 		# Activation function
 		if (self.act_fn == "silu"):
-			nodes = SwishJitAutoFn.apply(nodes)
+			nodes = F.silu(nodes, inplace = True)
 
 		# # Quantization-friendly hard swish
 		elif (self.act_fn == "swish"):
