@@ -20,19 +20,19 @@ model = dict(
 		out_indices=(1, 2, 3),
 		with_cp=True,
 		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
-    neck=dict(
-        type='BiFPN',
-        in_channels=[256, 512, 1024],
-        out_channels=256,
-        input_indices=(1,2,3),
-        num_outs=5,
-        strides=[8, 16, 32],
-        num_layers=1,
-        weight_method='fast_attn',
-        act_cfg='silu',
-        separable_conv=True,
-        epsilon=0.0001
-    ),
+	neck=dict(
+		type='BiFPN',
+		in_channels=[256, 512, 1024],
+		out_channels=256,
+		input_indices=(1,2,3),
+		num_outs=5,
+		strides=[8, 16, 32],
+		num_layers=1,
+		weight_method='fast_attn',
+		act_cfg='silu',
+		separable_conv=True,
+		epsilon=0.0001
+	),
 	bbox_head=dict(
 		type='GFLHead',
 		num_classes=34,

@@ -5,6 +5,7 @@ import numpy
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from mmcv.cnn.bricks import DepthwiseSeparableConvModule
 from mmcv.runner import BaseModule, auto_fp16
 
 from ..builder import NECKS
@@ -79,25 +80,6 @@ class ActLayer(nn.Module):
 
 		return nodes
 
-
-# temp until DepthwsieSeparableConvModule can be imported
-class SeparableConv2d(nn.Module):
-	def __init__(self, in_channels, out_channels, kernel_size, **kwargs):
-		super().__init__()
-		self.depth_wise = nn.Conv2d(in_channels, in_channels, kernel_size=(kernel_size, kernel_size),
-									stride=(1, 1), padding=(1, 1), dilation=(1, 1), groups=in_channels)
-		self.point_wise = ConvModule(in_channels, out_channels, kernel_size=1, **kwargs)
-
-	def forward(self, x):
-		out = self.depth_wise(x)
-		out = self.point_wise(out)
-		return out
-
-	def init_weights(self):
-		normal_init(self.depth_wise, std=0.01)
-		normal_init(self.point_wise, std=0.01)
-
-
 class BiFPNNode(nn.Module):
 	def __init__(self, input_channels, output_channel, num_backbone_features,
 				 weight_method, act_fn, separable_conv, epsilon, input_offsets,
@@ -146,7 +128,7 @@ class BiFPNNode(nn.Module):
 						   act_cfg=None, norm_cfg=dict(type='BN'))
 
 		if separable_conv:
-			self.fusion_convs = SeparableConv2d(**conv_kwargs)
+			self.fusion_convs = DepthwiseSeparableConvModule(**conv_kwargs)
 		else:
 			self.fusion_convs = ConvModule(padding=1, **conv_kwargs)
 
@@ -320,10 +302,7 @@ class BiFPN(BaseModule):
 				input_channels = in_channels + [out_channels, ] * (self.num_outs - self.num_backbone_features)
 			else:
 				input_channels = [out_channels, ] * self.num_outs
-			self.layers.append(
-				BiFPNBlock(input_channels, self.num_backbone_features, self.num_outs, out_channels, weight_method,
-						   act_cfg, separable_conv, epsilon, input_offsets, reduction)
-			)
+			self.layers.append(BiFPNBlock(input_channels, self.num_backbone_features, self.num_outs, out_channels, weight_method, act_cfg, separable_conv, epsilon, input_offsets, reduction))
 
 	@auto_fp16()
 	def forward(self, inputs):
