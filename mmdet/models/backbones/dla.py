@@ -145,7 +145,7 @@ class DLA(BaseModule):
 		x = self.base_layer(x)
 		for i in range(6):
 			x = getattr(self, 'level{}'.format(i))(x)
-            if i in self.out_indices:
+			if i in self.out_indices:
 				y.append(x)
 		return y
 
