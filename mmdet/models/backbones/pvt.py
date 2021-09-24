@@ -5,6 +5,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.utils.checkpoint as cp
 from mmcv.cnn import (Conv2d, build_activation_layer, build_norm_layer,
 					  constant_init, normal_init, trunc_normal_init)
 from mmcv.cnn.bricks.drop import build_dropout
