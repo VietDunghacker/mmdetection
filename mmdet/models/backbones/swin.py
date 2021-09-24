@@ -587,8 +587,7 @@ class SwinTransformer(BaseModule):
 			patch_row = pretrain_img_size[0] // patch_size
 			patch_col = pretrain_img_size[1] // patch_size
 			num_patches = patch_row * patch_col
-			self.absolute_pos_embed = nn.Parameter(
-				torch.zeros((1, num_patches, embed_dims)))
+			self.absolute_pos_embed = nn.Parameter(torch.zeros((1, num_patches, embed_dims)))
 
 		self.drop_after_pos = nn.Dropout(p=drop_rate)
 
