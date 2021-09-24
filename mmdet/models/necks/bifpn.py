@@ -13,6 +13,35 @@ from mmcv.cnn import normal_init, xavier_init, ConvModule
 
 act_fn_list = ["silu", "swish", "hswish", "relu", "relu6", "mish", "srelu"]
 
+@torch.jit.script
+def swish_jit_fwd(x):
+	return x.mul(torch.sigmoid(x))
+
+
+@torch.jit.script
+def swish_jit_bwd(x, grad_output):
+	x_sigmoid = torch.sigmoid(x)
+	return grad_output * (x_sigmoid * (1 + x * (1 - x_sigmoid)))
+
+class SwishJitAutoFn(torch.autograd.Function):
+	""" torch.jit.script optimised Swish w/ memory-efficient checkpoint
+	Inspired by conversation btw Jeremy Howard & Adam Pazske
+	https://twitter.com/jeremyphoward/status/1188251041835315200
+	"""
+	@staticmethod
+	def symbolic(g, x):
+		return g.op("Mul", x, g.op("Sigmoid", x))
+
+	@staticmethod
+	def forward(ctx, x):
+		ctx.save_for_backward(x)
+		return swish_jit_fwd(x)
+
+	@staticmethod
+	def backward(ctx, grad_output):
+		x = ctx.saved_tensors[0]
+		return swish_jit_bwd(x, grad_output)
+
 class ActLayer(nn.Module):
 	def __init__(self, act_name):
 		super(ActLayer, self).__init__()
@@ -22,7 +51,7 @@ class ActLayer(nn.Module):
 	def forward(self, nodes):
 		# Activation function
 		if (self.act_fn == "silu"):
-			nodes = F.silu(nodes)
+			nodes = SwishJitAutoFn.apply(nodes)
 
 		# # Quantization-friendly hard swish
 		elif (self.act_fn == "swish"):
