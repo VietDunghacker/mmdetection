@@ -225,6 +225,7 @@ class Resize:
 					return_scale=True,
 					backend=self.backend)
 			results[key] = img
+			cv2.imwrite('test.jpg', img)
 
 			scale_factor = np.array([w_scale, h_scale, w_scale, h_scale],
 									dtype=np.float32)
