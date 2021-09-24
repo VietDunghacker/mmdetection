@@ -26,11 +26,6 @@ class SwishImplementation(torch.autograd.Function):
 		sigmoid_i = torch.sigmoid(i)
 		return grad_output * (sigmoid_i * (1 + i * (1 - sigmoid_i)))
 
-
-class MemoryEfficientSwish(nn.Module):
-	def forward(self, x):
-		return SwishImplementation.apply(x)
-
 class ActLayer(nn.Module):
 	def __init__(self, act_name):
 		super(ActLayer, self).__init__()
@@ -40,7 +35,7 @@ class ActLayer(nn.Module):
 	def forward(self, nodes):
 		# Activation function
 		if (self.act_fn == "silu"):
-			nodes = MemoryEfficientSwish()(x)
+			nodes = SwishImplementation.apply(nodes)
 
 		# # Quantization-friendly hard swish
 		elif (self.act_fn == "swish"):
