@@ -7,10 +7,10 @@ model = dict(
 	backbone=dict(
 		type='PyramidVisionTransformerV2',
 		embed_dims=64,
-		num_layers=[3, 4, 6, 3],
+		num_layers=[3, 8, 27, 3],
 		out_indices = (1, 2, 3),
 		with_cp = True,
-		init_cfg=dict(checkpoint='https://github.com/whai362/PVT/releases/download/v2/pvt_v2_b2.pth')),
+		init_cfg=dict(checkpoint='https://github.com/whai362/PVT/releases/download/v2/pvt_v2_b4.pth')),
 	neck=dict(
 		type='BiFPN',
 		in_channels=[128, 320, 512],
