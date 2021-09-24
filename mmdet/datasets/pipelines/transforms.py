@@ -2081,8 +2081,8 @@ class Mosaic:
 											 2 * self.img_scale[0])
 			mosaic_labels = np.concatenate(mosaic_labels, 0)
 
-        cv2.imwrite('test.jpg', mosaic_img)
-        assert False
+		cv2.imwrite('test.jpg', mosaic_img)
+		assert False
 		results['img'] = mosaic_img
 		results['img_shape'] = mosaic_img.shape
 		results['ori_shape'] = mosaic_img.shape
