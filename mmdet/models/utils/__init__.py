@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from .builder import build_linear_layer, build_transformer
+from .ckpt_convert import pvt_convert
 from .conv_upsample import ConvUpsample
 from .corner_pool import BRPool, TLPool
 from .csp_layer import CSPLayer
@@ -24,5 +25,5 @@ __all__ = [
 	'LearnedPositionalEncoding', 'DynamicConv', 'SimplifiedBasicBlock',
 	'NormedLinear', 'NormedConv2d', 'make_divisible', 'InvertedResidual',
 	'SELayer', 'interpolate_as', 'ConvUpsample', 'CSPLayer', "ModulatedSEPCConv", 'SEPCConv',
-	'BRPool', 'TLPool', 'PatchEmbed', 'nchw_to_nlc', 'nlc_to_nchw'
+	'BRPool', 'TLPool', 'PatchEmbed', 'nchw_to_nlc', 'nlc_to_nchw', 'pvt_convert'
 ]
