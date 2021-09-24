@@ -80,8 +80,6 @@ albu_train_transforms = [
 ]
 
 train_pipeline = [
-	dict(type='LoadImageFromFile'),
-	dict(type='LoadAnnotations', with_bbox=True),
 	dict(type='Mosaic', center_ratio_range=(0.8, 1.2), img_scale=(720, 720), pad_val=114.0),
 	dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
 	dict(
