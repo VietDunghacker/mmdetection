@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import bisect
+import cv2
 import collections
 import copy
 import math
@@ -363,6 +364,7 @@ class MultiImageMixDataset:
 				results['scale'] = self._dynamic_scale
 
 			results = transform(results)
+			cv2.imwrite('test.jpg', results['img'])
 
 			if 'mix_results' in results:
 				results.pop('mix_results')
