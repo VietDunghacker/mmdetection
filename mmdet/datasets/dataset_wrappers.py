@@ -352,9 +352,7 @@ class MultiImageMixDataset:
 				indexes = transform.get_indexes(self.dataset)
 				if not isinstance(indexes, collections.abc.Sequence):
 					indexes = [indexes]
-				mix_results = [
-					copy.deepcopy(self.dataset[index]) for index in indexes
-				]
+				mix_results = [copy.deepcopy(self.dataset[index]) for index in indexes]
 				results['mix_results'] = mix_results
 
 			if self._dynamic_scale is not None:
