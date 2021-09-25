@@ -102,7 +102,6 @@ class AutoAugment:
         self.transforms = [Compose(policy) for policy in self.policies]
 
     def __call__(self, results):
-        print("Fuck")
         transform = np.random.choice(self.transforms)
         return transform(results)
 

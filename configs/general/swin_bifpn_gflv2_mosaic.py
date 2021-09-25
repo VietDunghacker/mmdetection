@@ -69,13 +69,8 @@ albu_train_transforms = [
 	dict(type='RGBShift', r_shift_limit=10, g_shift_limit=10, b_shift_limit=10),
 	dict(type='HueSaturationValue', hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20),
 	dict(type='ChannelShuffle'),
-	dict(
-		type='OneOf',
-		transforms=[
-			dict(type='Blur', blur_limit=3, p=1.0),
-			dict(type='MedianBlur', blur_limit=3, p=1.0)
-		],
-		p=0.1),
+	dict(type='ImageCompression', quality_lower = 85, quality_upper = 95, p = 0.1),
+	dict(type='ToGray', p = 0.1)
 ]
 
 train_pipeline = [
@@ -83,7 +78,7 @@ train_pipeline = [
 		type = 'AutoAugment',
 		policies = [
 			[
-				dict(type='Mosaic', center_ratio_range=(0.8, 1.2), img_scale=(720, 720), pad_val=114.0),
+				dict(type='Mosaic', center_ratio_range=(0.9, 1.1), img_scale=(720, 720), pad_val=114.0),
 				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
 			],
 			[
