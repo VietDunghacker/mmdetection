@@ -344,8 +344,7 @@ class MultiImageMixDataset:
 	def __getitem__(self, idx):
 		results = copy.deepcopy(self.dataset[idx])
 		for (transform, transform_type) in zip(self.pipeline, self.pipeline_types):
-			if self._skip_type_keys is not None and \
-					transform_type in self._skip_type_keys:
+			if self._skip_type_keys is not None and transform_type in self._skip_type_keys:
 				continue
 
 			if hasattr(transform, 'get_indexes'):
@@ -356,21 +355,28 @@ class MultiImageMixDataset:
 				results['mix_results'] = mix_results
 
 			if isinstance(transform, AutoAugment):
-				mosaic_mixup = False
-				for augmentations in transform.transforms:
-					for augmentation in augmentations.transforms:
-						if hasattr(augmentation, 'get_indexes'):
-							indexes = augmentation.get_indexes(self.dataset)
-							if not isinstance(indexes, collections.abc.Sequence):
-								indexes = [indexes]
-							mix_results = [copy.deepcopy(self.dataset[index]) for index in indexes]
-							results['mix_results'] = mix_results
+				chosen_transform = np.random.choice(transform.transforms)
+				for sub_transform in chosen_transform:
+					if hasattr(sub_transform, 'get_indexes'):
+						indexes = sub_transform.get_indexes(self.dataset)
+						if not isinstance(indexes, collections.abc.Sequence):
+							indexes = [indexes]
+						mix_results = [copy.deepcopy(self.dataset[index]) for index in indexes]
+						results['mix_results'] = mix_results
 
-							mosaic_mixup = True
-							break
-					if mosaic_mixup:
-						break
+					if self._dynamic_scale is not None:
+						# Used for subsequent pipeline to automatically change
+						# the output image size. E.g MixUp, Resize.
+						results['scale'] = self._dynamic_scale
 
+					results = sub_transform(results)
+
+					if 'mix_results' in results:
+						results.pop('mix_results')
+					if 'img_scale' in results:
+						results.pop('img_scale')
+				continue
+	
 			if self._dynamic_scale is not None:
 				# Used for subsequent pipeline to automatically change
 				# the output image size. E.g MixUp, Resize.
