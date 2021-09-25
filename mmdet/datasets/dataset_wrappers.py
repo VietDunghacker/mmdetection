@@ -356,7 +356,7 @@ class MultiImageMixDataset:
 
 			if isinstance(transform, AutoAugment):
 				chosen_transform = np.random.choice(transform.transforms)
-				for sub_transform in chosen_transform:
+				for sub_transform in chosen_transform.transforms:
 					if hasattr(sub_transform, 'get_indexes'):
 						indexes = sub_transform.get_indexes(self.dataset)
 						if not isinstance(indexes, collections.abc.Sequence):
