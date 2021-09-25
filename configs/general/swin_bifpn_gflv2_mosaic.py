@@ -63,7 +63,7 @@ model = dict(
 
 # data setting
 img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
-albu_train_transforms = [
+/852albu_train_transforms = [
 	dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0, rotate_limit=0, interpolation=1, p=0.5, border_mode = 0),
 	dict(type='RandomBrightnessContrast', brightness_limit=0.1, contrast_limit=0.1),
 	dict(type='RGBShift', r_shift_limit=10, g_shift_limit=10, b_shift_limit=10),
@@ -79,8 +79,19 @@ albu_train_transforms = [
 ]
 
 train_pipeline = [
-	dict(type='Mosaic', center_ratio_range=(0.8, 1.2), img_scale=(720, 720), pad_val=114.0),
-	dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
+	dict(
+		type = 'AutoAugment',
+		policies = [
+			[
+				dict(type='Mosaic', center_ratio_range=(0.8, 1.2), img_scale=(720, 720), pad_val=114.0),
+				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
+			],
+			[
+				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9)),
+				dict(type='Resize', img_scale=[(640, 640), (800, 800)], multiscale_mode='range', keep_ratio=True),
+			]
+		]
+	),
 	dict(
 		type='CutOut',
 		n_holes=(5, 10),

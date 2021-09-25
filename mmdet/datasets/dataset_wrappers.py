@@ -11,6 +11,7 @@ from torch.utils.data.dataset import ConcatDataset as _ConcatDataset
 
 from .builder import DATASETS, PIPELINES
 from .coco import CocoDataset
+from pipeline import AutoAugment
 
 
 @DATASETS.register_module()
@@ -342,8 +343,7 @@ class MultiImageMixDataset:
 
 	def __getitem__(self, idx):
 		results = copy.deepcopy(self.dataset[idx])
-		for (transform, transform_type) in zip(self.pipeline,
-											   self.pipeline_types):
+		for (transform, transform_type) in zip(self.pipeline, self.pipeline_types):
 			if self._skip_type_keys is not None and \
 					transform_type in self._skip_type_keys:
 				continue
@@ -354,6 +354,15 @@ class MultiImageMixDataset:
 					indexes = [indexes]
 				mix_results = [copy.deepcopy(self.dataset[index]) for index in indexes]
 				results['mix_results'] = mix_results
+
+			if isinstance(transform, AutoAugment):
+				for augmentation in transform.transforms:
+					if hasattr(augmentation, 'get_indexes'):
+					indexes = augmentation.get_indexes(self.dataset)
+					if not isinstance(indexes, collections.abc.Sequence):
+						indexes = [indexes]
+					mix_results = [copy.deepcopy(self.dataset[index]) for index in indexes]
+					results['mix_results'] = mix_results
 
 			if self._dynamic_scale is not None:
 				# Used for subsequent pipeline to automatically change

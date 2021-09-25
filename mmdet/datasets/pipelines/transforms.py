@@ -1921,6 +1921,7 @@ class CutOut:
 			y2 = np.clip(y1 + cutout_h, 0, h)
 			results['img'][y1:y2, x1:x2, :] = self.fill_in
 
+		cv2.imwrite('test.jpg', results)
 		return results
 
 	def __repr__(self):
