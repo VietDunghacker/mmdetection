@@ -649,7 +649,7 @@ class Pad:
 		self._pad_masks(results)
 		self._pad_seg(results)
 		cv2.imwrite('test.jpg', results['img'])
-		print_logs(results['gt_bboxes'])
+		print_log(results['gt_bboxes'])
 		assert False
 		return results
 
