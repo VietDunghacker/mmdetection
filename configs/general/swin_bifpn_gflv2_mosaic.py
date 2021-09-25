@@ -68,14 +68,16 @@ albu_train_transforms = [
 	dict(type='RandomBrightnessContrast', brightness_limit=0.1, contrast_limit=0.1),
 	dict(type='RGBShift', r_shift_limit=10, g_shift_limit=10, b_shift_limit=10),
 	dict(type='HueSaturationValue', hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20),
-	dict(type='ChannelShuffle'),
-	dict(type='ToGray', p = 0.1)
 ]
 
 train_pipeline = [
 	dict(
 		type = 'AutoAugment',
 		policies = [
+			[
+				dict(type='Mosaic', center_ratio_range=(0.9, 1.1), img_scale=(720, 720), pad_val=114.0),
+				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
+			],
 			[
 				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9)),
 				dict(type='Resize', img_scale=[(640, 640), (800, 800)], multiscale_mode='range', keep_ratio=True),
@@ -89,6 +91,21 @@ train_pipeline = [
 					  (16, 8), (8, 16), (16, 16), (16, 32), (32, 16), (32, 32),
 					  (32, 48), (48, 32), (48, 48)]),
 	dict(type='RandomFlip', flip_ratio=0.5),
+	dict(
+		type='Albu',
+		transforms=albu_train_transforms,
+		bbox_params=dict(
+			type='BboxParams',
+			format='pascal_voc',
+			label_fields=['gt_labels'],
+			min_visibility=0.0,
+			filter_lost_elements=True),
+		keymap={
+			'img': 'image',
+			'gt_bboxes': 'bboxes'
+		},
+		update_pad_shape=False,
+		skip_img_without_anno=True),	
 	dict(type='Pad', size_divisor=32),
 	dict(type='Normalize', **img_norm_cfg),
 	dict(type='DefaultFormatBundle'),
