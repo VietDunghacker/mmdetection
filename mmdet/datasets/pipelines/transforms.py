@@ -649,9 +649,6 @@ class Pad:
 		self._pad_masks(results)
 		self._pad_seg(results)
 		cv2.imwrite('test.jpg', results['img'])
-		print_log(results['gt_bboxes'])
-		import time
-		time.sleep(3)
 		assert False
 		return results
 
