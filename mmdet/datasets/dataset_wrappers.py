@@ -358,7 +358,7 @@ class MultiImageMixDataset:
 			if isinstance(transform, AutoAugment):
 				mosaic_mixup = False
 				for augmentations in transform.transforms:
-					for augmentation in augmentations:
+					for augmentation in augmentations.transforms:
 						if hasattr(augmentation, 'get_indexes'):
 							indexes = augmentation.get_indexes(self.dataset)
 							if not isinstance(indexes, collections.abc.Sequence):
