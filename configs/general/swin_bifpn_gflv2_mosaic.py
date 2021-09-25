@@ -77,10 +77,6 @@ train_pipeline = [
 		type = 'AutoAugment',
 		policies = [
 			[
-				dict(type='Mosaic', center_ratio_range=(0.9, 1.1), img_scale=(720, 720), pad_val=114.0),
-				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
-			],
-			[
 				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9)),
 				dict(type='Resize', img_scale=[(640, 640), (800, 800)], multiscale_mode='range', keep_ratio=True),
 			]
