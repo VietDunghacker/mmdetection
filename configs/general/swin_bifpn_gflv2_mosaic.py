@@ -74,7 +74,7 @@ albu_train_transforms = [
 			dict(type='ChannelShuffle', p=1.0),
 			dict(type='ToGray', p = 1.0)
 		],
-		p=1.0),
+		p=0.1),
 ]
 
 train_pipeline = [
