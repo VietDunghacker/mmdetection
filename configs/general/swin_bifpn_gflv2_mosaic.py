@@ -69,7 +69,6 @@ albu_train_transforms = [
 	dict(type='RGBShift', r_shift_limit=10, g_shift_limit=10, b_shift_limit=10),
 	dict(type='HueSaturationValue', hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20),
 	dict(type='ChannelShuffle'),
-	dict(type='ImageCompression', quality_lower = 85, quality_upper = 95, p = 0.1),
 	dict(type='ToGray', p = 0.1)
 ]
 
