@@ -358,11 +358,12 @@ class MultiImageMixDataset:
 			if isinstance(transform, AutoAugment):
 				for augmentation in transform.transforms:
 					if hasattr(augmentation, 'get_indexes'):
-					indexes = augmentation.get_indexes(self.dataset)
-					if not isinstance(indexes, collections.abc.Sequence):
-						indexes = [indexes]
-					mix_results = [copy.deepcopy(self.dataset[index]) for index in indexes]
-					results['mix_results'] = mix_results
+						indexes = augmentation.get_indexes(self.dataset)
+						if not isinstance(indexes, collections.abc.Sequence):
+							indexes = [indexes]
+						mix_results = [copy.deepcopy(self.dataset[index]) for index in indexes]
+						results['mix_results'] = mix_results
+						break
 
 			if self._dynamic_scale is not None:
 				# Used for subsequent pipeline to automatically change
