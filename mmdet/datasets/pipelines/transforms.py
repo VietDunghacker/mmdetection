@@ -470,11 +470,6 @@ class RandomFlip:
 			for key in results.get('seg_fields', []):
 				results[key] = mmcv.imflip(
 					results[key], direction=results['flip_direction'])
-		cv2.imwrite('test.jpg', results['img'])
-		print_log(results['bbox_fields'])
-		import time
-		time.sleep(3)
-		assert False
 		return results
 
 	def __repr__(self):
@@ -653,6 +648,11 @@ class Pad:
 		self._pad_img(results)
 		self._pad_masks(results)
 		self._pad_seg(results)
+		cv2.imwrite('test.jpg', results['img'])
+		print_log(results['gt_bboxes'])
+		import time
+		time.sleep(3)
+		assert False
 		return results
 
 	def __repr__(self):

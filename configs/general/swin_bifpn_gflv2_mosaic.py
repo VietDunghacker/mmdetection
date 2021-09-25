@@ -93,21 +93,6 @@ train_pipeline = [
 					  (16, 8), (8, 16), (16, 16), (16, 32), (32, 16), (32, 32),
 					  (32, 48), (48, 32), (48, 48)]),
 	dict(type='RandomFlip', flip_ratio=0.5),
-	dict(
-		type='Albu',
-		transforms=albu_train_transforms,
-		bbox_params=dict(
-			type='BboxParams',
-			format='pascal_voc',
-			label_fields=['gt_labels'],
-			min_visibility=0.0,
-			filter_lost_elements=True),
-		keymap={
-			'img': 'image',
-			'gt_bboxes': 'bboxes'
-		},
-		update_pad_shape=False,
-		skip_img_without_anno=True),	
 	dict(type='Pad', size_divisor=32),
 	dict(type='Normalize', **img_norm_cfg),
 	dict(type='DefaultFormatBundle'),
