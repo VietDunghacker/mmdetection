@@ -356,14 +356,19 @@ class MultiImageMixDataset:
 				results['mix_results'] = mix_results
 
 			if isinstance(transform, AutoAugment):
-				print("Fuck")
-				for augmentation in transform.transforms:
-					if hasattr(augmentation, 'get_indexes'):
-						indexes = augmentation.get_indexes(self.dataset)
-						if not isinstance(indexes, collections.abc.Sequence):
-							indexes = [indexes]
-						mix_results = [copy.deepcopy(self.dataset[index]) for index in indexes]
-						results['mix_results'] = mix_results
+				mosaic_mixup = False
+				for augmentations in transform.transforms:
+					for augmentation in augmentations:
+						if hasattr(augmentation, 'get_indexes'):
+							indexes = augmentation.get_indexes(self.dataset)
+							if not isinstance(indexes, collections.abc.Sequence):
+								indexes = [indexes]
+							mix_results = [copy.deepcopy(self.dataset[index]) for index in indexes]
+							results['mix_results'] = mix_results
+
+							mosaic_mixup = True
+							break
+					if mosaic_mixup:
 						break
 
 			if self._dynamic_scale is not None:
