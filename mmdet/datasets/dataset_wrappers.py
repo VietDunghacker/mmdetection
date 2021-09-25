@@ -344,7 +344,6 @@ class MultiImageMixDataset:
 	def __getitem__(self, idx):
 		results = copy.deepcopy(self.dataset[idx])
 		for (transform, transform_type) in zip(self.pipeline, self.pipeline_types):
-			print(idx, results['gt_bboxes'])
 			if self._skip_type_keys is not None and transform_type in self._skip_type_keys:
 				continue
 
