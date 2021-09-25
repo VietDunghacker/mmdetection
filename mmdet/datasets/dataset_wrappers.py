@@ -356,6 +356,7 @@ class MultiImageMixDataset:
 				results['mix_results'] = mix_results
 
 			if isinstance(transform, AutoAugment):
+				print("Fuck")
 				for augmentation in transform.transforms:
 					if hasattr(augmentation, 'get_indexes'):
 						indexes = augmentation.get_indexes(self.dataset)
