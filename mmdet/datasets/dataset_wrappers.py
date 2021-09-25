@@ -11,7 +11,7 @@ from torch.utils.data.dataset import ConcatDataset as _ConcatDataset
 
 from .builder import DATASETS, PIPELINES
 from .coco import CocoDataset
-from pipeline import AutoAugment
+from pipelines import AutoAugment
 
 
 @DATASETS.register_module()
