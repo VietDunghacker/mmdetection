@@ -5,6 +5,7 @@ import math
 
 import cv2
 import mmcv
+from mmcv.utils import print_log
 import numpy as np
 from numpy import random
 
@@ -614,11 +615,9 @@ class Pad:
 				max_size = max(results[key].shape[:2])
 				self.size = (max_size, max_size)
 			if self.size is not None:
-				padded_img = mmcv.impad(
-					results[key], shape=self.size, pad_val=pad_val)
+				padded_img = mmcv.impad(results[key], shape=self.size, pad_val=pad_val)
 			elif self.size_divisor is not None:
-				padded_img = mmcv.impad_to_multiple(
-					results[key], self.size_divisor, pad_val=pad_val)
+				padded_img = mmcv.impad_to_multiple(results[key], self.size_divisor, pad_val=pad_val)
 			results[key] = padded_img
 		results['pad_shape'] = padded_img.shape
 		results['pad_fixed_size'] = self.size
@@ -649,6 +648,9 @@ class Pad:
 		self._pad_img(results)
 		self._pad_masks(results)
 		self._pad_seg(results)
+		cv2.imwrite('test.jpg', results['img'])
+		print_logs(results['gt_bboxes'])
+		assert False
 		return results
 
 	def __repr__(self):
@@ -807,8 +809,7 @@ class RandomCrop:
 				bboxes[:, 3] > bboxes[:, 1])
 			# If the crop does not contain any gt-bbox area and
 			# allow_negative_crop is False, skip this image.
-			if (key == 'gt_bboxes' and not valid_inds.any()
-					and not allow_negative_crop):
+			if (key == 'gt_bboxes' and not valid_inds.any() and not allow_negative_crop):
 				return None
 			results[key] = bboxes[valid_inds, :]
 			# label fields. e.g. gt_labels and gt_labels_ignore
@@ -2280,14 +2281,11 @@ class MixUp:
 				(self.dynamic_scale[0], self.dynamic_scale[1], 3),
 				dtype=retrieve_img.dtype) * self.pad_val
 		else:
-			out_img = np.ones(
-				self.dynamic_scale, dtype=retrieve_img.dtype) * self.pad_val
+			out_img = np.ones(self.dynamic_scale, dtype=retrieve_img.dtype) * self.pad_val
 
 		# 1. keep_ratio resize
-		scale_ratio = min(self.dynamic_scale[0] / retrieve_img.shape[0],
-						  self.dynamic_scale[1] / retrieve_img.shape[1])
-		retrieve_img = mmcv.imresize(
-			retrieve_img, (int(retrieve_img.shape[1] * scale_ratio),
+		scale_ratio = min(self.dynamic_scale[0] / retrieve_img.shape[0], self.dynamic_scale[1] / retrieve_img.shape[1])
+		retrieve_img = mmcv.imresize(retrieve_img, (int(retrieve_img.shape[1] * scale_ratio),
 						   int(retrieve_img.shape[0] * scale_ratio)))
 
 		# 2. paste
@@ -2295,8 +2293,7 @@ class MixUp:
 
 		# 3. scale jit
 		scale_ratio *= jit_factor
-		out_img = mmcv.imresize(out_img, (int(out_img.shape[1] * jit_factor),
-										  int(out_img.shape[0] * jit_factor)))
+		out_img = mmcv.imresize(out_img, (int(out_img.shape[1] * jit_factor), int(out_img.shape[0] * jit_factor)))
 
 		# 4. flip
 		if is_filp:
@@ -2347,10 +2344,8 @@ class MixUp:
 
 			retrieve_gt_labels = retrieve_results['gt_labels'][keep_list]
 			retrieve_gt_bboxes = cp_retrieve_gt_bboxes[keep_list]
-			mixup_gt_bboxes = np.concatenate(
-				(results['gt_bboxes'], retrieve_gt_bboxes), axis=0)
-			mixup_gt_labels = np.concatenate(
-				(results['gt_labels'], retrieve_gt_labels), axis=0)
+			mixup_gt_bboxes = np.concatenate((results['gt_bboxes'], retrieve_gt_bboxes), axis=0)
+			mixup_gt_labels = np.concatenate((results['gt_labels'], retrieve_gt_labels), axis=0)
 
 			results['img'] = mixup_img
 			results['img_shape'] = mixup_img.shape
