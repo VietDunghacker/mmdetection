@@ -1,3 +1,4 @@
+import copy
 import itertools
 import numpy as np
 import random
