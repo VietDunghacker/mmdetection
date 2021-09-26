@@ -169,17 +169,9 @@ test_pipeline = [
 		])
 ]
 data = dict(
-	samples_per_gpu=12,
 	workers_per_gpu=4,
-	train=dict(type = dataset_type,
-		ann_file = data_root + '/annotations/instances_train2017.json',
-		img_prefix = 'train_images/',
-		pipeline=train_pipeline),
-	val=dict(type = dataset_type,
-		ann_file = data_root + '/annotations/instances_val2017.json',
-		img_prefix = 'val_images/',
-		pipeline=test_pipeline,
-		samples_per_gpu = 24),
+	train=dict(pipeline=train_pipeline),
+	val=dict(pipeline=test_pipeline),
 	test=dict(pipeline=test_pipeline))
 
 # optimizer
