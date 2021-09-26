@@ -24,8 +24,8 @@ class ClassAwareSampler(Sampler):
 		self.cw = []
 		self.empty_gt = set()
 		self.multiple_gt = set()
-		from .coco import CocoDataset
-		from .lvis import LVISDataset
+		from mmdet.datasets.coco import CocoDataset
+		from mmdet.datasets.lvis import LVISDataset
 		if isinstance(dataset, CocoDataset) or isinstance(dataset, LVISDataset):
 			for idx in range(len(self.dataset)):
 				cat_ids = set(self.dataset.get_cat_ids(idx))
@@ -80,8 +80,8 @@ class ClassAwareSampler(Sampler):
 
 	def _get_class_balance_factor(self):
 		ret = []
-		from .coco import CocoDataset
-		from .lvis import LVISDataset
+		from mmdet.datasets.coco import CocoDataset
+		from mmdet.datasets.lvis import LVISDataset
 		if isinstance(self.dataset, CocoDataset) or isinstance(dataset, LVISDataset):
 			#ret = [1.0] * len(self.dataset)
 			for idx in range(len(self.dataset)):
