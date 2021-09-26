@@ -5,6 +5,7 @@ import torch
 
 from collections import defaultdict
 from terminaltables import AsciiTable
+from torch.utils.data import Sampler
 
 class ClassAwareSampler(Sampler):
 	def __init__(self, dataset, samples_per_gpu):
