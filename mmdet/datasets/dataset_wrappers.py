@@ -228,6 +228,12 @@ class ClassBalancedDataset:
 			assert len(flags) == len(repeat_indices)
 		self.flag = np.asarray(flags, dtype=np.uint8)
 
+		if hasattr(self.dataset, 'cat_ids'):
+			self.cat_ids = self.dataset.cat_ids
+
+		if hasattr(self.dataset, 'cat2label'):
+			self.cat2label = self.dataset.cat2label
+
 	def _get_repeat_factors(self, dataset, repeat_thr):
 		"""Get repeat factor for each images in the dataset.
 
@@ -283,6 +289,8 @@ class ClassBalancedDataset:
 		"""Length after repetition."""
 		return len(self.repeat_indices)
 
+	def get_cat_ids(self):
+		return self.dataset.get_cat_ids()
 
 @DATASETS.register_module()
 class MultiImageMixDataset:
@@ -337,6 +345,12 @@ class MultiImageMixDataset:
 		if dynamic_scale is not None:
 			assert isinstance(dynamic_scale, tuple)
 		self._dynamic_scale = dynamic_scale
+
+		if hasattr(self.dataset, 'cat_ids'):
+			self.cat_ids = self.dataset.cat_ids
+
+		if hasattr(self.dataset, 'cat2label'):
+			self.cat2label = self.dataset.cat2label
 
 	def __len__(self):
 		return self.num_samples
@@ -412,3 +426,6 @@ class MultiImageMixDataset:
 		"""
 		assert isinstance(dynamic_scale, tuple)
 		self._dynamic_scale = dynamic_scale
+
+	def get_cat_ids(self):
+		return self.dataset.get_cat_ids()
