@@ -289,9 +289,9 @@ class ClassBalancedDataset:
 		"""Length after repetition."""
 		return len(self.repeat_indices)
 
-	def get_cat_ids(self):
-		return self.dataset.get_cat_ids()
-
+	def get_cat_ids(self, idx):
+		return self.dataset.get_cat_ids(idx)
+		
 @DATASETS.register_module()
 class MultiImageMixDataset:
 	"""A wrapper of multiple images mixed dataset.
@@ -427,5 +427,5 @@ class MultiImageMixDataset:
 		assert isinstance(dynamic_scale, tuple)
 		self._dynamic_scale = dynamic_scale
 
-	def get_cat_ids(self):
-		return self.dataset.get_cat_ids()
+	def get_cat_ids(self, idx):
+		return self.dataset.get_cat_ids(idx)
