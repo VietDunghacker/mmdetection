@@ -82,7 +82,7 @@ train_pipeline = [
 		type = 'AutoAugment',
 		policies = [
 			[
-				dict(type='Mosaic', center_ratio_range=(0.9, 1.1), img_scale=(720, 720), pad_val=114.0),
+				dict(type='Mosaic', center_ratio_range=(0.9, 1.1), img_scale=(720, 720), pad_val=0.0),
 				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
 			],
 			[
@@ -105,7 +105,7 @@ train_pipeline = [
 			type='BboxParams',
 			format='pascal_voc',
 			label_fields=['gt_labels'],
-			min_visibility=0.0,
+			min_visibility=0.1,
 			filter_lost_elements=True),
 		keymap={
 			'img': 'image',

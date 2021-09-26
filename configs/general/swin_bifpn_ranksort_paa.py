@@ -85,28 +85,29 @@ albu_train_transforms = [
 	dict(type='RandomBrightnessContrast', brightness_limit=0.1, contrast_limit=0.1),
 	dict(type='RGBShift', r_shift_limit=10, g_shift_limit=10, b_shift_limit=10),
 	dict(type='HueSaturationValue', hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20),
-	dict(type='ChannelShuffle'),
 	dict(
 		type='OneOf',
 		transforms=[
-			dict(type='Blur', blur_limit=3, p=1.0),
-			dict(type='MedianBlur', blur_limit=3, p=1.0)
+			dict(type='ChannelShuffle', p=1.0),
+			dict(type='ToGray', p = 1.0)
 		],
 		p=0.1),
 ]
 
 train_pipeline = [
-	dict(type='LoadImageFromFile'),
-	dict(type='LoadAnnotations', with_bbox=True),
 	dict(
-		type='RandomCrop',
-		crop_type='relative_range',
-		crop_size=(0.9, 0.9)),
-	dict(
-		type='Resize',
-		img_scale=[(640, 640), (800, 800)],
-		multiscale_mode='range',
-		keep_ratio=True),
+		type = 'AutoAugment',
+		policies = [
+			[
+				dict(type='Mosaic', center_ratio_range=(0.9, 1.1), img_scale=(720, 720), pad_val=0.0),
+				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
+			],
+			[
+				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9)),
+				dict(type='Resize', img_scale=[(640, 640), (800, 800)], multiscale_mode='range', keep_ratio=True),
+			]
+		]
+	),
 	dict(
 		type='CutOut',
 		n_holes=(5, 10),
