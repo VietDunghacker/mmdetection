@@ -21,15 +21,18 @@ model = dict(
 		with_cp=True,
 		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
 	neck=dict(
-		type='PAFPNX',
-		in_channels=[128, 256, 512, 1024],
+		type='BiFPN',
+		in_channels=[256, 512, 1024],
 		out_channels=256,
-		start_level=1,
-		add_extra_convs='on_output',
+		input_indices=(1, 2, 3),
 		num_outs=5,
-		relu_before_extra_convs=True,
-		pafpn_conv_cfg=dict(type='DCNv2'),
-		norm_cfg=dict(type='GN', num_groups=32, requires_grad=True)),
+		strides=[8, 16, 32],
+		num_layers=1,
+		weight_method='fast_attn',
+		act_cfg='silu',
+		separable_conv=True,
+		epsilon=0.0001
+	),
 	bbox_head=dict(
 		type='TOODHead',
 		num_classes=80,
@@ -62,7 +65,7 @@ model = dict(
 		loss_bbox=dict(type='CIoULoss', loss_weight=2.0),
 	),
 	train_cfg = dict(
-		initial_iter=0,
+		initial_iter=1000,
 		initial_assigner=dict(type='ATSSAssigner', topk=9),
 		assigner=dict(type='TaskAlignedAssigner', topk=13),
 		alpha=1,
@@ -85,28 +88,29 @@ albu_train_transforms = [
 	dict(type='RandomBrightnessContrast', brightness_limit=0.1, contrast_limit=0.1),
 	dict(type='RGBShift', r_shift_limit=10, g_shift_limit=10, b_shift_limit=10),
 	dict(type='HueSaturationValue', hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20),
-	dict(type='ChannelShuffle'),
 	dict(
 		type='OneOf',
 		transforms=[
-			dict(type='Blur', blur_limit=3, p=1.0),
-			dict(type='MedianBlur', blur_limit=3, p=1.0)
+			dict(type='ChannelShuffle', p=1.0),
+			dict(type='ToGray', p = 1.0)
 		],
 		p=0.1),
 ]
 
 train_pipeline = [
-	dict(type='LoadImageFromFile'),
-	dict(type='LoadAnnotations', with_bbox=True),
 	dict(
-		type='RandomCrop',
-		crop_type='relative_range',
-		crop_size=(0.9, 0.9)),
-	dict(
-		type='Resize',
-		img_scale=[(640, 640), (800, 800)],
-		multiscale_mode='range',
-		keep_ratio=True),
+		type = 'AutoAugment',
+		policies = [
+			[
+				dict(type='Mosaic', center_ratio_range=(0.9, 1.1), img_scale=(720, 720), pad_val=0.0),
+				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
+			],
+			[
+				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9)),
+				dict(type='Resize', img_scale=[(640, 640), (800, 800)], multiscale_mode='range', keep_ratio=True),
+			]
+		]
+	),
 	dict(
 		type='CutOut',
 		n_holes=(5, 10),
