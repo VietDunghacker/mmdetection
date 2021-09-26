@@ -104,7 +104,7 @@ train_pipeline = [
 				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
 			],
 			[
-				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9)),
+				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
 				dict(type='Resize', img_scale=[(640, 640), (800, 800)], multiscale_mode='range', keep_ratio=True),
 			]
 		]
@@ -131,7 +131,7 @@ train_pipeline = [
 			'gt_bboxes': 'bboxes'
 		},
 		update_pad_shape=False,
-		skip_img_without_anno=True),	
+		skip_img_without_anno=False),	
 	dict(type='Normalize', **img_norm_cfg),
 	dict(type='LoadRPDV2Annotations', num_classes=34),
 	dict(type='RPDV2FormatBundle'),
