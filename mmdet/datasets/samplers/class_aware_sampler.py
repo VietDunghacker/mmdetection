@@ -29,7 +29,11 @@ class ClassAwareSampler(Sampler):
 		self.multiple_gt = set()
 		from mmdet.datasets.coco import CocoDataset
 		from mmdet.datasets.lvis import LVISDataset
-		if isinstance(dataset, CocoDataset) or isinstance(dataset, LVISDataset):
+		self.coco_style = isinstance(self.dataset, CocoDataset) or isinstance(self.dataset, LVISDataset)
+		if hasattr(self.dataset, "dataset") and (isinstance(self.dataset.dataset, CocoDataset) or isinstance(self.dataset.dataset, LVISDataset)):
+			self.coco_style = True
+
+		if self.coco_style:
 			for idx in range(len(self.dataset)):
 				cat_ids = set(self.dataset.get_cat_ids(idx))
 				if len([cat_id for cat_id in cat_ids if cat_id in self.dataset.cat_ids]) == 0:
@@ -83,13 +87,8 @@ class ClassAwareSampler(Sampler):
 
 	def _get_class_balance_factor(self):
 		ret = []
-		from mmdet.datasets.coco import CocoDataset
-		from mmdet.datasets.lvis import LVISDataset
-		true_condition = isinstance(self.dataset, CocoDataset) or isinstance(self.dataset, LVISDataset)
-		if hasattr(self.dataset, "dataset") and (isinstance(self.dataset.dataset, CocoDataset) or isinstance(self.dataset.dataset, LVISDataset)):
-			true_condition = True
 
-		if true_condition:
+		if self.coco_style:
 			#ret = [1.0] * len(self.dataset)
 			for idx in range(len(self.dataset)):
 				cat_ids = set(self.dataset.get_cat_ids(idx))
