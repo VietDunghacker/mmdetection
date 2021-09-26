@@ -85,7 +85,7 @@ class ClassAwareSampler(Sampler):
 		ret = []
 		from mmdet.datasets.coco import CocoDataset
 		from mmdet.datasets.lvis import LVISDataset
-		if isinstance(self.dataset, CocoDataset) or isinstance(dataset, LVISDataset):
+		if isinstance(self.dataset, CocoDataset) or isinstance(self.dataset, LVISDataset):
 			#ret = [1.0] * len(self.dataset)
 			for idx in range(len(self.dataset)):
 				cat_ids = set(self.dataset.get_cat_ids(idx))
