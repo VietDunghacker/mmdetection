@@ -52,7 +52,8 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 											 num_classes)
 		self.wh_head = self._build_head(in_channel, feat_channel, 2)
 		self.offset_head = self._build_head(in_channel, feat_channel, 2)
-		self.scale = Scale(1.0)
+		self.wh_scale = Scale(1.0)
+		self.offset_scale = Scale(1.0)
 
 		self.loss_center_heatmap = build_loss(loss_center_heatmap)
 		self.loss_wh = build_loss(loss_wh)
@@ -110,9 +111,9 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 		"""
 
 		center_heatmap_pred = self.heatmap_head(feat).sigmoid()
-		wh_pred = self.scale(self.wh_head(feat))
+		wh_pred = self.wh_scale(self.wh_head(feat))
 
-		offset_pred = self.offset_head(feat)
+		offset_pred = self.offset_scale(self.offset_head(feat))
 		return center_heatmap_pred, wh_pred, offset_pred
 
 	@force_fp32(apply_to=('center_heatmap_preds', 'wh_preds', 'offset_preds'))
