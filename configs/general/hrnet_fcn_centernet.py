@@ -83,6 +83,7 @@ train_pipeline = [
 			[
 				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
 				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
+				dict(type='Pad', size_divisor=800),
 			]
 		]
 	),
