@@ -225,16 +225,15 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 			gt_centers = torch.cat((center_x, center_y), dim=1)
 
 			gt_center_set = set([(ctx.int(), cty.int()) for (ctx, cty) in gt_centers])
-			if len(gt_centers) != len(gt_center_set):
-				print("Fuck: " + gt_centers)
 
 			for j, ct in enumerate(gt_centers):
-				ctx_int, cty_int = ct.int()
 				ctx, cty = ct
+				ctx_int = int(min(ctx, feat_w - 1))
+				cty_int = int(min(cty, feat_h - 1))
+				ctx_int, cty_int = ct.int()
 				scale_box_h = (gt_bbox[j][3] - gt_bbox[j][1]) * height_ratio
 				scale_box_w = (gt_bbox[j][2] - gt_bbox[j][0]) * width_ratio
-				radius = gaussian_radius([scale_box_h, scale_box_w],
-										 min_overlap=0.3)
+				radius = gaussian_radius([scale_box_h, scale_box_w], min_overlap=0.3)
 				radius = max(0, int(radius))
 				ind = gt_label[j]
 				gen_gaussian_target(center_heatmap_target[batch_id, ind], [ctx_int, cty_int], radius)

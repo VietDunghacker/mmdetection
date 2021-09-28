@@ -2037,10 +2037,8 @@ class Mosaic:
 			img_i = results_patch['img']
 			h_i, w_i = img_i.shape[:2]
 			# keep_ratio resize
-			scale_ratio_i = min(self.img_scale[0] / h_i,
-								self.img_scale[1] / w_i)
-			img_i = mmcv.imresize(
-				img_i, (int(w_i * scale_ratio_i), int(h_i * scale_ratio_i)))
+			scale_ratio_i = min(self.img_scale[0] / h_i, self.img_scale[1] / w_i)
+			img_i = mmcv.imresize(img_i, (int(w_i * scale_ratio_i), int(h_i * scale_ratio_i)))
 
 			# compute the combine parameters
 			paste_coord, crop_coord = self._mosaic_combine(loc, center_position, img_i.shape[:2][::-1])
@@ -2067,13 +2065,14 @@ class Mosaic:
 
 		if len(mosaic_labels) > 0:
 			mosaic_bboxes = np.concatenate(mosaic_bboxes, 0)
-			mosaic_bboxes[:, 0::2] = np.clip(mosaic_bboxes[:, 0::2], 0,
-											 2 * self.img_scale[1])
-			mosaic_bboxes[:, 1::2] = np.clip(mosaic_bboxes[:, 1::2], 0,
-											 2 * self.img_scale[0])
+			mosaic_bboxes[:, 0::2] = np.clip(mosaic_bboxes[:, 0::2], 0, 2 * self.img_scale[1])
+			mosaic_bboxes[:, 1::2] = np.clip(mosaic_bboxes[:, 1::2], 0, 2 * self.img_scale[0])
 			mosaic_labels = np.concatenate(mosaic_labels, 0)
 
 			mosaic_bboxes, mosaic_labels = self._filter_box_candidates(mosaic_bboxes, mosaic_labels)
+
+		cv2.imwrite("result.jpg", mosaic_img)
+		assert False
 
 		results['img'] = mosaic_img
 		results['img_shape'] = mosaic_img.shape
