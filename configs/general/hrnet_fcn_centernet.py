@@ -1,5 +1,4 @@
 _base_ = [
-	'../_base_/datasets/coco_detection.py',
 	'../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py',
 ]
 
@@ -124,6 +123,15 @@ test_pipeline = [
 		flip=False,
 		transforms=[
 			dict(type='Resize', keep_ratio=True),
+			dict(
+				type='RandomCenterCropPad',
+				ratios=None,
+				border=None,
+				mean=[0, 0, 0],
+				std=[1, 1, 1],
+				to_rgb=True,
+				test_mode=True,
+				test_pad_mode=['size_divisor', 32]),
 			dict(type='RandomFlip'),
 			dict(type='Normalize', **img_norm_cfg),
 			dict(type='DefaultFormatBundle'),
@@ -131,17 +139,9 @@ test_pipeline = [
 		])
 ]
 data = dict(
-	samples_per_gpu=12,
 	workers_per_gpu=4,
-	train=dict(type = dataset_type,
-		ann_file = data_root + '/annotations/instances_train2017.json',
-		img_prefix = 'train_images/',
-		pipeline=train_pipeline),
-	val=dict(type = dataset_type,
-		ann_file = data_root + '/annotations/instances_val2017.json',
-		img_prefix = 'val_images/',
-		pipeline=test_pipeline,
-		samples_per_gpu = 24),
+	train=dict(pipeline=train_pipeline),
+	val=dict(pipeline=test_pipeline),
 	test=dict(pipeline=test_pipeline))
 
 # optimizer
