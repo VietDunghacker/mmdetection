@@ -802,8 +802,7 @@ class RandomCrop:
 			if self.bbox_clip_border:
 				bboxes[:, 0::2] = np.clip(bboxes[:, 0::2], 0, img_shape[1])
 				bboxes[:, 1::2] = np.clip(bboxes[:, 1::2], 0, img_shape[0])
-			valid_inds = (bboxes[:, 2] > bboxes[:, 0]) & (
-				bboxes[:, 3] > bboxes[:, 1])
+			valid_inds = (bboxes[:, 2] > bboxes[:, 0]) & (bboxes[:, 3] > bboxes[:, 1])
 			# If the crop does not contain any gt-bbox area and
 			# allow_negative_crop is False, skip this image.
 			if (key == 'gt_bboxes' and not valid_inds.any() and not allow_negative_crop):
