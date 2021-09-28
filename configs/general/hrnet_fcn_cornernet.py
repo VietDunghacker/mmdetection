@@ -46,16 +46,28 @@ model = dict(
 		concat_input=False,
 		dropout_ratio=-1,
 		align_corners=False),
-	bbox_head=dict(
-		type='CenterNetHead',
-		num_classes=34,
-		in_channel=256,
-		feat_channel=256,
-		loss_center_heatmap=dict(type='GaussianFocalLoss', alpha = 2.0, loss_weight=1.0),
-		loss_wh=dict(type='L1Loss', loss_weight=0.1),
-		loss_offset=dict(type='L1Loss', loss_weight=1.0)),
-	train_cfg=None,
-	test_cfg=dict(topk=100, local_maximum_kernel=3, max_per_img=100, threshold = 0.05, nms_cfg = dict(type='soft_nms', iou_threshold=0.5, method='gaussian')))
+ 	bbox_head=dict(
+ 	 	type='CornerHead',
+ 	 	num_classes=80,
+ 	 	in_channels=256,
+ 	 	num_feat_levels=1,
+ 	 	corner_emb_channels=1,
+ 	 	loss_heatmap=dict(
+ 	 	 	type='GaussianFocalLoss', alpha=2.0, gamma=4.0, loss_weight=1),
+ 	 	loss_embedding=dict(
+ 	 	 	type='AssociativeEmbeddingLoss',
+ 	 	 	pull_weight=0.10,
+ 	 	 	push_weight=0.10),
+ 	 	loss_offset=dict(type='SmoothL1Loss', beta=1.0, loss_weight=1)),
+ 	# training and testing settings
+ 	train_cfg=None,
+ 	test_cfg=dict(
+ 	 	corner_topk=100,
+ 	 	local_maximum_kernel=3,
+ 	 	distance_threshold=0.5,
+ 	 	score_thr=0.05,
+ 	 	max_per_img=100,
+ 	 	nms=dict(type='soft_nms', iou_threshold=0.5, method='gaussian')))
 
 # data setting
 img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
@@ -115,7 +127,7 @@ train_pipeline = [
 ]
 
 test_pipeline = [
-	dict(type='LoadImageFromFile', to_float32=True),
+	dict(type='LoadImageFromFile'),
 	dict(
 		type='MultiScaleFlipAug',
 		img_scale=(800, 800),
