@@ -1,7 +1,7 @@
 _base_ = [
 	'../_base_/default_runtime.py'
 ]
-max_per_img = 32
+max_per_img = 128
 model = dict(
 	type='DeformableDETR',
 	backbone=dict(
@@ -33,7 +33,7 @@ model = dict(
 		num_query=max_per_img,
 		num_classes=1,
 		in_channels=256,
-		as_two_stage=False,
+		as_two_stage=True,
 		with_box_refine=True,
 		transformer=dict(
 			type='DeformableDetrTransformer',
