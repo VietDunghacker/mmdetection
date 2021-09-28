@@ -830,7 +830,7 @@ class DETRHead(AnchorFreeHead):
 
 		return det_bboxes, det_labels
 	def _bboxes_nms(self, bboxes, labels, cfg):
-		keep = bboxes[:, :4] > cfg.score_threshold
+		keep = bboxes[:, -1] > cfg.score_threshold
 		bboxes = bboxes[keep]
 		labels = labels[keep]
 
