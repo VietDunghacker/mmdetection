@@ -230,7 +230,6 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 				ctx, cty = ct
 				ctx_int = int(min(ctx, feat_w - 1))
 				cty_int = int(min(cty, feat_h - 1))
-				ctx_int, cty_int = ct.int()
 				scale_box_h = (gt_bbox[j][3] - gt_bbox[j][1]) * height_ratio
 				scale_box_w = (gt_bbox[j][2] - gt_bbox[j][0]) * width_ratio
 				radius = gaussian_radius([scale_box_h, scale_box_w], min_overlap=0.3)
