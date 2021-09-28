@@ -37,7 +37,7 @@ model = dict(
 		init_cfg = dict(type='Pretrained', checkpoint='https://download.openmmlab.com/pretrain/third_party/hrnetv2_w48-d2186c55.pth')),
 	neck=dict(
 		type='FCNHead',
-		in_channels=[40, 80, 160, 320],
+		in_channels=[48, 96, 192, 384],
 		in_index=(0, 1, 2, 3),
 		channels=256,
 		input_transform='resize_concat',
