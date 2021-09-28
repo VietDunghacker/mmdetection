@@ -1,7 +1,7 @@
 _base_ = [
 	'../_base_/default_runtime.py'
 ]
-max_per_img = 128
+max_per_img = 32
 model = dict(
 	type='DeformableDETR',
 	backbone=dict(
@@ -42,8 +42,7 @@ model = dict(
 				num_layers=6,
 				transformerlayers=dict(
 					type='BaseTransformerLayer',
-					attn_cfgs=dict(
-						type='MultiScaleDeformableAttention', embed_dims=256),
+					attn_cfgs=dict(type='MultiScaleDeformableAttention', embed_dims=256),
 					feedforward_channels=1024,
 					ffn_dropout=0.1,
 					operation_order=('self_attn', 'norm', 'ffn', 'norm'))),
@@ -54,23 +53,13 @@ model = dict(
 				transformerlayers=dict(
 					type='DetrTransformerDecoderLayer',
 					attn_cfgs=[
-						dict(
-							type='MultiheadAttention',
-							embed_dims=256,
-							num_heads=8,
-							dropout=0.1),
-						dict(
-							type='MultiScaleDeformableAttention',
-							embed_dims=256)
+						dict(type='MultiheadAttention', embed_dims=256, num_heads=8, dropout=0.1),
+						dict(type='MultiScaleDeformableAttention', embed_dims=256)
 					],
 					feedforward_channels=1024,
 					ffn_dropout=0.1,
 					operation_order=('self_attn', 'norm', 'cross_attn', 'norm', 'ffn', 'norm')))),
-		positional_encoding=dict(
-			type='SinePositionalEncoding',
-			num_feats=128,
-			normalize=True,
-			offset=-0.5),
+		positional_encoding=dict(type='SinePositionalEncoding', num_feats=128, normalize=True, offset=-0.5),
  	 	loss_cls=dict(
  	 	 	type='FocalLoss',
  	 	 	use_sigmoid=True,
