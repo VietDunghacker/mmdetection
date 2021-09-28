@@ -1,28 +1,28 @@
 _base_ = [
 	'../_base_/default_runtime.py'
 ]
-max_per_img = 32
+max_per_img = 300
 model = dict(
 	type='DeformableDETR',
 	backbone=dict(
 		type='SwinTransformer',
-		embed_dims=128,
+		embed_dims=96,
 		depths=[2, 2, 18, 2],
-		num_heads=[4, 8, 16, 32],
+		num_heads=[3, 6, 12, 24],
 		window_size=7,
 		mlp_ratio=4,
 		qkv_bias=True,
 		qk_scale=None,
 		drop_rate=0.,
 		attn_drop_rate=0.,
-		drop_path_rate=0.3,
+		drop_path_rate=0.2,
 		patch_norm=True,
 		out_indices=(1, 2, 3),
 		with_cp=True,
-		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/swin_base_224_b16x64_300e_imagenet_20210616_190742-93230b0d.pth')),
+		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_small_patch4_window7_224-cc7a01c9.pth')),
 	neck=dict(
 		type='ChannelMapper',
-		in_channels=[256, 512, 1024],
+		in_channels=[192, 384, 768],
 		kernel_size=1,
 		out_channels=256,
 		act_cfg=None,
@@ -71,24 +71,23 @@ model = dict(
 			num_feats=128,
 			normalize=True,
 			offset=-0.5),
-		loss_cls=dict(
-			type='CrossEntropyLoss',
-			bg_cls_weight=0.1,
-			use_sigmoid=False,
-			loss_weight=2.0,
-			class_weight=1.0),
+ 	 	loss_cls=dict(
+ 	 	 	type='FocalLoss',
+ 	 	 	use_sigmoid=True,
+ 	 	 	gamma=2.0,
+ 	 	 	alpha=0.25,
+ 	 	 	loss_weight=2.0),
 		loss_bbox=dict(type='L1Loss', loss_weight=5.0),
 		loss_iou=dict(type='GIoULoss', loss_weight=2.0)),
 	# training and testing settings
 	train_cfg=dict(
 		assigner=dict(
 			type='HungarianAssigner',
-			cls_cost=dict(type='ClassificationCost', weight=2.),
+			cls_cost=dict(type='FocalLossCost', weight=2.),
 			reg_cost=dict(type='BBoxL1Cost', weight=5.0, box_format='xywh'),
 			iou_cost=dict(type='IoUCost', iou_mode='giou', weight=2.0))),
 	test_cfg=dict(
 		max_per_img=max_per_img,
-		nms_max_per_img = 32,
 		nms = dict(type='soft_nms', iou_threshold=0.6)))
 
 # data setting

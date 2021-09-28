@@ -1,30 +1,30 @@
 _base_ = [
 	'../_base_/default_runtime.py'
 ]
-max_per_img = 32
+max_per_img = 100
 model = dict(
 	type='DETR',
 	backbone=dict(
 		type='SwinTransformer',
-		embed_dims=128,
+		embed_dims=96,
 		depths=[2, 2, 18, 2],
-		num_heads=[4, 8, 16, 32],
+		num_heads=[3, 6, 12, 24],
 		window_size=7,
 		mlp_ratio=4,
 		qkv_bias=True,
 		qk_scale=None,
 		drop_rate=0.,
 		attn_drop_rate=0.,
-		drop_path_rate=0.3,
+		drop_path_rate=0.2,
 		patch_norm=True,
-		out_indices=(3, ),
+		out_indices=(1, 2, 3),
 		with_cp=True,
-		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/swin_base_224_b16x64_300e_imagenet_20210616_190742-93230b0d.pth')),
+		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_small_patch4_window7_224-cc7a01c9.pth')),
 	bbox_head=dict(
 		type='DETRHead',
 		num_classes=1,
 		num_query = max_per_img,
-		in_channels=1024,
+		in_channels=768,
 		transformer=dict(
 			type='Transformer',
 			encoder=dict(
@@ -58,19 +58,14 @@ model = dict(
 					operation_order=('self_attn', 'norm', 'cross_attn', 'norm', 'ffn', 'norm')),
 			)),
 		positional_encoding=dict(type='SinePositionalEncoding', num_feats=128, normalize=True),
-		loss_cls=dict(
-			type='FocalLoss',
-			use_sigmoid=True,
-			gamma=2.0,
-			alpha=0.25,
-			loss_weight=2.0),
+ 	 	loss_cls=dict(type='CrossEntropyLoss', bg_cls_weight=0.1, use_sigmoid=False, loss_weight=1.0, class_weight=1.0),
 		loss_bbox=dict(type='L1Loss', loss_weight=5.0),
 		loss_iou=dict(type='GIoULoss', loss_weight=2.0)),
 	# training and testing settings
 	train_cfg=dict(
 		assigner=dict(
 			type='HungarianAssigner',
-			cls_cost=dict(type='ClassificationCost', weight=2.),
+			cls_cost=dict(type='ClassificationCost', weight=1.),
 			reg_cost=dict(type='BBoxL1Cost', weight=5.0, box_format='xywh'),
 			iou_cost=dict(type='IoUCost', iou_mode='giou', weight=2.0))),
 	test_cfg=dict(
@@ -79,10 +74,7 @@ model = dict(
 		nms = dict(type='nms', iou_threshold=0.6)))
 
 # data setting
-dataset_type = 'CocoDataset'
-data_root = 'data/coco/'
 img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
-
 albu_train_transforms = [
 	dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0, rotate_limit=0, interpolation=1, p=0.5, border_mode = 0),
 	dict(type='RandomBrightnessContrast', brightness_limit=0.1, contrast_limit=0.1),
@@ -106,7 +98,7 @@ train_pipeline = [
 				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
 			],
 			[
-				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9)),
+				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
 				dict(type='Resize', img_scale=[(640, 640), (800, 800)], multiscale_mode='range', keep_ratio=True),
 			]
 		]
@@ -118,7 +110,6 @@ train_pipeline = [
 					  (16, 8), (8, 16), (16, 16), (16, 32), (32, 16), (32, 32),
 					  (32, 48), (48, 32), (48, 48)]),
 	dict(type='RandomFlip', flip_ratio=0.5),
-	dict(type='Pad', size_divisor=32),
 	dict(
 		type='Albu',
 		transforms=albu_train_transforms,
@@ -133,7 +124,8 @@ train_pipeline = [
 			'gt_bboxes': 'bboxes'
 		},
 		update_pad_shape=False,
-		skip_img_without_anno=True),	
+		skip_img_without_anno=False),	
+	dict(type='Pad', size_divisor=32),
 	dict(type='Normalize', **img_norm_cfg),
 	dict(type='DefaultFormatBundle'),
 	dict(type='Collect', keys=['img', 'gt_bboxes', 'gt_labels']),
@@ -154,19 +146,10 @@ test_pipeline = [
 			dict(type='Collect', keys=['img']),
 		])
 ]
-
 data = dict(
-	samples_per_gpu=12,
 	workers_per_gpu=4,
-	train=dict(type = dataset_type,
-		ann_file = data_root + '/annotations/instances_train2017.json',
-		img_prefix = 'train_images/',
-		pipeline=train_pipeline),
-	val=dict(type = dataset_type,
-		ann_file = data_root + '/annotations/instances_val2017.json',
-		img_prefix = 'val_images/',
-		pipeline=test_pipeline,
-		samples_per_gpu = 24),
+	train=dict(pipeline=train_pipeline),
+	val=dict(pipeline=test_pipeline),
 	test=dict(pipeline=test_pipeline))
 
 # optimizer
