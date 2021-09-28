@@ -60,53 +60,35 @@ model = dict(
 	test_cfg=dict(topk=100, local_maximum_kernel=3, max_per_img=100, threshold = 0.05, nms_cfg = dict(type='soft_nms', iou_threshold=0.5, method='gaussian')))
 
 # data setting
-dataset_type = 'CocoDataset'
-data_root = 'data/coco/'
 img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 albu_train_transforms = [
-	dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.0, rotate_limit=0, interpolation=1, p=0.5),
-	dict(type='RandomBrightnessContrast', brightness_limit=[0.1, 0.3], contrast_limit=[0.1, 0.3], p=0.2),
+	dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0, rotate_limit=0, interpolation=1, p=0.5, border_mode = 0),
+	dict(type='RandomBrightnessContrast', brightness_limit=0.1, contrast_limit=0.1),
+	dict(type='RGBShift', r_shift_limit=10, g_shift_limit=10, b_shift_limit=10),
+	dict(type='HueSaturationValue', hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20),
 	dict(
 		type='OneOf',
 		transforms=[
-			dict(
-				type='RGBShift',
-				r_shift_limit=10,
-				g_shift_limit=10,
-				b_shift_limit=10,
-				p=1.0),
-			dict(
-				type='HueSaturationValue',
-				hue_shift_limit=20,
-				sat_shift_limit=30,
-				val_shift_limit=20,
-				p=1.0)
-		],
-		p=0.1),
-	dict(type='ChannelShuffle', p=0.1),
-	dict(
-		type='OneOf',
-		transforms=[
-			dict(type='Blur', blur_limit=3, p=1.0),
-			dict(type='MedianBlur', blur_limit=3, p=1.0)
+			dict(type='ChannelShuffle', p=1.0),
+			dict(type='ToGray', p = 1.0)
 		],
 		p=0.1),
 ]
 
 train_pipeline = [
-	dict(type='LoadImageFromFile', to_float32=True, color_type='color'),
-	dict(type='LoadAnnotations', with_bbox=True),
-	dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
 	dict(
-		type='RandomCenterCropPad',
-		crop_size=(800, 800),
-		ratios=(0.9, 0.925, 0.95, 0.975, 1.0, 1.05, 1.1, 1.15, 1.2),
-		border = 380,
-		mean=[0, 0, 0],
-		std=[1, 1, 1],
-		to_rgb=True,
-		test_pad_mode=None),
-	dict(type='Resize', img_scale=(800, 800), keep_ratio=True, override = True),
+		type = 'AutoAugment',
+		policies = [
+			[
+				dict(type='Mosaic', center_ratio_range=(0.9, 1.1), img_scale=(720, 720), pad_val=0.0),
+				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
+			],
+			[
+				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
+				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
+			]
+		]
+	),
 	dict(type='RandomFlip', flip_ratio=0.5),
 	dict(
 		type='CutOut',
@@ -135,22 +117,13 @@ train_pipeline = [
 ]
 
 test_pipeline = [
-	dict(type='LoadImageFromFile', to_float32=True),
+	dict(type='LoadImageFromFile'),
 	dict(
 		type='MultiScaleFlipAug',
 		img_scale=(800, 800),
 		flip=False,
 		transforms=[
 			dict(type='Resize', keep_ratio=True),
-			dict(
-				type='RandomCenterCropPad',
-				ratios=None,
-				border=None,
-				mean=[0, 0, 0],
-				std=[1, 1, 1],
-				to_rgb=True,
-				test_mode=True,
-				test_pad_mode=['size_divisor', 32]),
 			dict(type='RandomFlip'),
 			dict(type='Normalize', **img_norm_cfg),
 			dict(type='DefaultFormatBundle'),
