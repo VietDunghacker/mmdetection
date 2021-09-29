@@ -1,5 +1,4 @@
 _base_ = [
-	'../_base_/datasets/coco_detection.py',
 	'../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py'
 ]
 model = dict(
@@ -82,6 +81,8 @@ model = dict(
 	)
 
 # data setting
+dataset_type = 'CocoDataset'
+data_root = 'data/coco/'
 img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 albu_train_transforms = [
 	dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0, rotate_limit=0, interpolation=1, p=0.5, border_mode = 0),
@@ -106,7 +107,7 @@ train_pipeline = [
 				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
 			],
 			[
-				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9)),
+				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
 				dict(type='Resize', img_scale=[(640, 640), (800, 800)], multiscale_mode='range', keep_ratio=True),
 			]
 		]
@@ -132,9 +133,9 @@ train_pipeline = [
 			'gt_bboxes': 'bboxes'
 		},
 		update_pad_shape=False,
-		skip_img_without_anno=True),	
-	dict(type='Pad', size_divisor=32),
+		skip_img_without_anno=False),	
 	dict(type='Normalize', **img_norm_cfg),
+	dict(type='Pad', size_divisor=1),
 	dict(type='DefaultFormatBundle'),
 	dict(type='Collect', keys=['img', 'gt_bboxes', 'gt_labels']),
 ]
@@ -154,6 +155,7 @@ test_pipeline = [
 			dict(type='Collect', keys=['img']),
 		])
 ]
+
 data = dict(
 	workers_per_gpu=4,
 	train=dict(pipeline=train_pipeline),
