@@ -44,7 +44,7 @@ model = dict(
 			octave_base_scale=8,
 			scales_per_octave=1,
 			strides=[8, 16, 32, 64, 128]),
-		loss_cls=dict(type='QualityFocalLoss', use_sigmoid=False, beta=2.0, loss_weight=1.0),
+		loss_cls=dict(type='QualityFocalLoss', use_sigmoid=False, beta=1.0, loss_weight=1.0),
 		loss_dfl=dict(type='DistributionFocalLoss', loss_weight=0.25),
 		use_dgqp = True,
 		loss_bbox=dict(type='CIoULoss', loss_weight=2.0)),
@@ -64,7 +64,7 @@ model = dict(
 # data setting
 img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 albu_train_transforms = [
-	dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0, rotate_limit=0, interpolation=1, p=0.5, border_mode = 0),
+	dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.1, rotate_limit=2, interpolation=1, p=0.5, border_mode = 0),
 	dict(type='RandomBrightnessContrast', brightness_limit=0.1, contrast_limit=0.1),
 	dict(type='RGBShift', r_shift_limit=10, g_shift_limit=10, b_shift_limit=10),
 	dict(type='HueSaturationValue', hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20),
@@ -87,7 +87,7 @@ train_pipeline = [
 			],
 			[
 				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9)),
-				dict(type='Resize', img_scale=[(640, 640), (800, 800)], multiscale_mode='range', keep_ratio=True),
+				dict(type='Resize', img_scale=[(480, 480), (800, 800)], multiscale_mode='range', keep_ratio=True),
 			]
 		]
 	),
