@@ -186,4 +186,8 @@ class HourglassNet(BaseModule):
 						out_feat)
 				inter_feat = self.inters[ind](self.relu(inter_feat))
 
-		return [out_feat for i in enumerate(out_feats) if i in self.out_indices]
+		out = [out_feat for i in enumerate(out_feats) if i in self.out_indices]
+		if len(out) > 1:
+			return out
+		else:
+			return out[0]
