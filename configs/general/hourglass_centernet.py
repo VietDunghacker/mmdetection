@@ -47,19 +47,19 @@ train_pipeline = [
 		policies = [
 			[
 				dict(type='Mosaic', center_ratio_range=(0.9, 1.1), img_scale=(720, 720), pad_val=0.0),
-				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
+				dict(type='Resize', img_scale=(768, 768), keep_ratio=True),
 			],
 			[
 				dict(type='Mosaic', center_ratio_range=(0.8, 1.2), img_scale=(720, 720), pad_val=0.0),
-				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
+				dict(type='Resize', img_scale=(768, 768), keep_ratio=True),
 			],
 			[
 				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
-				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
+				dict(type='Resize', img_scale=(768, 768), keep_ratio=True),
 			]
 		]
 	),
-	dict(type='Pad', size_divisor=800),
+	dict(type='Pad', size_divisor=768),
 	dict(type='RandomFlip', flip_ratio=0.5),
 	dict(
 		type='CutOut',
