@@ -6,7 +6,7 @@ from ..utils import ResLayer
 from .resnet import BasicBlock
 
 
-class HourglassModule(nn.Module):
+class HourglassModule(BaseModule):
 	"""Hourglass Module for HourglassNet backbone.
 
 	Generate module recursively and use BasicBlock as the base unit.
