@@ -65,7 +65,7 @@ model = dict(
 		loss_bbox=dict(type='CIoULoss', loss_weight=2.0),
 	),
 	train_cfg = dict(
-		initial_iter=1000,
+		initial_epoch=1,
 		initial_assigner=dict(type='ATSSAssigner', topk=9),
 		assigner=dict(type='TaskAlignedAssigner', topk=13),
 		alpha=1,

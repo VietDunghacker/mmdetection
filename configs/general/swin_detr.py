@@ -1,30 +1,30 @@
 _base_ = [
 	'../_base_/default_runtime.py'
 ]
-max_per_img = 32
+max_per_img = 128
 model = dict(
 	type='DETR',
 	backbone=dict(
 		type='SwinTransformer',
-		embed_dims=96,
+		embed_dims=128,
 		depths=[2, 2, 18, 2],
-		num_heads=[3, 6, 12, 24],
+		num_heads=[4, 8, 16, 32],
 		window_size=7,
 		mlp_ratio=4,
 		qkv_bias=True,
 		qk_scale=None,
 		drop_rate=0.,
 		attn_drop_rate=0.,
-		drop_path_rate=0.2,
+		drop_path_rate=0.3,
 		patch_norm=True,
 		out_indices=(3, ),
 		with_cp=True,
-		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_small_patch4_window7_224-cc7a01c9.pth')),
+		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
 	bbox_head=dict(
 		type='DETRHead',
 		num_classes=1,
 		num_query = max_per_img,
-		in_channels=768,
+		in_channels=1024,
 		transformer=dict(
 			type='Transformer',
 			encoder=dict(
