@@ -1,6 +1,6 @@
 import torch.nn as nn
 from mmcv.cnn import ConvModule
-
+from mmcv.runner import BaseModule
 from ..builder import BACKBONES
 from ..utils import ResLayer
 from .resnet import BasicBlock
@@ -62,7 +62,7 @@ class HourglassModule(nn.Module):
 
 
 @BACKBONES.register_module()
-class HourglassNet(nn.Module):
+class HourglassNet(BaseModule):
 	"""HourglassNet backbone.
 
 	Stacked Hourglass Networks for Human Pose Estimation.
