@@ -59,10 +59,11 @@ train_pipeline = [
 			],
 			[
 				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
-				dict(type='Resize', img_scale=[(640, 640), (800, 800)], multiscale_mode='range', keep_ratio=True),
+				dict(type='Resize', img_scale=[(480, 480), (800, 800)], multiscale_mode='range', keep_ratio=True),
 			]
 		]
 	),
+	dict(type='Pad', size_divisor=800),
 	dict(
 		type='CutOut',
 		n_holes=(5, 10),
