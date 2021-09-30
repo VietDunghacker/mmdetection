@@ -488,7 +488,7 @@ class GFLHead(AnchorHead):
 			batch_mlvl_scores = torch.cat([batch_mlvl_scores, padding], dim=-1)
 		else:
 			if self.use_norcal:
-				batch_mlvl_fg_scores, batch_mlvl_bg_scores = batch_mlvl_scores[..., :-1], batch_mlvl_scores[..., -1]
+				batch_mlvl_fg_scores, batch_mlvl_bg_scores = batch_mlvl_scores[..., :-1], batch_mlvl_scores[..., -1:]
 				batch_mlvl_fg_scores /= self.instance_per_class.to(batch_mlvl_scores.device).pow(0.1)
 				batch_mlvl_fg_scores = F.normalize(batch_mlvl_fg_scores, p = 1.0, dim = -1)
 				batch_mlvl_scores = torch.cat([batch_mlvl_fg_scores, batch_mlvl_bg_scores], dim = -1)
