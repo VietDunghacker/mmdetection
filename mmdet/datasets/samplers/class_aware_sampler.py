@@ -32,6 +32,7 @@ class ClassAwareSampler(Sampler):
 		self.coco_style = isinstance(self.dataset, CocoDataset) or isinstance(self.dataset, LVISDataset)
 		if hasattr(self.dataset, "dataset") and (isinstance(self.dataset.dataset, CocoDataset) or isinstance(self.dataset.dataset, LVISDataset)):
 			self.coco_style = True
+		self.coco_style = True
 
 		if self.coco_style:
 			for idx in range(len(self.dataset)):
