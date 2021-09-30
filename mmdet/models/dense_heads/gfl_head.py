@@ -486,12 +486,6 @@ class GFLHead(AnchorHead):
 		if self.use_sigmoid_cls:
 			padding = batch_mlvl_scores.new_zeros(batch_size, batch_mlvl_scores.shape[1], 1)
 			batch_mlvl_scores = torch.cat([batch_mlvl_scores, padding], dim=-1)
-		else:
-			if self.use_norcal:
-				batch_mlvl_scores = inverse_sigmoid(batch_mlvl_scores)
-				batch_mlvl_scores /= torch.cat([self.instance_per_class, torch.tensor([1])]).to(batch_mlvl_scores.device).pow(0.2)
-				batch_mlvl_scores = batch_mlvl_scores.sigmoid()
-				#batch_mlvl_scores = torch.cat([batch_mlvl_fg_scores.sigmoid(), batch_mlvl_bg_scores], dim = -1)
 
 		if with_nms:
 			det_results = []
