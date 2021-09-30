@@ -100,6 +100,8 @@ class GFLHead(AnchorHead):
 				 reg_channels=64,
 				 add_mean=True,
 				 avg_samples_to_int=False,
+				 use_norcal=False,
+				 instance_per_class=None,
 				 init_cfg=dict(
 					 type='Normal',
 					 layer='Conv2d',
@@ -119,6 +121,9 @@ class GFLHead(AnchorHead):
 		self.reg_channels = reg_channels
 		self.add_mean = add_mean
 		self.total_dim = reg_topk
+
+		self.use_norcal = use_norcal
+		self.instance_per_class = instance_per_class
 		if add_mean:
 			self.total_dim += 1
 		self.avg_samples_to_int = avg_samples_to_int
@@ -469,8 +474,7 @@ class GFLHead(AnchorHead):
 
 		batch_mlvl_bboxes = torch.cat(mlvl_bboxes, dim=1)
 		if rescale:
-			batch_mlvl_bboxes /= batch_mlvl_bboxes.new_tensor(
-				scale_factors).unsqueeze(1)
+			batch_mlvl_bboxes /= batch_mlvl_bboxes.new_tensor(scale_factors).unsqueeze(1)
 
 		batch_mlvl_scores = torch.cat(mlvl_scores, dim=1)
 		# Add a dummy background class to the backend when using sigmoid
@@ -479,14 +483,16 @@ class GFLHead(AnchorHead):
 		if self.use_sigmoid_cls:
 			padding = batch_mlvl_scores.new_zeros(batch_size, batch_mlvl_scores.shape[1], 1)
 			batch_mlvl_scores = torch.cat([batch_mlvl_scores, padding], dim=-1)
+		else:
+			if self.use_norcal:
+				batch_mlvl_scores = batch_mlvl_scores.exp()
+				batch_mlvl_scores /= torch.cat((self.instance_per_class, torch.tensor([1]))).pow(0.6)
+				batch_mlvl_scores = F.normalize(batch_mlvl_scores, p = 1.0, dim = -1)
 
 		if with_nms:
 			det_results = []
-			for (mlvl_bboxes, mlvl_scores) in zip(batch_mlvl_bboxes,
-												  batch_mlvl_scores):
-				det_bbox, det_label = multiclass_nms(mlvl_bboxes, mlvl_scores,
-													 cfg.score_thr, cfg.nms,
-													 cfg.max_per_img)
+			for (mlvl_bboxes, mlvl_scores) in zip(batch_mlvl_bboxes, batch_mlvl_scores):
+				det_bbox, det_label = multiclass_nms(mlvl_bboxes, mlvl_scores, cfg.score_thr, cfg.nms, cfg.max_per_img)
 				det_results.append(tuple([det_bbox, det_label]))
 		else:
 			det_results = [
