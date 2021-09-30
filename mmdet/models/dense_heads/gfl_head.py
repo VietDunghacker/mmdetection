@@ -123,7 +123,10 @@ class GFLHead(AnchorHead):
 		self.total_dim = reg_topk
 
 		self.use_norcal = use_norcal
-		self.instance_per_class = torch.tensor(instance_per_class)
+		self.instance_per_class = instance_per_class
+		if self.use_norcal:
+			assert self.instance_per_class is not None
+			self.instance_per_class = torch.tensor(self.instance_per_class)
 		if add_mean:
 			self.total_dim += 1
 		self.avg_samples_to_int = avg_samples_to_int
@@ -485,7 +488,7 @@ class GFLHead(AnchorHead):
 			batch_mlvl_scores = torch.cat([batch_mlvl_scores, padding], dim=-1)
 		else:
 			if self.use_norcal:
-				batch_mlvl_scores /= torch.cat((self.instance_per_class, torch.tensor([1]))).to(batch_mlvl_scores.device).pow(0.6)
+				batch_mlvl_scores /= torch.cat((self.instance_per_class, torch.tensor([1]))).to(batch_mlvl_scores.device).pow(0.1)
 				batch_mlvl_scores = F.normalize(batch_mlvl_scores, p = 1.0, dim = -1)
 
 		if with_nms:
