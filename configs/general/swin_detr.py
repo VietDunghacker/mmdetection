@@ -70,7 +70,7 @@ model = dict(
 			iou_cost=dict(type='IoUCost', iou_mode='giou', weight=2.0))),
 	test_cfg=dict(
 		max_per_img=max_per_img,
-		nms_max_per_img = min(max_per_img, 100),
+		score_threshold = 0.05,
 		nms = dict(type='nms', iou_threshold=0.6)))
 
 # data setting
