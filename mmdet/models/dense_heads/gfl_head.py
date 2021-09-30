@@ -9,6 +9,7 @@ from mmdet.core import (anchor_inside_flags, bbox2distance, bbox_overlaps,
 						build_assigner, build_sampler, distance2bbox,
 						images_to_levels, multi_apply, multiclass_nms,
 						reduce_mean, unmap, bbox_limited)
+from mmdet.models.utils.transformer import inverse_sigmoid
 from ..builder import HEADS, build_loss
 from .anchor_head import AnchorHead
 
@@ -463,8 +464,7 @@ class GFLHead(AnchorHead):
 			if nms_pre > 0 and scores.shape[1] > nms_pre:
 				max_scores, _ = scores.max(-1)
 				_, topk_inds = max_scores.topk(nms_pre)
-				batch_inds = torch.arange(batch_size).view(
-					-1, 1).expand_as(topk_inds).long()
+				batch_inds = torch.arange(batch_size).view(-1, 1).expand_as(topk_inds).long()
 				anchors = anchors[topk_inds, :]
 				bbox_pred = bbox_pred[batch_inds, topk_inds, :]
 				scores = scores[batch_inds, topk_inds, :]
@@ -489,9 +489,10 @@ class GFLHead(AnchorHead):
 		else:
 			if self.use_norcal:
 				batch_mlvl_fg_scores, batch_mlvl_bg_scores = batch_mlvl_scores[..., :-1], batch_mlvl_scores[..., -1:]
+				batch_mlvl_fg_scores = inverse_sigmoid(batch_mlvl_fg_scores)
 				batch_mlvl_fg_scores /= self.instance_per_class.to(batch_mlvl_scores.device).pow(0.1)
-				batch_mlvl_fg_scores = F.normalize(batch_mlvl_fg_scores, p = 1.0, dim = -1)
-				batch_mlvl_scores = torch.cat([batch_mlvl_fg_scores, batch_mlvl_bg_scores], dim = -1)
+				batch_mlvl_scores = torch.cat([batch_mlvl_fg_scores.sigmoid(), batch_mlvl_bg_scores], dim = -1)
+				batch_mlvl_scores = F.normalize(batch_mlvl_scores, p = 1.0, dim = -1)
 
 		if with_nms:
 			det_results = []
