@@ -55,8 +55,8 @@ class ClassAwareSampler(Sampler):
 		for i in sorted(category_freq.keys()):
 			self.cw.append(1. / category_freq[i])
 		self.cw = np.array(self.cw)
-		self.cw /= sum(self.cw)
 		self.orig_cw = copy.deepcopy(self.cw)
+		self.cw /= sum(self.cw)
 
 		print("Number of negative samples: {}".format(len(self.empty_gt)))
 
