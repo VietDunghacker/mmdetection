@@ -72,7 +72,7 @@ model = dict(
 	train_cfg=dict(
 		assigner=dict(
 			type='HungarianAssigner',
-			cls_cost=dict(type='FocalLossCost', weight=2.),
+			cls_cost=dict(type='FocalLossCost', gamma = 1, weight=2.),
 			reg_cost=dict(type='BBoxL1Cost', weight=5.0, box_format='xywh'),
 			iou_cost=dict(type='IoUCost', iou_mode='giou', weight=2.0))),
 	test_cfg=dict(
