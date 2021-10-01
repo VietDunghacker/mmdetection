@@ -63,7 +63,7 @@ model = dict(
  	 	loss_cls=dict(
  	 	 	type='FocalLoss',
  	 	 	use_sigmoid=True,
- 	 	 	gamma=2.0,
+ 	 	 	gamma=1.0,
  	 	 	alpha=0.25,
  	 	 	loss_weight=2.0),
 		loss_bbox=dict(type='L1Loss', loss_weight=5.0),
