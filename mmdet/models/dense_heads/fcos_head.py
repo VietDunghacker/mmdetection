@@ -59,8 +59,7 @@ class FCOSHead(AnchorFreeHead):
 	def __init__(self,
 				 num_classes,
 				 in_channels,
-				 regress_ranges=((-1, 64), (64, 128), (128, 256), (256, 512),
-								 (512, INF)),
+				 regress_ranges=((-1, 64), (64, 128), (128, 256), (256, 512), (512, INF)),
 				 center_sampling=False,
 				 center_sample_radius=1.5,
 				 norm_on_bbox=False,
@@ -550,13 +549,11 @@ class FCOSHead(AnchorFreeHead):
 			return gt_labels.new_full((num_points,), self.num_classes), \
 				   gt_bboxes.new_zeros((num_points, 4))
 
-		areas = (gt_bboxes[:, 2] - gt_bboxes[:, 0]) * (
-			gt_bboxes[:, 3] - gt_bboxes[:, 1])
+		areas = (gt_bboxes[:, 2] - gt_bboxes[:, 0]) * (gt_bboxes[:, 3] - gt_bboxes[:, 1])
 		# TODO: figure out why these two are different
 		# areas = areas[None].expand(num_points, num_gts)
 		areas = areas[None].repeat(num_points, 1)
-		regress_ranges = regress_ranges[:, None, :].expand(
-			num_points, num_gts, 2)
+		regress_ranges = regress_ranges[:, None, :].expand(num_points, num_gts, 2)
 		gt_bboxes = gt_bboxes[None].expand(num_points, num_gts, 4)
 		xs, ys = points[:, 0], points[:, 1]
 		xs = xs[:, None].expand(num_points, num_gts)
