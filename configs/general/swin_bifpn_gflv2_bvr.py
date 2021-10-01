@@ -45,7 +45,7 @@ model = dict(
 				ratios=[1.0],
 				octave_base_scale=8,
 				scales_per_octave=1,
-				strides=[16, 32, 64, 128]),
+				strides=[8, 16, 32, 64, 128]),
 			loss_cls=dict(type='QualityFocalLoss', use_sigmoid=False, beta=2.0, loss_weight=1.0),
 			loss_dfl=dict(type='DistributionFocalLoss', loss_weight=0.25),
 			use_dgqp = True,
@@ -56,7 +56,7 @@ model = dict(
 			num_classes=34,
 			in_channels=256,
 			stacked_convs=2,
-			strides=[16, 32, 64, 128],
+			strides=[8, 16, 32, 64, 128],
 			shared_stacked_convs=0,
 			logits_convs=1,
 			head_types=['top_left_corner', 'bottom_right_corner', 'center'],
@@ -78,7 +78,7 @@ model = dict(
 			cross_level_selection=True),
 		num_attn_heads=8,
 		scale_position=False,
-		pos_cfg=dict(base_size=[300, 300], log_scale=True, num_layers=2),
+		pos_cfg=dict(base_size=[400, 400], log_scale=True, num_layers=2),
 		shared_positional_encoding_outer=True),
 	train_cfg=dict(
 		bbox=dict(
