@@ -62,7 +62,7 @@ model = dict(
 			head_types=['top_left_corner', 'bottom_right_corner', 'center'],
 			corner_pooling=False,
 			loss_offset=dict(type='SmoothL1Loss', beta=1.0 / 9.0, loss_weight=1.0),
-			loss_cls=dict(type='GaussianFocalLoss', loss_weight=0.25)),
+			loss_cls=dict(type='GaussianFocalLoss', alpha = 1.0, loss_weight=0.25)),
 		cls_keypoint_cfg=dict(
 			keypoint_types=['center'],
 			with_key_score=False,
