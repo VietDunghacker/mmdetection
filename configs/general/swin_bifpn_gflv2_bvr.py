@@ -78,7 +78,7 @@ model = dict(
 			cross_level_selection=True),
 		num_attn_heads=8,
 		scale_position=False,
-		pos_cfg=dict(base_size=[400, 400], log_scale=True, num_layers=2),
+		pos_cfg=dict(base_size=[300, 300], log_scale=True, num_layers=2),
 		shared_positional_encoding_outer=True),
 	train_cfg=dict(
 		bbox=dict(
