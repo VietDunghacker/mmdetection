@@ -118,7 +118,7 @@ train_pipeline = [
 				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
 			],
 			[
-				dict(type='Mosaic', center_ratio_range=(0.8, 1.2), img_scale=(720, 720), pad_val=0.0),
+				dict(type='Mosaic', center_ratio_range=(0.95, 1.05), img_scale=(720, 720), pad_val=0.0),
 				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
 			],
 			[
