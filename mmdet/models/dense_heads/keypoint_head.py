@@ -109,10 +109,8 @@ class KeypointHead(AnchorFreeHead):
 			self.keypoint_cls_heads.update({head_type: keypoint_cls_head})
 
 			keypoint_offset_head = self._init_layer_list(self.feat_channels, self.logits_convs)
-			keypoint_offset_head.append(
-				nn.Conv2d(self.feat_channels, 2, 3, stride=1, padding=1))
-			self.keypoint_offset_heads.update(
-				{head_type: keypoint_offset_head})
+			keypoint_offset_head.append(nn.Conv2d(self.feat_channels, 2, 3, stride=1, padding=1))
+			self.keypoint_offset_heads.update({head_type: keypoint_offset_head})
 
 	def _init_layer_list(self, in_channels: int,
 						 num_convs: int) -> nn.ModuleList:
@@ -312,18 +310,14 @@ class KeypointHead(AnchorFreeHead):
 		featmap_sizes = [score.size()[-2:] for score in keypoint_scores]
 		points = self.get_points(featmap_sizes, gt_points[0].dtype,
 								 gt_points[0].device)
-		keypoint_scores = _flatten_concat(keypoint_scores).permute(
-			0, 2, 1)  # [batch,num_points,num_classes]
-		keypoint_offsets = _flatten_concat(keypoint_offsets).permute(
-			0, 2, 1)  # [batch,num_points,2]
-		score_targets, offset_targets, pos_masks = self.get_targets(
-			points, gt_points, gt_bboxes, gt_labels)
+		keypoint_scores = _flatten_concat(keypoint_scores).permute(0, 2, 1)  # [batch,num_points,num_classes]
+		keypoint_offsets = _flatten_concat(keypoint_offsets).permute(0, 2, 1)  # [batch,num_points,2]
+		score_targets, offset_targets, pos_masks = self.get_targets(points, gt_points, gt_bboxes, gt_labels)
 
 		avg_factor = reduce_mean(torch.sum(pos_masks))
 		# TODO: Maybe positive samples and negative samples shoud have
 		# different avg factors.
-		loss_cls = self.loss_cls(
-			keypoint_scores.sigmoid(), score_targets, avg_factor=avg_factor)
+		loss_cls = self.loss_cls(keypoint_scores.sigmoid(), score_targets, avg_factor=avg_factor)
 		loss_offset = self.loss_offset(
 			keypoint_offsets,
 			offset_targets,
@@ -360,8 +354,7 @@ class KeypointHead(AnchorFreeHead):
 		# TODO: check the order of concated tensor
 		names, keypoint_scores = _concat(keypoint_scores)
 		_, keypoint_offsets = _concat(keypoint_offsets)
-		gt_points = self._box2point(
-			names, gt_bboxes)  # keypoint_type*batch*[num_gt,2]
+		gt_points = self._box2point(names, gt_bboxes)  # keypoint_type*batch*[num_gt,2]
 		return self.loss(keypoint_scores, keypoint_offsets, names, gt_points,
 						 gt_bboxes * len(names), gt_labels * len(names),
 						 img_metas * len(names))
@@ -389,8 +382,7 @@ class KeypointHead(AnchorFreeHead):
 				extraction process. Defaults to False.
 		"""
 
-		def _local_nms(heatmap: torch.Tensor,
-					   kernel_size: int = 3) -> torch.Tensor:
+		def _local_nms(heatmap: torch.Tensor, kernel_size: int = 3) -> torch.Tensor:
 			"""Find the local maximum points of a heatmap.
 
 			Args:
@@ -402,15 +394,13 @@ class KeypointHead(AnchorFreeHead):
 				torch.Tensor: heatmap with score only on local maximum points.
 			"""
 			pad = (kernel_size - 1) // 2
-			hmax = F.max_pool2d(
-				heatmap, (kernel_size, kernel_size), stride=1, padding=pad)
+			hmax = F.max_pool2d(heatmap, (kernel_size, kernel_size), stride=1, padding=pad)
 			keep = (hmax == heatmap).float()
 			return heatmap * keep
 
 		keypoint_scores = _local_nms(keypoint_logits.sigmoid())
 		topk_score, topk_inds, _, topk_ys, topk_xs = _topk(keypoint_scores, locations, max_keypoint_num)
-		topk_offsets = _gather_feat(keypoint_offsets.reshape(keypoint_offsets.size(0), 2,
-									 -1).permute(0, 2, 1), topk_inds)
+		topk_offsets = _gather_feat(keypoint_offsets.reshape(keypoint_offsets.size(0), 2, -1).permute(0, 2, 1), topk_inds)
 		if block_grad:
 			topk_offsets = topk_offsets.detach()
 			topk_score = topk_score.detach()

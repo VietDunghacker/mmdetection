@@ -2,7 +2,7 @@ _base_ = [
 	'../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py'
 ]
 model = dict(
-	type='RepPointsV2Detector',
+	type='RepPointsDetector',
 	backbone=dict(
 		type='SwinTransformer',
 		embed_dims=128,
@@ -47,41 +47,39 @@ model = dict(
 			lcconv_padding=1)
 	],
 	bbox_head=dict(
-		type='RepPointsV2Head',
-		num_classes=22,
+		type='RepPointsHead',
+		num_classes=80,
 		in_channels=256,
 		feat_channels=256,
 		point_feat_channels=256,
 		stacked_convs=0,
-		shared_stacked_convs=1,
-		first_kernel_size=3,
-		kernel_size=1,
-		corner_dim=64,
 		num_points=25,
 		gradient_mul=0.1,
 		point_strides=[8, 16, 32, 64, 128],
 		point_base_scale=4,
-		norm_cfg=dict(type='GN', num_groups=32, requires_grad=True),
-		loss_cls=dict(type='FocalLoss', use_sigmoid=True, gamma=2.0, alpha=0.25, loss_weight=1.0),
-		loss_bbox_init=dict(type='CIoULoss', loss_weight=1.0),
-		loss_bbox_refine=dict(type='CIoULoss', loss_weight = 2.0),
-		loss_heatmap=dict(type='GaussianFocalLoss', alpha=2.0, gamma=4.0, loss_weight=0.25),
-		loss_offset=dict(type='SmoothL1Loss', beta=1.0 / 9.0, loss_weight=1.0),
-		loss_sem=dict(type='SEPFocalLoss', gamma=2.0, alpha=0.25, loss_weight=0.1),
-		transform_method='exact_minmax'),
-	train_cfg = dict(
+		loss_cls=dict(
+			type='FocalLoss',
+			use_sigmoid=True,
+			gamma=2.0,
+			alpha=0.25,
+			loss_weight=1.0),
+		loss_bbox_init=dict(type='SmoothL1Loss', beta=0.11, loss_weight=0.5),
+		loss_bbox_refine=dict(type='SmoothL1Loss', beta=0.11, loss_weight=1.0),
+		transform_method='moment'),
+	# training and testing settings
+	train_cfg=dict(
 		init=dict(
-			assigner=dict(type='PointAssignerV2', scale=4, pos_num=1),
-			allowed_border=-1,
-			pos_weight=-1,
-			debug=False),
-		heatmap=dict(
-			assigner=dict(type='PointHMAssigner', gaussian_bump=True, gaussian_iou=0.7),
+			assigner=dict(type='PointAssigner', scale=4, pos_num=1),
 			allowed_border=-1,
 			pos_weight=-1,
 			debug=False),
 		refine=dict(
-			assigner=dict(type='ATSSAssigner', topk=9),
+			assigner=dict(
+				type='MaxIoUAssigner',
+				pos_iou_thr=0.5,
+				neg_iou_thr=0.4,
+				min_pos_iou=0,
+				ignore_iof_thr=-1),
 			allowed_border=-1,
 			pos_weight=-1,
 			debug=False)),
@@ -151,9 +149,8 @@ train_pipeline = [
 		update_pad_shape=False,
 		skip_img_without_anno=False),	
 	dict(type='Normalize', **img_norm_cfg),
-	dict(type='LoadRPDV2Annotations', num_classes=22),
-	dict(type='RPDV2FormatBundle'),
-	dict(type='Collect', keys=['img', 'gt_bboxes', 'gt_labels', 'gt_sem_map', 'gt_sem_weights']),
+	dict(type='DefaultFormatBundle'),
+	dict(type='Collect', keys=['img', 'gt_bboxes', 'gt_labels']),
 ]
 
 test_pipeline = [

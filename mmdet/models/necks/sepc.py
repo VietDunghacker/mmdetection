@@ -70,10 +70,8 @@ class SEPC(BaseModule):
 			dilation=1,
 			part_deform=lcconv_deform)
 		if self.ibn:
-			self.lnorm_name, lnorm = build_norm_layer(
-				self.lcnorm_cfg, out_channels, postfix='_loc')
-			self.cnorm_name, cnorm = build_norm_layer(
-				self.lcnorm_cfg, out_channels, postfix='_cls')
+			self.lnorm_name, lnorm = build_norm_layer(self.lcnorm_cfg, out_channels, postfix='_loc')
+			self.cnorm_name, cnorm = build_norm_layer(self.lcnorm_cfg, out_channels, postfix='_cls')
 			self.add_module(self.lnorm_name, lnorm)
 			self.add_module(self.cnorm_name, cnorm)
 		self.relu = nn.ReLU()

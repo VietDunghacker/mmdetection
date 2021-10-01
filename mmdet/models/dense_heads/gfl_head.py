@@ -297,10 +297,7 @@ class GFLHead(AnchorHead):
 			pos_decode_bbox_pred = distance2bbox(pos_anchor_centers,
 												 pos_bbox_pred_corners)
 			pos_decode_bbox_targets = pos_bbox_targets / stride[0]
-			score[pos_inds] = bbox_overlaps(
-				pos_decode_bbox_pred.detach(),
-				pos_decode_bbox_targets,
-				is_aligned=True)
+			score[pos_inds] = bbox_overlaps(pos_decode_bbox_pred.detach(), pos_decode_bbox_targets, is_aligned=True)
 			pred_corners = pos_bbox_pred.reshape(-1, self.reg_max + 1)
 			target_corners = bbox2distance(pos_anchor_centers,
 										   pos_decode_bbox_targets,
@@ -403,8 +400,7 @@ class GFLHead(AnchorHead):
 		avg_factor = reduce_mean(avg_factor).clamp_(min=1).item()
 		losses_bbox = list(map(lambda x: x / avg_factor, losses_bbox))
 		losses_dfl = list(map(lambda x: x / avg_factor, losses_dfl))
-		return dict(
-			loss_cls=losses_cls, loss_bbox=losses_bbox, loss_dfl=losses_dfl)
+		return dict(loss_cls=losses_cls, loss_bbox=losses_bbox, loss_dfl=losses_dfl)
 
 	def _get_bboxes(self,
 					cls_scores,
