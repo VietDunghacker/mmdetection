@@ -101,4 +101,4 @@ class ClassAwareSampler(Sampler):
 		return torch.tensor(ret).float()
 
 	def __len__(self):
-		return len(self.dataset)
+		return int(np.ceil(len(self.dataset) / self._size)) * self._size
