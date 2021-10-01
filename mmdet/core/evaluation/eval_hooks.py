@@ -102,8 +102,8 @@ class EvalHook(BaseEvalHook):
 		if isinstance(self.train_dataloader.sampler, ClassAwareSampler) and 'AP_per_class' in eval_res.keys():
 			for i, ap in enumerate(eval_res['AP_per_class']):
 				new_cw = self.train_dataloader.sampler.orig_cw[i] * (1.001 - ap) ** 2
-				if new_cw <= 1e-5:
-					new_cw = 1e-5
+				if new_cw <= 1e-4:
+					new_cw = 1e-4
 				self.train_dataloader.sampler.cw[i] = new_cw
 			sum_cw = sum(self.train_dataloader.sampler.cw)
 			for i in range(len(self.train_dataloader.dataset.CLASSES)):
