@@ -1,7 +1,7 @@
 _base_ = [
 	'../_base_/default_runtime.py'
 ]
-max_per_img = 32
+max_per_img = 64
 model = dict(
 	type='DeformableDETR',
 	backbone=dict(
@@ -63,7 +63,7 @@ model = dict(
  	 	loss_cls=dict(
  	 	 	type='FocalLoss',
  	 	 	use_sigmoid=True,
- 	 	 	gamma=1.0,
+ 	 	 	gamma=2.0,
  	 	 	alpha=0.25,
  	 	 	loss_weight=2.0),
 		loss_bbox=dict(type='L1Loss', loss_weight=5.0),
@@ -72,7 +72,7 @@ model = dict(
 	train_cfg=dict(
 		assigner=dict(
 			type='HungarianAssigner',
-			cls_cost=dict(type='FocalLossCost', gamma = 1, weight=2.),
+			cls_cost=dict(type='FocalLossCost', weight=2.),
 			reg_cost=dict(type='BBoxL1Cost', weight=5.0, box_format='xywh'),
 			iou_cost=dict(type='IoUCost', iou_mode='giou', weight=2.0))),
 	test_cfg=dict(
