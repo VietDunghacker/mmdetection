@@ -5,7 +5,7 @@ _base_ = [
 # model settings
 max_per_img = 64
 model = dict(
-	type='CenterNet',
+	type='CentripetalNet',
 	backbone=dict(
 		type='HourglassNet',
 		downsample_times=5,
