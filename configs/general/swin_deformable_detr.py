@@ -1,7 +1,7 @@
 _base_ = [
 	'../_base_/default_runtime.py'
 ]
-max_per_img = 64
+max_per_img = 128
 model = dict(
 	type='DeformableDETR',
 	backbone=dict(
@@ -33,7 +33,7 @@ model = dict(
 		num_query=max_per_img,
 		num_classes=1,
 		in_channels=256,
-		as_two_stage=False,
+		as_two_stage=True,
 		with_box_refine=True,
 		transformer=dict(
 			type='DeformableDetrTransformer',
@@ -104,6 +104,10 @@ train_pipeline = [
 		policies = [
 			[
 				dict(type='Mosaic', center_ratio_range=(0.9, 1.1), img_scale=(720, 720), pad_val=0.0),
+				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
+			],
+			[
+				dict(type='Mosaic', center_ratio_range=(0.8, 1.2), img_scale=(720, 720), pad_val=0.0),
 				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
 			],
 			[

@@ -1,7 +1,7 @@
 _base_ = [
 	'../_base_/default_runtime.py'
 ]
-max_per_img = 100
+max_per_img = 32
 model = dict(
 	type='DETR',
 	backbone=dict(
@@ -95,6 +95,10 @@ train_pipeline = [
 		policies = [
 			[
 				dict(type='Mosaic', center_ratio_range=(0.9, 1.1), img_scale=(720, 720), pad_val=0.0),
+				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
+			],
+			[
+				dict(type='Mosaic', center_ratio_range=(0.8, 1.2), img_scale=(720, 720), pad_val=0.0),
 				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
 			],
 			[

@@ -60,7 +60,7 @@ model = dict(
 			octave_base_scale=8,
 			scales_per_octave=1,
 			strides=[8, 16, 32, 64, 128]),
-		loss_cls=dict(type='QualityFocalLoss', use_sigmoid=False, beta=1.0, loss_weight=1.0),
+		loss_cls=dict(type='QualityFocalLoss', use_sigmoid=False, beta=2.0, loss_weight=1.0),
 		loss_dfl=dict(type='DistributionFocalLoss', loss_weight=0.25),
 		use_dgqp = True,
 		loss_bbox=dict(type='CIoULoss', loss_weight=2.0)),

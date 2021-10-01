@@ -17,19 +17,22 @@ model = dict(
 		attn_drop_rate=0.,
 		drop_path_rate=0.3,
 		patch_norm=True,
-		out_indices=(0, 1, 2, 3, ),
+		out_indices=(1, 2, 3,),
 		with_cp=True,
 		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/swin_base_224_b16x64_300e_imagenet_20210616_190742-93230b0d.pth')),
-	neck= dict(
-		type='PAFPNX',
-		in_channels=[128, 256, 512, 1024],
+	neck=dict(
+		type='BiFPN',
+		in_channels=[256, 512, 1024],
 		out_channels=256,
-		start_level=2,
-		add_extra_convs='on_output',
-		num_outs=4,
-		relu_before_extra_convs=True,
-		pafpn_conv_cfg=dict(type='DCNv2'),
-		norm_cfg=dict(type='GN', num_groups=32, requires_grad=True)),
+		input_indices=(1, 2, 3),
+		num_outs=5,
+		strides=[8, 16, 32],
+		num_layers=1,
+		weight_method='fast_attn',
+		act_cfg='silu',
+		separable_conv=True,
+		epsilon=0.0001
+	),
 	bbox_head=dict(
 		type='BVRHead',
 		bbox_head_cfg=dict(
@@ -76,7 +79,7 @@ model = dict(
 			cross_level_selection=True),
 		num_attn_heads=8,
 		scale_position=False,
-		pos_cfg=dict(base_size=[300, 300], log_scale=True, num_layers=2),
+		pos_cfg=dict(base_size=[400, 400], log_scale=True, num_layers=2),
 		shared_positional_encoding_outer=True),
 	train_cfg=dict(
 		bbox=dict(
@@ -93,41 +96,43 @@ model = dict(
 		nms_pre=1000,
 		min_bbox_size=0,
 		score_thr=0.05,
-		nms=dict(type='nms', iou_threshold=0.6),
+		nms=dict(type='soft_nms', iou_threshold=0.6),
 		max_per_img=100)
 	)
 
 # data setting
 img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 albu_train_transforms = [
-	dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.0, rotate_limit=0, interpolation=1, p=0.5),
+	dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.1, rotate_limit=2, interpolation=1, p=0.5, border_mode = 0),
+	dict(type='RandomBrightnessContrast', brightness_limit=0.1, contrast_limit=0.1),
+	dict(type='RGBShift', r_shift_limit=10, g_shift_limit=10, b_shift_limit=10),
+	dict(type='HueSaturationValue', hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20),
 	dict(
 		type='OneOf',
 		transforms=[
-			dict(type='Blur', blur_limit=3, p=1.0),
-			dict(type='MedianBlur', blur_limit=3, p=1.0)
+			dict(type='ChannelShuffle', p=1.0),
+			dict(type='ToGray', p = 1.0)
 		],
 		p=0.1),
 ]
 
 train_pipeline = [
-	dict(type='LoadImageFromFile', to_float32=True),
-	dict(type='LoadAnnotations', with_bbox=True),
 	dict(
-		type='RandomCrop',
-		crop_type='relative_range',
-		crop_size=(0.9, 0.9)),
-	dict(
-		type='Resize',
-		img_scale=[(640, 640), (960, 960)],
-		multiscale_mode='range',
-		keep_ratio=True),
-	dict(
-		type='PhotoMetricDistortion',
-		brightness_delta=10,
-		contrast_range=(0.9, 1.1),
-		saturation_range=(0.9, 1.1),
-		hue_delta=9
+		type = 'AutoAugment',
+		policies = [
+			[
+				dict(type='Mosaic', center_ratio_range=(0.9, 1.1), img_scale=(720, 720), pad_val=0.0),
+				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
+			],
+			[
+				dict(type='Mosaic', center_ratio_range=(0.8, 1.2), img_scale=(720, 720), pad_val=0.0),
+				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
+			],
+			[
+				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9)),
+				dict(type='Resize', img_scale=[(480, 480), (800, 800)], multiscale_mode='range', keep_ratio=True),
+			]
+		]
 	),
 	dict(
 		type='CutOut',
@@ -143,7 +148,7 @@ train_pipeline = [
 			type='BboxParams',
 			format='pascal_voc',
 			label_fields=['gt_labels'],
-			min_visibility=0.0,
+			min_visibility=0.1,
 			filter_lost_elements=True),
 		keymap={
 			'img': 'image',
@@ -151,7 +156,7 @@ train_pipeline = [
 		},
 		update_pad_shape=False,
 		skip_img_without_anno=True),	
-	dict(type='Pad', size_divisor=800),
+	dict(type='Pad', size_divisor=32),
 	dict(type='Normalize', **img_norm_cfg),
 	dict(type='DefaultFormatBundle'),
 	dict(type='Collect', keys=['img', 'gt_bboxes', 'gt_labels']),
