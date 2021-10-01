@@ -386,7 +386,7 @@ class RepPointsV2Head(AnchorFreeHead):
 		# points center for one time
 		multi_level_points = []
 		for i in range(num_levels):
-			points = self.point_generators[i].grid_points(featmap_sizes[i], self.point_strides[i], device = featmap_sizes[i].device)
+			points = self.point_generators[i].grid_points(featmap_sizes[i], self.point_strides[i])
 			multi_level_points.append(points)
 		points_list = [[point.clone() for point in multi_level_points] for _ in range(num_imgs)]
 
@@ -400,7 +400,7 @@ class RepPointsV2Head(AnchorFreeHead):
 				h, w = img_meta['pad_shape'][:2]
 				valid_feat_h = min(int(np.ceil(h / point_stride)), feat_h)
 				valid_feat_w = min(int(np.ceil(w / point_stride)), feat_w)
-				flags = self.point_generators[i].valid_flags((feat_h, feat_w), (valid_feat_h, valid_feat_w), device = featmap_sizes[i].device)
+				flags = self.point_generators[i].valid_flags((feat_h, feat_w), (valid_feat_h, valid_feat_w))
 				multi_level_flags.append(flags)
 			valid_flag_list.append(multi_level_flags)
 
