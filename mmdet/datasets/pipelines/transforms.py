@@ -1498,9 +1498,6 @@ class Albu:
 		# update final shape
 		if self.update_pad_shape:
 			results['pad_shape'] = results['img'].shape
-		print("After albu, bboxes: ", results['gt_bboxes'])
-		cv2.imwrite("test.jpg", results['img'])
-		assert False
 
 		return results
 
@@ -2346,6 +2343,10 @@ class MixUp:
 			results['img_shape'] = mixup_img.shape
 			results['gt_bboxes'] = mixup_gt_bboxes
 			results['gt_labels'] = mixup_gt_labels
+
+			print("After albu, bboxes: ", results['gt_bboxes'])
+			cv2.imwrite("test.jpg", results['img'])
+			assert False
 
 		return results
 

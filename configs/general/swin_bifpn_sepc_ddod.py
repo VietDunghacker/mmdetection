@@ -115,7 +115,7 @@ train_pipeline = [
 						type='BboxParams',
 						format='pascal_voc',
 						label_fields=['gt_labels'],
-						min_visibility=0.9,
+						min_visibility=0.8,
 						filter_lost_elements=True),
 					keymap={
 						'img': 'image',
@@ -123,7 +123,11 @@ train_pipeline = [
 					},
 					update_pad_shape=False,
 					skip_img_without_anno=False),
-				dict(type = 'Pad', size_divisor = 800),
+				dict(
+					type='MixUp',
+					img_scale=(800, 800),
+					ratio_range=(0.8, 1.6),
+					pad_val=0.0),
 			]
 		]
 	),
