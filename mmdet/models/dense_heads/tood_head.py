@@ -90,12 +90,12 @@ class TOODHead(AnchorHead):
 		self.norm_cfg = norm_cfg
 		self.num_dcn_on_head = num_dcn_on_head
 		self.anchor_type = anchor_type
-		self.epoch = 0 # which would be update in head hook!
+		self.iter = 0 # which would be update in head hook!
 		super(TOODHead, self).__init__(num_classes, in_channels, init_cfg = init_cfg, **kwargs)
 
 		self.sampling = False
 		if self.train_cfg:
-			self.initial_epoch = self.train_cfg.initial_epoch
+			self.initial_iter = self.train_cfg.initial_iter
 			self.initial_assigner = build_assigner(self.train_cfg.initial_assigner)
 			self.initial_loss_cls = build_loss(initial_loss_cls)
 			self.alingment_assigner = build_assigner(self.train_cfg.assigner)
@@ -179,7 +179,7 @@ class TOODHead(AnchorHead):
 
 		return multi_apply(self.forward_single, feats, self.scales, level_anchor_list, self.anchor_generator.strides)
 
-
+	@force_fp32(apply_to=('x'))
 	def forward_single(self, x, scale, anchor, stride):
 		"""Forward feature of a single scale level.
 		Args:
@@ -300,7 +300,7 @@ class TOODHead(AnchorHead):
 		labels = labels.reshape(-1)
 
 		# classification loss
-		if self.epoch < self.initial_epoch:
+		if self.iter < self.initial_iter:
 			label_weights = label_weights.reshape(-1)
 			loss_cls = self.initial_loss_cls(cls_score, labels, label_weights, avg_factor=1.0)
 		else:
@@ -320,7 +320,7 @@ class TOODHead(AnchorHead):
 			pos_decode_bbox_targets = pos_bbox_targets / stride[0]
 
 			# regression loss
-			if self.epoch < self.initial_epoch:
+			if self.iter < self.initial_iter:
 				pos_bbox_weight = self.centerness_target(pos_anchors, pos_bbox_targets)
 			else:
 				pos_bbox_weight = alignment_metrics[pos_inds]
@@ -638,7 +638,7 @@ class TOODHead(AnchorHead):
 		bbox_weights_list = images_to_levels(all_bbox_weights,
 											 num_level_anchors)
 
-		if self.epoch < self.initial_epoch:
+		if self.iter < self.initial_iter:
 			norm_alignment_metrics_list = [bbox_weights[:, :, 0] for bbox_weights in bbox_weights_list]
 		else:
 			# for alignment metric
@@ -724,7 +724,7 @@ class TOODHead(AnchorHead):
 
 		num_level_anchors_inside = self.get_num_level_anchors_inside(
 			num_level_anchors, inside_flags)
-		if self.epoch < self.initial_epoch:
+		if self.iter < self.initial_iter:
 			assign_result = self.initial_assigner.assign(anchors, num_level_anchors_inside,
 												 gt_bboxes, gt_bboxes_ignore,
 												 gt_labels)
