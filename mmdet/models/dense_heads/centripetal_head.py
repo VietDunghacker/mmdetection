@@ -4,7 +4,6 @@ import torch
 import torch.nn as nn
 from mmcv.cnn import ConvModule, normal_init
 from mmcv.ops import DeformConv2d
-from mmcv.runner import force_fp32
 
 from mmdet.core import multi_apply
 from ..builder import HEADS, build_loss
@@ -150,7 +149,6 @@ class CentripetalHead(CornerHead):
 			_ = [x.conv.reset_parameters() for x in self.tl_centripetal_shift[i]]
 			_ = [x.conv.reset_parameters() for x in self.br_centripetal_shift[i]]
 
-	@force_fp32(apply_to=('x'))
 	def forward_single(self, x, lvl_ind):
 		"""Forward feature of a single level.
 
