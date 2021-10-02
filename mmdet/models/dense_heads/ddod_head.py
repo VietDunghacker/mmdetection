@@ -143,8 +143,12 @@ class DDODHead(AnchorHead):
  	 	 	 	centerness (Tensor): Centerness for a single scale level, the
  	 	 	 	 	channel number is (N, num_anchors * 1, H, W).
  	 	"""
- 	 	cls_feat = x
- 	 	reg_feat = x
+		if isinstance(x, list):
+			cls_feat = x[0]
+			reg_feat = x[1]
+		else:
+			cls_feat = x
+			reg_feat = x
  	 	for cls_conv in self.cls_convs:
  	 	 	cls_feat = cls_conv(cls_feat)
  	 	for reg_conv in self.reg_convs:
@@ -190,18 +194,14 @@ class DDODHead(AnchorHead):
 
  	 	iou_targets = label_weights.new_zeros(labels.shape)
  	 	iou_weights = label_weights.new_zeros(labels.shape)
- 	 	iou_weights[(bbox_weights.sum(axis=1) > 0).nonzero(
- 	 	 	as_tuple=False)] = 1.
+ 	 	iou_weights[(bbox_weights.sum(axis=1) > 0).nonzero(as_tuple=False)] = 1.
 
  	 	# classification loss
- 	 	loss_cls = self.loss_cls(
- 	 	 	cls_score, labels, label_weights, avg_factor=num_total_samples)
+ 	 	loss_cls = self.loss_cls(cls_score, labels, label_weights, avg_factor=num_total_samples)
 
  	 	# FG cat_id: [0, num_classes -1], BG cat_id: num_classes
  	 	bg_class_ind = self.num_classes
- 	 	pos_inds = ((labels >= 0)
- 	 	 	 	 	&
- 	 	 	 	 	(labels < bg_class_ind)).nonzero(as_tuple=False).squeeze(1)
+ 	 	pos_inds = ((labels >= 0) & (labels < bg_class_ind)).nonzero(as_tuple=False).squeeze(1)
 
  	 	if len(pos_inds) > 0:
  	 	 	pos_bbox_targets = bbox_targets[pos_inds]
@@ -290,9 +290,7 @@ class DDODHead(AnchorHead):
  	 	(anchor_list, labels_list, label_weights_list, bbox_targets_list,
  	 	 bbox_weights_list, num_total_pos, num_total_neg) = cls_reg_targets
 
- 	 	num_total_samples = reduce_mean(
- 	 	 	torch.tensor(num_total_pos, dtype=torch.float,
- 	 	 	 	 	 	 device=device)).item()
+ 	 	num_total_samples = reduce_mean(torch.tensor(num_total_pos, dtype=torch.float, device=device)).item()
  	 	num_total_samples = max(num_total_samples, 1.0)
 
  	 	# get pos samples for each level
