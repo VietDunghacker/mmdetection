@@ -1443,6 +1443,7 @@ class Albu:
 		# dict to albumentations format
 		results = self.mapper(results, self.keymap_to_albu)
 		# TODO: add bbox_fields
+		print("Before albu, bboxes: ", results['bboxes'])
 		if 'bboxes' in results:
 			# to list of boxes
 			if isinstance(results['bboxes'], np.ndarray):
@@ -1498,6 +1499,9 @@ class Albu:
 		# update final shape
 		if self.update_pad_shape:
 			results['pad_shape'] = results['img'].shape
+		print("After albu, bboxes: ", results['bboxes'])
+		cv2.imwrite("test.jpg", results['image'])
+		assert False
 
 		return results
 
