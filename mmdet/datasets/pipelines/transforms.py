@@ -1494,6 +1494,7 @@ class Albu:
 
 		# back to the original format
 		results = self.mapper(results, self.keymap_back)
+		print("After albu, bboxes: ", results['gt_bboxes'])
 
 		# update final shape
 		if self.update_pad_shape:
@@ -2344,7 +2345,7 @@ class MixUp:
 			results['gt_bboxes'] = mixup_gt_bboxes
 			results['gt_labels'] = mixup_gt_labels
 
-			print("After albu, bboxes: ", results['gt_bboxes'])
+			print("New gt bboxes:", results['gt_bboxes'])
 			cv2.imwrite("test.jpg", results['img'])
 			assert False
 

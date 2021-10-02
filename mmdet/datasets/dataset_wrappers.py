@@ -292,6 +292,10 @@ class ClassBalancedDataset:
 	def get_cat_ids(self, idx):
 		ori_index = self.repeat_indices[idx]
 		return self.dataset.get_cat_ids(ori_index)
+
+	def get_ann_info(self, idx):
+		ori_index = self.repeat_indices[idx]
+		return self.dataset.get_ann_info(ori_index)
 		
 @DATASETS.register_module()
 class MultiImageMixDataset:
@@ -430,3 +434,6 @@ class MultiImageMixDataset:
 
 	def get_cat_ids(self, idx):
 		return self.dataset.get_cat_ids(idx)
+
+	def get_ann_info(self, idx):
+		return self.dataset.get_ann_info(idx)
