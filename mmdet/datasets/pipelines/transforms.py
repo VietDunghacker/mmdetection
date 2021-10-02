@@ -2306,10 +2306,8 @@ class MixUp:
 
 		# 6. adjust bbox
 		retrieve_gt_bboxes = retrieve_results['gt_bboxes']
-		retrieve_gt_bboxes[:, 0::2] = np.clip(
-			retrieve_gt_bboxes[:, 0::2] * scale_ratio, 0, origin_w)
-		retrieve_gt_bboxes[:, 1::2] = np.clip(
-			retrieve_gt_bboxes[:, 1::2] * scale_ratio, 0, origin_h)
+		retrieve_gt_bboxes[:, 0::2] = np.clip(retrieve_gt_bboxes[:, 0::2] * scale_ratio, 0, origin_w)
+		retrieve_gt_bboxes[:, 1::2] = np.clip(retrieve_gt_bboxes[:, 1::2] * scale_ratio, 0, origin_h)
 
 		if is_filp:
 			retrieve_gt_bboxes[:, 0::2] = (
@@ -2326,8 +2324,10 @@ class MixUp:
 
 		# 8. mix up
 		if keep_list.sum() >= 1.0:
+			ori_dtype = ori_img.dtype
 			ori_img = ori_img.astype(np.float32)
 			mixup_img = 0.5 * ori_img + 0.5 * padded_cropped_img.astype(np.float32)
+			mixup_img = mixup_img.astype(ori_dtype)
 
 			retrieve_gt_labels = retrieve_results['gt_labels'][keep_list]
 			retrieve_gt_bboxes = cp_retrieve_gt_bboxes[keep_list]
@@ -2339,6 +2339,7 @@ class MixUp:
 			results['gt_bboxes'] = mixup_gt_bboxes
 			results['gt_labels'] = mixup_gt_labels
 
+			print("dtype: ", results['img'].dtype)
 			cv2.imwrite('test.jpg', results['img'])
 			assert False
 		return results
