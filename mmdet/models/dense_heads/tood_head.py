@@ -243,8 +243,7 @@ class TOODHead(AnchorHead):
 		"""
 		# since feature map sizes of all images are the same, we only compute
 		# anchors for one time
-		multi_level_anchors = self.anchor_generator.grid_anchors(
-			featmap_sizes, device)
+		multi_level_anchors = self.anchor_generator.grid_priors(featmap_sizes, device)
 		anchor_list = [multi_level_anchors for _ in range(num_imgs)]
 
 		return anchor_list
