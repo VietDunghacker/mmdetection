@@ -10,6 +10,7 @@ from .centripetal_head import CentripetalHead
 from .corner_head import CornerHead
 from .deformable_detr_head import DeformableDETRHead
 from .detr_head import DETRHead
+from .dood_head import DOODHead
 from .embedding_rpn_head import EmbeddingRPNHead
 from .fcos_head import FCOSHead
 from .fovea_head import FoveaHead
@@ -53,5 +54,6 @@ __all__ = [
 	'CascadeRPNHead', 'EmbeddingRPNHead', 'LDHead', 'CascadeRPNHead',
 	'AutoAssignHead', 'DETRHead', 'YOLOFHead', 'DeformableDETRHead',
 	'CenterNetHead', 'YOLOXHead', 'GFLSEPCHead', 'RepPointsV2Head',
-	'BVRHead', 'KeypointHead', 'TOODHead', "OATHead", 'QFLHead', 'RankBasedPAAHead'
+	'BVRHead', 'KeypointHead', 'TOODHead', "OATHead", 'QFLHead', 'RankBasedPAAHead',
+	'DOODHead'
 ]
