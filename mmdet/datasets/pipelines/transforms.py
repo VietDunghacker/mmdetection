@@ -648,7 +648,6 @@ class Pad:
 		self._pad_img(results)
 		self._pad_masks(results)
 		self._pad_seg(results)
-		cv2.imwrite("test.jpg", results['img'])
 		return results
 
 	def __repr__(self):
