@@ -49,8 +49,8 @@ model = dict(
 			lcnorm_cfg=dict(type='GN', num_groups=32, requires_grad=True))
 	],
 	bbox_head=dict(
-		type='GFLHead',
-		num_classes=34,
+		type='DDODHead',
+		num_classes=80,
 		in_channels=256,
 		stacked_convs=0,
 		feat_channels=256,
@@ -60,12 +60,16 @@ model = dict(
 			octave_base_scale=8,
 			scales_per_octave=1,
 			strides=[8, 16, 32, 64, 128]),
-		loss_cls=dict(type='QualityFocalLoss', use_sigmoid=False, beta=2.0, loss_weight=1.0),
-		loss_dfl=dict(type='DistributionFocalLoss', loss_weight=0.25),
-		use_dgqp = True,
-		loss_bbox=dict(type='CIoULoss', loss_weight=2.0)),
-	train_cfg = dict(
-		assigner=dict(type='ATSSAssigner', topk=9),
+		bbox_coder=dict(
+			type='DeltaXYWHBBoxCoder',
+			target_means=[.0, .0, .0, .0],
+			target_stds=[0.1, 0.1, 0.2, 0.2]),
+		loss_cls=dict(type='FocalLoss', use_sigmoid=True, gamma=2.0, alpha=0.25, loss_weight=1.0),
+		loss_bbox=dict(type='CIoULoss', loss_weight=2.0),
+		loss_iou=dict(type='CrossEntropyLoss', use_sigmoid=True, loss_weight=1.0)),
+	train_cfg=dict(
+		assigner=dict(type='ATSSCostAssigner', topk=9),
+		reg_assigner=dict(type='ATSSCostAssigner', topk=9, alpha=0.5),
 		allowed_border=-1,
 		pos_weight=-1,
 		debug=False),
