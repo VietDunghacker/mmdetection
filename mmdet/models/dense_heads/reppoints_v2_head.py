@@ -222,8 +222,7 @@ class RepPointsV2Head(AnchorFreeHead):
 			bbox_right = pts_x.max(dim=1, keepdim=True)[0]
 			bbox_up = pts_y.min(dim=1, keepdim=True)[0]
 			bbox_bottom = pts_y.max(dim=1, keepdim=True)[0]
-			bbox = torch.cat([bbox_left, bbox_up, bbox_right, bbox_bottom],
-							 dim=1)
+			bbox = torch.cat([bbox_left, bbox_up, bbox_right, bbox_bottom], dim=1)
 		elif self.transform_method == 'partial_minmax':
 			pts_y = pts_y[:, :4, ...]
 			pts_x = pts_x[:, :4, ...]
@@ -231,15 +230,13 @@ class RepPointsV2Head(AnchorFreeHead):
 			bbox_right = pts_x.max(dim=1, keepdim=True)[0]
 			bbox_up = pts_y.min(dim=1, keepdim=True)[0]
 			bbox_bottom = pts_y.max(dim=1, keepdim=True)[0]
-			bbox = torch.cat([bbox_left, bbox_up, bbox_right, bbox_bottom],
-							 dim=1)
+			bbox = torch.cat([bbox_left, bbox_up, bbox_right, bbox_bottom], dim=1)
 		elif self.transform_method == 'moment':
 			pts_y_mean = pts_y.mean(dim=1, keepdim=True)
 			pts_x_mean = pts_x.mean(dim=1, keepdim=True)
 			pts_y_std = torch.std(pts_y - pts_y_mean, dim=1, keepdim=True)
 			pts_x_std = torch.std(pts_x - pts_x_mean, dim=1, keepdim=True)
-			moment_transfer = (self.moment_transfer * self.moment_mul) + (
-				self.moment_transfer.detach() * (1 - self.moment_mul))
+			moment_transfer = (self.moment_transfer * self.moment_mul) + (self.moment_transfer.detach() * (1 - self.moment_mul))
 			moment_width_transfer = moment_transfer[0]
 			moment_height_transfer = moment_transfer[1]
 			half_width = pts_x_std * torch.exp(moment_width_transfer)
@@ -308,7 +305,8 @@ class RepPointsV2Head(AnchorFreeHead):
 			cls_feat = x
 			pts_feat = x
 
-		dcn_base_offset = self.dcn_base_offset.type_as(cls_feat)
+		original_dtype = cls_feat.dtype
+		dcn_base_offset = self.dcn_base_offset
 		# If we use center_init, the initial reppoints is from center points.
 		# If we use bounding bbox representation, the initial reppoints is
 		#   from regular grid placed on a pre-defined bbox.
@@ -357,14 +355,14 @@ class RepPointsV2Head(AnchorFreeHead):
 			pts_out_init = pts_out_init + points_init
 		# refine and classify reppoints
 		pts_out_init_grad_mul = (1 - self.gradient_mul) * pts_out_init.detach() + self.gradient_mul * pts_out_init
-		dcn_offset = pts_out_init_grad_mul - dcn_base_offset
+		dcn_offset = pts_out_init_grad_mul.type_as(dcn_base_offset) - dcn_base_offset
 
 		hem_feat = torch.cat([hem_score_out, hem_offset_out], dim=1)
 		cls_feat = torch.cat([cls_feat, hem_feat], dim=1)
 		pts_feat = torch.cat([pts_feat, hem_feat], dim=1)
 
-		cls_out = self.reppoints_cls_out(self.relu(self.reppoints_cls_conv(cls_feat, dcn_offset)))
-		pts_out_refine = self.reppoints_pts_refine_out(self.relu(self.reppoints_pts_refine_conv(pts_feat, dcn_offset)))
+		cls_out = self.reppoints_cls_out(self.relu(self.reppoints_cls_conv(cls_feat.type_as(dcn_offset), dcn_offset))).to(original_dtype)
+		pts_out_refine = self.reppoints_pts_refine_out(self.relu(self.reppoints_pts_refine_conv(pts_feat.type_as(dcn_offset), dcn_offset))).to(original_dtype)
 		if self.use_grid_points:
 			pts_out_refine, bbox_out_refine = self.gen_grid_from_reg(pts_out_refine, bbox_out_init.detach())
 		else:
