@@ -269,17 +269,14 @@ class RepPointsV2Head(AnchorFreeHead):
 		"""
 		b, _, h, w = reg.shape
 		bxy = (previous_boxes[:, :2, ...] + previous_boxes[:, 2:, ...]) / 2.
-		bwh = (previous_boxes[:, 2:, ...] -
-			   previous_boxes[:, :2, ...]).clamp(min=1e-6)
-		grid_topleft = bxy + bwh * reg[:, :2, ...] - 0.5 * bwh * torch.exp(
-			reg[:, 2:, ...])
+		bwh = (previous_boxes[:, 2:, ...] -  previous_boxes[:, :2, ...]).clamp(min=1e-6)
+		grid_topleft = bxy + bwh * reg[:, :2, ...] - 0.5 * bwh * torch.exp(reg[:, 2:, ...])
 		grid_wh = bwh * torch.exp(reg[:, 2:, ...])
 		grid_left = grid_topleft[:, [0], ...]
 		grid_top = grid_topleft[:, [1], ...]
 		grid_width = grid_wh[:, [0], ...]
 		grid_height = grid_wh[:, [1], ...]
-		intervel = torch.linspace(0., 1., self.dcn_kernel).view(
-			1, self.dcn_kernel, 1, 1).type_as(reg)
+		intervel = torch.linspace(0., 1., self.dcn_kernel).view(1, self.dcn_kernel, 1, 1).type_as(reg)
 		grid_x = grid_left + grid_width * intervel
 		grid_x = grid_x.unsqueeze(1).repeat(1, self.dcn_kernel, 1, 1, 1)
 		grid_x = grid_x.view(b, -1, h, w)
@@ -288,9 +285,7 @@ class RepPointsV2Head(AnchorFreeHead):
 		grid_y = grid_y.view(b, -1, h, w)
 		grid_yx = torch.stack([grid_y, grid_x], dim=2)
 		grid_yx = grid_yx.view(b, -1, h, w)
-		regressed_bbox = torch.cat([
-			grid_left, grid_top, grid_left + grid_width, grid_top + grid_height
-		], 1)
+		regressed_bbox = torch.cat([grid_left, grid_top, grid_left + grid_width, grid_top + grid_height], 1)
 		return grid_yx, regressed_bbox
 
 	def forward(self, feats):
@@ -306,13 +301,13 @@ class RepPointsV2Head(AnchorFreeHead):
 			pts_feat = x
 
 		original_dtype = cls_feat.dtype
-		dcn_base_offset = self.dcn_base_offset
+		dcn_base_offset = self.dcn_base_offset.to(cls_feat.device)
 		# If we use center_init, the initial reppoints is from center points.
 		# If we use bounding bbox representation, the initial reppoints is
 		#   from regular grid placed on a pre-defined bbox.
 		if self.use_grid_points or not self.center_init:
 			scale = self.point_base_scale / 2
-			points_init = dcn_base_offset / dcn_base_offset.max() * scale
+			points_init = dcn_base_offset / dcn_base_offset.max() * scale.type_as(dcn_base_offset)
 			bbox_init = x.new_tensor([-scale, -scale, scale, scale]).view(1, 4, 1, 1)
 		else:
 			points_init = 0

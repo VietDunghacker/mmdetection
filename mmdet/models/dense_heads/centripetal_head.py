@@ -173,16 +173,17 @@ class CentripetalHead(CornerHead):
 				- br_centripetal_shift (Tensor): Predicted bottom-right
 				  centripetal shift heatmap.
 		"""
+		original_dtype = x.dtype
 		tl_heat, br_heat, _, _, tl_off, br_off, tl_pool, br_pool = super().forward_single(x, lvl_ind, return_pool=True)
 
 		tl_guiding_shift = self.tl_guiding_shift[lvl_ind](tl_pool)
 		br_guiding_shift = self.br_guiding_shift[lvl_ind](br_pool)
 
-		tl_dcn_offset = self.tl_dcn_offset[lvl_ind](tl_guiding_shift.detach())
-		br_dcn_offset = self.br_dcn_offset[lvl_ind](br_guiding_shift.detach())
+		tl_dcn_offset = self.tl_dcn_offset[lvl_ind](tl_guiding_shift.detach().float())
+		br_dcn_offset = self.br_dcn_offset[lvl_ind](br_guiding_shift.detach().float())
 
-		tl_feat_adaption = self.tl_feat_adaption[lvl_ind](tl_pool, tl_dcn_offset)
-		br_feat_adaption = self.br_feat_adaption[lvl_ind](br_pool, br_dcn_offset)
+		tl_feat_adaption = self.tl_feat_adaption[lvl_ind](tl_pool.float(), tl_dcn_offset).to(original_dtype)
+		br_feat_adaption = self.br_feat_adaption[lvl_ind](br_pool.float(), br_dcn_offset).to(original_dtype)
 
 		tl_centripetal_shift = self.tl_centripetal_shift[lvl_ind](tl_feat_adaption)
 		br_centripetal_shift = self.br_centripetal_shift[lvl_ind](br_feat_adaption)
