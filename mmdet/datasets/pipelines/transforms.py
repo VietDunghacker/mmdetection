@@ -1441,7 +1441,6 @@ class Albu:
 
 	def __call__(self, results):
 		# dict to albumentations format
-		print("Before albu, bboxes: ", results['gt_bboxes'])
 		results = self.mapper(results, self.keymap_to_albu)
 		# TODO: add bbox_fields
 		if 'bboxes' in results:
@@ -1494,7 +1493,6 @@ class Albu:
 
 		# back to the original format
 		results = self.mapper(results, self.keymap_back)
-		print("After albu, bboxes: ", results['gt_bboxes'])
 
 		# update final shape
 		if self.update_pad_shape:
@@ -2278,8 +2276,7 @@ class MixUp:
 
 		# 1. keep_ratio resize
 		scale_ratio = min(self.dynamic_scale[0] / retrieve_img.shape[0], self.dynamic_scale[1] / retrieve_img.shape[1])
-		retrieve_img = mmcv.imresize(retrieve_img, (int(retrieve_img.shape[1] * scale_ratio),
-						   int(retrieve_img.shape[0] * scale_ratio)))
+		retrieve_img = mmcv.imresize(retrieve_img, (int(retrieve_img.shape[1] * scale_ratio), int(retrieve_img.shape[0] * scale_ratio)))
 
 		# 2. paste
 		out_img[:retrieve_img.shape[0], :retrieve_img.shape[1]] = retrieve_img
@@ -2341,11 +2338,9 @@ class MixUp:
 			results['img_shape'] = mixup_img.shape
 			results['gt_bboxes'] = mixup_gt_bboxes
 			results['gt_labels'] = mixup_gt_labels
-			cv2.imwrite("test.jpg", results['img'])
 
-			print("New gt bboxes:", results['gt_bboxes'])
+			cv2.imwrite('test.jpg', results['img'])
 			assert False
-
 		return results
 
 	def _filter_box_candidates(self, bbox1, bbox2):

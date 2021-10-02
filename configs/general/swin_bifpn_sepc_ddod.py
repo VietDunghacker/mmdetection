@@ -49,8 +49,8 @@ model = dict(
 			lcnorm_cfg=dict(type='GN', num_groups=32, requires_grad=True))
 	],
 	bbox_head=dict(
-		type='DDODHead',
-		num_classes=80,
+		type='GFLHead',
+		num_classes=34,
 		in_channels=256,
 		stacked_convs=0,
 		feat_channels=256,
@@ -60,22 +60,12 @@ model = dict(
 			octave_base_scale=8,
 			scales_per_octave=1,
 			strides=[8, 16, 32, 64, 128]),
-		bbox_coder=dict(
-			type='DeltaXYWHBBoxCoder',
-			target_means=[.0, .0, .0, .0],
-			target_stds=[0.1, 0.1, 0.2, 0.2]),
-		loss_cls=dict(
-			type='FocalLoss',
-			use_sigmoid=True,
-			gamma=2.0,
-			alpha=0.25,
-			loss_weight=1.0),
-		loss_bbox=dict(type='CIoULoss', loss_weight=2.0),
-		loss_iou=dict(type='CrossEntropyLoss', use_sigmoid=True, loss_weight=1.0)),
-	# training and testing settings
-	train_cfg=dict(
-		assigner=dict(type='ATSSCostAssigner', topk=9),
-		reg_assigner=dict(type='ATSSCostAssigner', topk=9, alpha=0.5),
+		loss_cls=dict(type='QualityFocalLoss', use_sigmoid=False, beta=2.0, loss_weight=1.0),
+		loss_dfl=dict(type='DistributionFocalLoss', loss_weight=0.25),
+		use_dgqp = True,
+		loss_bbox=dict(type='CIoULoss', loss_weight=2.0)),
+	train_cfg = dict(
+		assigner=dict(type='ATSSAssigner', topk=9),
 		allowed_border=-1,
 		pos_weight=-1,
 		debug=False),
@@ -108,6 +98,41 @@ train_pipeline = [
 		type = 'AutoAugment',
 		policies = [
 			[
+				dict(type='Mosaic', center_ratio_range=(0.9, 1.1), img_scale=(720, 720), pad_val=0.0),
+				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
+			],
+			[
+				dict(type='Mosaic', center_ratio_range=(0.95, 1.05), img_scale=(720, 720), pad_val=0.0),
+				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
+			],
+			[
+				dict(
+					type='Albu',
+					transforms=[
+						dict(
+							type = "OneOf",
+							transforms=[
+								dict(type = "Crop", x_min = 0, y_min = 400, x_max = 800, y_max = 800),
+								dict(type = "Crop", x_min = 0, y_min = 500, x_max = 800, y_max = 800),
+								dict(type = "Crop", x_min = 0, y_min = 600, x_max = 800, y_max = 800),
+							],
+							p=1.0),							
+						],
+					bbox_params=dict(
+						type='BboxParams',
+						format='pascal_voc',
+						label_fields=['gt_labels'],
+						min_visibility=0.8,
+						filter_lost_elements=True),
+					keymap={
+						'img': 'image',
+						'gt_bboxes': 'bboxes'
+					},
+					update_pad_shape=False,
+					skip_img_without_anno=False),
+				dict(type = 'Pad', size_divisor = 800),
+			],
+			[
 				dict(
 					type='Albu',
 					transforms=[
@@ -136,8 +161,12 @@ train_pipeline = [
 				dict(
 					type='MixUp',
 					img_scale=(800, 800),
-					ratio_range=(1.0, 1.0),
+					ratio_range=(0.9, 1.1),
 					pad_val=0.0),
+			],
+			[
+				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
+				dict(type='Resize', img_scale=[(640, 640), (800, 800)], multiscale_mode='range', keep_ratio=True),
 			]
 		]
 	),
