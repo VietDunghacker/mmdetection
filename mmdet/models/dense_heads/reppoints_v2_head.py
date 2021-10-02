@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from mmcv.cnn import ConvModule, bias_init_with_prob, normal_init
+from mmcv.runner import force_fp32
 
 from mmdet.core import (PointGenerator, build_assigner, build_sampler,
 						images_to_levels, multi_apply, multiclass_nms, unmap)
@@ -296,6 +297,7 @@ class RepPointsV2Head(AnchorFreeHead):
 	def forward(self, feats):
 		return multi_apply(self.forward_single, feats)
 
+	@force_fp32()
 	def forward_single(self, x):
 		""" Forward feature map of a single FPN level."""
 		if isinstance(x, list):
