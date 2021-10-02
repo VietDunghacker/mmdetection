@@ -2332,8 +2332,7 @@ class MixUp:
 		# 8. mix up
 		if keep_list.sum() >= 1.0:
 			ori_img = ori_img.astype(np.float32)
-			mixup_img = 0.5 * ori_img + 0.5 * padded_cropped_img.astype(
-				np.float32)
+			mixup_img = 0.5 * ori_img + 0.5 * padded_cropped_img.astype(np.float32)
 
 			retrieve_gt_labels = retrieve_results['gt_labels'][keep_list]
 			retrieve_gt_bboxes = cp_retrieve_gt_bboxes[keep_list]
