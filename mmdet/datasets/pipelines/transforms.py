@@ -648,6 +648,7 @@ class Pad:
 		self._pad_img(results)
 		self._pad_masks(results)
 		self._pad_seg(results)
+		cv2.imwrite("test.jpg", results['img'])
 		return results
 
 	def __repr__(self):
@@ -2339,9 +2340,6 @@ class MixUp:
 			results['gt_bboxes'] = mixup_gt_bboxes
 			results['gt_labels'] = mixup_gt_labels
 
-			print("dtype: ", results['img'].dtype)
-			cv2.imwrite('test.jpg', results['img'])
-			assert False
 		return results
 
 	def _filter_box_candidates(self, bbox1, bbox2):
