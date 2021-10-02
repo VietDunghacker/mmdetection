@@ -127,7 +127,7 @@ train_pipeline = [
 				dict(
 					type='MixUp',
 					img_scale=(800, 800),
-					ratio_range=(0.8, 1.6),
+					ratio_range=(1.0, 1.0),
 					pad_val=0.0),
 			]
 		]
