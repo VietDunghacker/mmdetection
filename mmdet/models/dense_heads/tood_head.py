@@ -21,9 +21,9 @@ class TaskDecomposition(nn.Module):
 		self.in_channels = self.feat_channels * self.stacked_convs
 		self.conv_cfg = conv_cfg
 		self.norm_cfg = norm_cfg
-		self.la_conv1 = nn.Conv2d( self.in_channels,  self.in_channels // la_down_rate, 1)
+		self.la_conv1 = nn.Conv2d(self.in_channels,  self.in_channels // la_down_rate, 1)
 		self.relu = nn.ReLU(inplace=True)
-		self.la_conv2 = nn.Conv2d( self.in_channels // la_down_rate,  self.stacked_convs, 1, padding=0)
+		self.la_conv2 = nn.Conv2d(self.in_channels // la_down_rate,  self.stacked_convs, 1, padding=0)
 		self.sigmoid = nn.Sigmoid()
 
 		self.reduction_conv = ConvModule(
@@ -49,8 +49,7 @@ class TaskDecomposition(nn.Module):
 		weight = self.relu(self.la_conv1(avg_feat))
 		weight = self.sigmoid(self.la_conv2(weight))
 
-		conv_weight = weight.reshape(b, 1, self.stacked_convs, 1) * \
-						  self.reduction_conv.conv.weight.reshape(1, self.feat_channels, self.stacked_convs, self.feat_channels)
+		conv_weight = weight.reshape(b, 1, self.stacked_convs, 1) * self.reduction_conv.conv.weight.reshape(1, self.feat_channels, self.stacked_convs, self.feat_channels)
 		conv_weight = conv_weight.reshape(b, self.feat_channels, self.in_channels)
 		feat = feat.reshape(b, self.in_channels, h * w)
 		feat = torch.bmm(conv_weight, feat).reshape(b, self.feat_channels, h, w)
