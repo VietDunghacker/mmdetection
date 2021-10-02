@@ -2296,9 +2296,7 @@ class MixUp:
 		ori_img = results['img']
 		origin_h, origin_w = out_img.shape[:2]
 		target_h, target_w = ori_img.shape[:2]
-		padded_img = np.zeros(
-			(max(origin_h, target_h), max(origin_w,
-										  target_w), 3)).astype(np.uint8)
+		padded_img = np.zeros((max(origin_h, target_h), max(origin_w, target_w), 3)).astype(np.uint8)
 		padded_img[:origin_h, :origin_w] = out_img
 
 		x_offset, y_offset = 0, 0
@@ -2338,6 +2336,7 @@ class MixUp:
 			retrieve_gt_bboxes = cp_retrieve_gt_bboxes[keep_list]
 			mixup_gt_bboxes = np.concatenate((results['gt_bboxes'], retrieve_gt_bboxes), axis=0)
 			mixup_gt_labels = np.concatenate((results['gt_labels'], retrieve_gt_labels), axis=0)
+			cv2.imwrite("test.jpg", results['img'])
 
 			results['img'] = mixup_img
 			results['img_shape'] = mixup_img.shape
@@ -2345,7 +2344,6 @@ class MixUp:
 			results['gt_labels'] = mixup_gt_labels
 
 			print("New gt bboxes:", results['gt_bboxes'])
-			cv2.imwrite("test.jpg", results['img'])
 			assert False
 
 		return results
