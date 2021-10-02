@@ -73,13 +73,7 @@ class ClassAwareSampler(Sampler):
 
 	def _infinite_indices(self):
 		while True:
-			ids = torch.multinomial(self.weights, self._size * 9, replacement=False)
-			if len(self.empty_gt) > 0:
-				ids = ids.numpy().tolist()
-				random_negative_sample = random.choices(self.empty_gt, k = self._size)
-				ids.extend(random_negative_sample)
-				ids = np.random.permutation(ids)
-				ids = torch.tensor(ids)
+			ids = torch.multinomial(self.weights, self._size * 10, replacement=False)
 			yield from ids
 			self.weights = self._get_class_balance_factor()
 
@@ -90,11 +84,11 @@ class ClassAwareSampler(Sampler):
 			#ret = [1.0] * len(self.dataset)
 			for idx in range(len(self.dataset)):
 				cat_ids = self.dataset.get_cat_ids(idx)
-				ret.append(sum([self.cw[self.dataset.cat2label[cat_id]] for cat_id in cat_ids if cat_id in self.dataset.cat_ids]))
+				ret.append(sum([self.cw[self.dataset.cat2label[cat_id]] for cat_id in cat_ids if cat_id in self.dataset.cat_ids]) + 1e-6)
 		else:
 			for idx in range(len(self.dataset)):
 				cat_ids = self.dataset.get_cat_ids(idx)
-				ret.append(sum([self.cw[cat_id] for cat_id in cat_ids if cat_id in self.dataset.cat_ids]))
+				ret.append(sum([self.cw[cat_id] for cat_id in cat_ids if cat_id in self.dataset.cat_ids]) + 1e-6)
 		return torch.tensor(ret).float()
 
 	def __len__(self):
