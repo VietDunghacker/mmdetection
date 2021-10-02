@@ -2336,12 +2336,12 @@ class MixUp:
 			retrieve_gt_bboxes = cp_retrieve_gt_bboxes[keep_list]
 			mixup_gt_bboxes = np.concatenate((results['gt_bboxes'], retrieve_gt_bboxes), axis=0)
 			mixup_gt_labels = np.concatenate((results['gt_labels'], retrieve_gt_labels), axis=0)
-			cv2.imwrite("test.jpg", results['img'])
 
 			results['img'] = mixup_img
 			results['img_shape'] = mixup_img.shape
 			results['gt_bboxes'] = mixup_gt_bboxes
 			results['gt_labels'] = mixup_gt_labels
+			cv2.imwrite("test.jpg", results['img'])
 
 			print("New gt bboxes:", results['gt_bboxes'])
 			assert False
