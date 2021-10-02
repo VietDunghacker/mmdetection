@@ -110,7 +110,16 @@ train_pipeline = [
 			[
 				dict(
 					type='Albu',
-					transforms=[dict(type = "Crop", x_min = 0, y_min = 400, x_max = 800, y_max = 800)],
+					transforms=[
+						dict(
+							type = "OneOf",
+							transforms=[
+								dict(type = "Crop", x_min = 0, y_min = 400, x_max = 800, y_max = 800),
+								dict(type = "Crop", x_min = 0, y_min = 500, x_max = 800, y_max = 800),
+								dict(type = "Crop", x_min = 0, y_min = 600, x_max = 800, y_max = 800),
+							],
+							p=1.0),							
+						],
 					bbox_params=dict(
 						type='BboxParams',
 						format='pascal_voc',
