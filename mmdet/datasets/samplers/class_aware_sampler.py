@@ -92,11 +92,11 @@ class ClassAwareSampler(Sampler):
 		if self.coco_style:
 			#ret = [1.0] * len(self.dataset)
 			for idx in range(len(self.dataset)):
-				cat_ids = set(self.dataset.get_cat_ids(idx))
+				cat_ids = self.dataset.get_cat_ids(idx)
 				ret.append(sum([self.cw[self.dataset.cat2label[cat_id]] for cat_id in cat_ids if cat_id in self.dataset.cat_ids]))
 		else:
 			for idx in range(len(self.dataset)):
-				cat_ids = set(self.dataset.get_cat_ids(idx))
+				cat_ids = self.dataset.get_cat_ids(idx)
 				ret.append(sum([self.cw[cat_id] for cat_id in cat_ids if cat_id in self.dataset.cat_ids]))
 		return torch.tensor(ret).float()
 
