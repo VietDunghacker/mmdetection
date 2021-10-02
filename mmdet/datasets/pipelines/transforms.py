@@ -1441,9 +1441,9 @@ class Albu:
 
 	def __call__(self, results):
 		# dict to albumentations format
+		print("Before albu, bboxes: ", results['gt_bboxes'])
 		results = self.mapper(results, self.keymap_to_albu)
 		# TODO: add bbox_fields
-		print("Before albu, bboxes: ", results['gt_bboxes'])
 		if 'bboxes' in results:
 			# to list of boxes
 			if isinstance(results['bboxes'], np.ndarray):
