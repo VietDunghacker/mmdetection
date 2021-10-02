@@ -115,7 +115,7 @@ train_pipeline = [
 						type='BboxParams',
 						format='pascal_voc',
 						label_fields=['gt_labels'],
-						min_visibility=0.5,
+						min_visibility=0.9,
 						filter_lost_elements=True),
 					keymap={
 						'img': 'image',
