@@ -15,9 +15,17 @@ model = dict(
 		conv_cfg=dict(type='ConvAWS'),
 		sac=dict(type='SAC', use_deform=True),
 		stage_with_sac=(False, True, True, True),
+		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/pretrain/third_party/res2net101_v1d_26w_4s_mmdetv2-f0a600f9.pth'),
+		with_cp=True,
 		output_img=True),
 	neck=dict(
 		type='RFP',
+		in_channels=(256, 512, 1024, 2048),
+		out_channels=256,
+		num_outs=5,
+		start_level=1,
+		add_extra_convs='on_output',
+		relu_before_extra_convs=True,
 		rfp_steps=2,
 		aspp_out_channels=64,
 		aspp_dilations=(1, 3, 6, 1),
@@ -35,7 +43,8 @@ model = dict(
 			conv_cfg=dict(type='ConvAWS'),
 			sac=dict(type='SAC', use_deform=True),
 			stage_with_sac=(False, True, True, True),
-			pretrained='torchvision://resnet50',
+			init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/pretrain/third_party/res2net101_v1d_26w_4s_mmdetv2-f0a600f9.pth'),
+			with_cp = True,
 			style='pytorch')),
 	bbox_head=dict(
 		type='TOODHead',
@@ -225,14 +234,9 @@ data = dict(
 optimizer = dict(
 	_delete_ = True,
 	type='AdamW',
-	lr=0.0001,
+	lr=0.001,
 	betas=(0.9, 0.999),
-	weight_decay=0.05,
-	paramwise_cfg=dict(
-		custom_keys={
-			'absolute_pos_embed': dict(decay_mult=0.),
-			'relative_position_bias_table': dict(decay_mult=0.),
-			'norm': dict(decay_mult=0.)}))
+	weight_decay=0.0005)
 optimizer_config = dict(grad_clip=None)
 log_config = dict(interval = 10)
 # learning policy
