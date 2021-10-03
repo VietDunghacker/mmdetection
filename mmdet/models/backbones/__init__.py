@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+from .crossformer import CrossFormer_S, CrossFormer_B, CrossFormer_L
 from .csp_darknet import CSPDarknet
 from .darknet import Darknet
 from .detectors_resnet import DetectoRS_ResNet
@@ -7,6 +8,7 @@ from .dla import DLA
 from .efficientnet import EfficientNet
 from .hourglass import HourglassNet
 from .hrnet import HRNet
+from .lit import LIT
 from .mobilenet_v2 import MobileNetV2
 from .pvt import PyramidVisionTransformer, PyramidVisionTransformerV2
 from .regnet import RegNet
@@ -17,10 +19,12 @@ from .resnext import ResNeXt
 from .ssd_vgg import SSDVGG
 from .swin import SwinTransformer
 from .trident_resnet import TridentResNet
+from .xcit import XCiT
 
 __all__ = [
     'RegNet', 'ResNet', 'ResNetV1d', 'ResNeXt', 'SSDVGG', 'HRNet',
     'MobileNetV2', 'Res2Net', 'HourglassNet', 'DetectoRS_ResNet',
     'DetectoRS_ResNeXt', 'Darknet', 'ResNeSt', 'TridentResNet', 'CSPDarknet',
-    'SwinTransformer', 'EfficientNet', 'DLA', 'PyramidVisionTransformer', 'PyramidVisionTransformerV2'
+    'SwinTransformer', 'EfficientNet', 'DLA', 'PyramidVisionTransformer', 'PyramidVisionTransformerV2',
+    'CrossFormer_S', 'CrossFormer_B', 'CrossFormer_L', 'LIT', 'XCiT'
 ]
