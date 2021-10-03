@@ -1,7 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import numpy as np
 import torch
-from mmcv.ops import batched_nms
 
 from mmdet.core import bbox2result, bbox2roi, bbox_xyxy_to_cxcywh
 from mmdet.core.bbox.samplers import PseudoSampler
@@ -13,7 +12,6 @@ from .cascade_roi_head import CascadeRoIHead
 class SparseRoIHead(CascadeRoIHead):
 	r"""The RoIHead for `Sparse R-CNN: End-to-End Object Detection with
 	Learnable Proposals <https://arxiv.org/abs/2011.12450>`_
-
 	Args:
 		num_stages (int): Number of stage whole iterative process.
 			Defaults to 6.
@@ -29,7 +27,6 @@ class SparseRoIHead(CascadeRoIHead):
 		pretrained (str, optional): model pretrained path. Default: None
 		init_cfg (dict or list[dict], optional): Initialization config dict.
 			Default: None
-
 	"""
 
 	def __init__(self,
@@ -82,7 +79,6 @@ class SparseRoIHead(CascadeRoIHead):
 	def _bbox_forward(self, stage, x, rois, object_feats, img_metas):
 		"""Box head forward function used in both training and testing. Returns
 		all regression, classification results and a intermediate feature.
-
 		Args:
 			stage (int): The index of current stage in
 				iterative process.
@@ -92,11 +88,9 @@ class SparseRoIHead(CascadeRoIHead):
 			object_feats (Tensor): The object feature extracted from
 				the previous stage.
 			img_metas (dict): meta information of images.
-
 		Returns:
 			dict[str, Tensor]: a dictionary of bbox head outputs,
 				Containing the following results:
-
 					- cls_score (Tensor): The score of each class, has
 					  shape (batch_size, num_proposals, num_classes)
 					  when use focal loss or
@@ -119,8 +113,10 @@ class SparseRoIHead(CascadeRoIHead):
 		num_imgs = len(img_metas)
 		bbox_roi_extractor = self.bbox_roi_extractor[stage]
 		bbox_head = self.bbox_head[stage]
-		bbox_feats = bbox_roi_extractor(x[:bbox_roi_extractor.num_inputs], rois)
-		cls_score, bbox_pred, object_feats = bbox_head(bbox_feats, object_feats)
+		bbox_feats = bbox_roi_extractor(x[:bbox_roi_extractor.num_inputs],
+										rois)
+		cls_score, bbox_pred, object_feats = bbox_head(bbox_feats,
+													   object_feats)
 		proposal_list = self.bbox_head[stage].refine_bboxes(
 			rois,
 			rois.new_zeros(len(rois)),  # dummy arg
@@ -150,7 +146,6 @@ class SparseRoIHead(CascadeRoIHead):
 					  imgs_whwh=None,
 					  gt_masks=None):
 		"""Forward function in training stage.
-
 		Args:
 			x (list[Tensor]): list of multi-level img features.
 			proposals (Tensor): Decoded proposal bboxes, has shape
@@ -174,7 +169,6 @@ class SparseRoIHead(CascadeRoIHead):
 					[img_width,img_height, img_width, img_height].
 			gt_masks (None | Tensor) : true segmentation masks for each box
 				used if the architecture supports a segmentation task.
-
 		Returns:
 			dict[str, Tensor]: a dictionary of loss components of all stage.
 		"""
@@ -188,7 +182,8 @@ class SparseRoIHead(CascadeRoIHead):
 		all_stage_loss = {}
 		for stage in range(self.num_stages):
 			rois = bbox2roi(proposal_list)
-			bbox_results = self._bbox_forward(stage, x, rois, object_feats, img_metas)
+			bbox_results = self._bbox_forward(stage, x, rois, object_feats,
+											  img_metas)
 			all_stage_bbox_results.append(bbox_results)
 			if gt_bboxes_ignore is None:
 				# TODO support ignore
@@ -197,13 +192,17 @@ class SparseRoIHead(CascadeRoIHead):
 			cls_pred_list = bbox_results['detach_cls_score_list']
 			proposal_list = bbox_results['detach_proposal_list']
 			for i in range(num_imgs):
-				normalize_bbox_ccwh = bbox_xyxy_to_cxcywh(proposal_list[i] / imgs_whwh[i])
+				normalize_bbox_ccwh = bbox_xyxy_to_cxcywh(proposal_list[i] /
+														  imgs_whwh[i])
 				assign_result = self.bbox_assigner[stage].assign(
 					normalize_bbox_ccwh, cls_pred_list[i], gt_bboxes[i],
 					gt_labels[i], img_metas[i])
-				sampling_result = self.bbox_sampler[stage].sample(assign_result, proposal_list[i], gt_bboxes[i])
+				sampling_result = self.bbox_sampler[stage].sample(
+					assign_result, proposal_list[i], gt_bboxes[i])
 				sampling_results.append(sampling_result)
-			bbox_targets = self.bbox_head[stage].get_targets(sampling_results, gt_bboxes, gt_labels, self.train_cfg[stage], True)
+			bbox_targets = self.bbox_head[stage].get_targets(
+				sampling_results, gt_bboxes, gt_labels, self.train_cfg[stage],
+				True)
 			cls_score = bbox_results['cls_score']
 			decode_bbox_pred = bbox_results['decode_bbox_pred']
 
@@ -213,7 +212,8 @@ class SparseRoIHead(CascadeRoIHead):
 				*bbox_targets,
 				imgs_whwh=imgs_whwh)
 			for key, value in single_stage_loss.items():
-				all_stage_loss[f'stage{stage + 1}_{key}'] = value * self.stage_loss_weights[stage]
+				all_stage_loss[f'stage{stage}_{key}'] = value * \
+									self.stage_loss_weights[stage]
 			object_feats = bbox_results['object_feats']
 
 		return all_stage_loss
@@ -226,7 +226,6 @@ class SparseRoIHead(CascadeRoIHead):
 					imgs_whwh,
 					rescale=False):
 		"""Test without augmentation.
-
 		Args:
 			x (list[Tensor]): list of multi-level img features.
 			proposal_boxes (Tensor): Decoded proposal bboxes, has shape
@@ -240,7 +239,6 @@ class SparseRoIHead(CascadeRoIHead):
 					[img_width,img_height, img_width, img_height].
 			rescale (bool): If True, return boxes in original image
 				space. Defaults to False.
-
 		Returns:
 			bbox_results (list[tuple[np.ndarray]]): \
 				[[cls1_det, cls2_det, ...], ...]. \
@@ -265,7 +263,8 @@ class SparseRoIHead(CascadeRoIHead):
 
 		for stage in range(self.num_stages):
 			rois = bbox2roi(proposal_list)
-			bbox_results = self._bbox_forward(stage, x, rois, object_feats, img_metas)
+			bbox_results = self._bbox_forward(stage, x, rois, object_feats,
+											  img_metas)
 			object_feats = bbox_results['object_feats']
 			cls_score = bbox_results['cls_score']
 			proposal_list = bbox_results['detach_proposal_list']
@@ -281,11 +280,9 @@ class SparseRoIHead(CascadeRoIHead):
 
 		for img_id in range(num_imgs):
 			cls_score_per_img = cls_score[img_id]
-
 			scores_per_img, topk_indices = cls_score_per_img.flatten(0, 1).topk(self.test_cfg.max_per_img, sorted=False)
 			labels_per_img = topk_indices % num_classes
 			bbox_pred_per_img = proposal_list[img_id][topk_indices // num_classes]
-
 			if rescale:
 				scale_factor = img_metas[img_id]['scale_factor']
 				bbox_pred_per_img /= bbox_pred_per_img.new_tensor(scale_factor)
@@ -323,6 +320,7 @@ class SparseRoIHead(CascadeRoIHead):
 				proposal_list = bbox_results['detach_proposal_list']
 				object_feats = bbox_results['object_feats']
 		return all_stage_bbox_results
+
 
 	def _bboxes_nms(self, bboxes, labels, cfg):
 		if labels.numel() == 0:
