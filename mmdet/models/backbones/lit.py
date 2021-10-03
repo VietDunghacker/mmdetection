@@ -5,7 +5,7 @@ import torch.utils.checkpoint as checkpoint
 import numpy as np
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
 
-from mmcv_custom import load_checkpoint
+from mmcv.runner import BaseModule, ModuleList, _load_checkpoint
 from mmdet.utils import get_root_logger
 from ..builder import BACKBONES
 from mmcv.ops import DeformConv2dPack
@@ -495,7 +495,7 @@ class LIT(nn.Module):
 		if isinstance(pretrained, str):
 			self.apply(_init_weights)
 			logger = get_root_logger()
-			load_checkpoint(self, pretrained, strict=False, logger=logger)
+			_load_checkpoint(self, pretrained, strict=False, logger=logger)
 		elif pretrained is None:
 			self.apply(_init_weights)
 		else:
