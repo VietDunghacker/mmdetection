@@ -382,7 +382,7 @@ class XCiT(BaseModule):
 		if patch_size == 16:
 			self.fpn1 = nn.Sequential(
 				nn.ConvTranspose2d(embed_dim, embed_dim, kernel_size=2, stride=2),
-				nn.BatchNorm(embed_dim),
+				nn.BatchNorm2d(embed_dim),
 				nn.GELU(),
 				nn.ConvTranspose2d(embed_dim, embed_dim, kernel_size=2, stride=2),
 			)
