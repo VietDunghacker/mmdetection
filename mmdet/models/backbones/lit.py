@@ -72,7 +72,6 @@ class PatchEmbed(nn.Module):
 
 		return x
 
-
 class RelPosAttention(nn.Module):
 	""" Window based multi-head self attention (W-MSA) module with relative position bias.
 	It supports both of shifted and non-shifted window.
@@ -222,7 +221,6 @@ class MLPBlock(nn.Module):
 		mlp_hidden_dim = int(dim * mlp_ratio)
 		self.mlp = Mlp(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
 
-
 	def forward(self, x):
 		x = x + self.drop_path(self.mlp(self.norm2(x)))
 		return x
@@ -331,7 +329,6 @@ class LITLayer(nn.Module):
 		else:
 			self.downsample = None
 
-
 	def get_relative_pos_index(self, H, W):
 		# get pair-wise relative position index for each token inside the window
 		coords_h = torch.arange(H)
@@ -369,7 +366,7 @@ class LITLayer(nn.Module):
 			return x, H, W, x, H, W
 
 @BACKBONES.register_module()
-class LIT(nn.Module):
+class LIT(BaseModule):
 	def __init__(self,
 				 pretrain_img_size=224,
 				 patch_size=4,
@@ -390,8 +387,15 @@ class LIT(nn.Module):
 				 out_indices=(0, 1, 2, 3),
 				 frozen_stages=-1,
 				 use_checkpoint=False,
-				 has_msa=[0, 0, 1, 1]):
-		super().__init__()
+				 has_msa=[0, 0, 1, 1],
+				 init_cfg = [
+					dict(type='TruncNormal', std = 0.02, layer='Linear'),
+					dict(
+						type='Constant',
+						val=1,
+						layer='LayerNorm')
+				]):
+		super(LIT, self).__init__(init_cfg = init_cfg)
 		# self.fp16_enabled = True
 		self.pretrain_img_size = pretrain_img_size
 		self.num_layers = len(depths)
@@ -429,8 +433,7 @@ class LIT(nn.Module):
 				dim=int(embed_dim * 2 ** i_layer),
 				depth=depths[i_layer],
 				num_heads=num_heads[i_layer],
-				input_resolution=(input_resolution[0] // (2 ** i_layer),
-								  input_resolution[1] // (2 ** i_layer)),
+				input_resolution=(input_resolution[0] // (2 ** i_layer), input_resolution[1] // (2 ** i_layer)),
 				window_size=window_size,
 				mlp_ratio=mlp_ratio,
 				qkv_bias=qkv_bias,
@@ -475,31 +478,6 @@ class LIT(nn.Module):
 				m.eval()
 				for param in m.parameters():
 					param.requires_grad = False
-
-	def init_weights(self, pretrained=None):
-		"""Initialize the weights in backbone.
-		Args:
-			pretrained (str, optional): Path to pre-trained weights.
-				Defaults to None.
-		"""
-
-		def _init_weights(m):
-			if isinstance(m, nn.Linear):
-				trunc_normal_(m.weight, std=.02)
-				if isinstance(m, nn.Linear) and m.bias is not None:
-					nn.init.constant_(m.bias, 0)
-			elif isinstance(m, nn.LayerNorm):
-				nn.init.constant_(m.bias, 0)
-				nn.init.constant_(m.weight, 1.0)
-
-		if isinstance(pretrained, str):
-			self.apply(_init_weights)
-			logger = get_root_logger()
-			_load_checkpoint(self, pretrained, strict=False, logger=logger)
-		elif pretrained is None:
-			self.apply(_init_weights)
-		else:
-			raise TypeError('pretrained must be a str or None')
 
 	def forward(self, x):
 		"""Forward function."""
