@@ -7,7 +7,7 @@ model = dict(
 		type='PyramidVisionTransformerV2',
 		embed_dims=64,
 		num_layers=[3, 8, 27, 3],
-		init_cfg=dict(checkpoint='https://github.com/whai362/PVT/releases/download/v2/pvt_v2_b4.pth'),
+		init_cfg=dict(type='Pretrained', checkpoint='https://dl.fbaipublicfiles.com/xcit/xcit_medium_24_p16_224_dist.pth'),
 		out_indices = (1, 2, 3),
 		with_cp = True),
 	neck=dict(
