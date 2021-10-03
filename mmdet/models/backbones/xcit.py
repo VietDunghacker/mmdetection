@@ -327,7 +327,13 @@ class XCiT(BaseModule):
 				 tokens_norm=False,
 				 out_indices=[3, 5, 7, 11],
 				 use_checkpoint = False,
-				 init_cfg = None):
+				 init_cfg = [
+					dict(type='TruncNormal', std = 0.02, layer='Linear'),
+					dict(
+						type='Constant',
+						val=1,
+						layer='LayerNorm')
+				]):
 		"""
 		Args:
 			img_size (int, tuple): input image size
@@ -407,30 +413,6 @@ class XCiT(BaseModule):
 	@torch.jit.ignore
 	def no_weight_decay(self):
 		return {'pos_embed', 'cls_token', 'dist_token'}
-
-	def init_weights(self):
-		"""Initialize the weights in backbone.
-		Args:
-			pretrained (str, optional): Path to pre-trained weights.
-				Defaults to None.
-		"""
-		logger = get_root_logger()
-		if self.init_cfg is None:
-			logger.warn(f'No pre-trained weights for '
-						f'{self.__class__.__name__}, '
-						f'training start from scratch')
-			for m in self.modules():
-				if isinstance(m, nn.Linear):
-					trunc_normal_init(m.weight, std=.02)
-					if isinstance(m, nn.Linear) and m.bias is not None:
-						constant_init(m.bias, 0)
-				elif isinstance(m, nn.LayerNorm):
-					constant_init(m.bias, 0)
-					constant_init(m.weight, 1.0)
-		else:
-			assert 'checkpoint' in self.init_cfg, f'Only support specify `Pretrained` in `init_cfg` in {self.__class__.__name__} '
-            load_checkpoint(self, self.init_cfg.checkpoint, strict=False, logger=logger)
-
 
 	def forward_features(self, x):
 		B, C, H, W = x.shape
