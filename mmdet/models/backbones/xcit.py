@@ -16,7 +16,7 @@ import torch.nn.functional as F
 import torch.utils.checkpoint as checkpoint
 
 from timm.models.vision_transformer import Mlp
-from timm.models.layers import to_2tuple
+from timm.models.layers import to_2tuple, DropPath
 
 from mmcv.cnn import constant_init, trunc_normal_init
 from mmcv.runner import BaseModule, ModuleList, _load_checkpoint
