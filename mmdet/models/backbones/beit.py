@@ -17,12 +17,14 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.checkpoint as checkpoint
 
-from timm.models.layers import drop_path, to_2tuple, trunc_normal_
+from timm.models.layers import drop_path
 
-from mmcv_custom import load_checkpoint
-from mmseg.utils import get_root_logger
-from mmseg.models.builder import BACKBONES
-
+from mmcv.cnn import trunc_normal_init, constant_init
+from mmcv.runner import BaseModule, _load_checkpoint
+from mmcv.utils import to_2tuple
+from mmdet.utils import get_root_logger
+from mmdet.models.builder import BACKBONES
+from ..utils.transformer import PatchEmbed
 
 class DropPath(nn.Module):
 	"""Drop paths (Stochastic Depth) per sample  (when applied in main path of residual blocks).
@@ -51,12 +53,9 @@ class Mlp(nn.Module):
 	def forward(self, x):
 		x = self.fc1(x)
 		x = self.act(x)
-		# x = self.drop(x)
-		# commit this for the orignal BERT implement 
 		x = self.fc2(x)
 		x = self.drop(x)
 		return x
-
 
 class Attention(nn.Module):
 	def __init__(
@@ -179,34 +178,6 @@ class Block(nn.Module):
 			x = x + self.drop_path(self.gamma_2 * self.mlp(self.norm2(x)))
 		return x
 
-
-class PatchEmbed(nn.Module):
-	""" Image to Patch Embedding
-	"""
-	def __init__(self, img_size=224, patch_size=16, in_chans=3, embed_dim=768):
-		super().__init__()
-		img_size = to_2tuple(img_size)
-		patch_size = to_2tuple(patch_size)
-		num_patches = (img_size[1] // patch_size[1]) * (img_size[0] // patch_size[0])
-		self.patch_shape = (img_size[0] // patch_size[0], img_size[1] // patch_size[1])
-		self.img_size = img_size
-		self.patch_size = patch_size
-		self.num_patches = num_patches
-
-		self.proj = nn.Conv2d(in_chans, embed_dim, kernel_size=patch_size, stride=patch_size)
-
-	def forward(self, x, **kwargs):
-		B, C, H, W = x.shape
-		# FIXME look at relaxing size constraints
-		# assert H == self.img_size[0] and W == self.img_size[1], \
-		#	 f"Input image size ({H}*{W}) doesn't match model ({self.img_size[0]}*{self.img_size[1]})."
-		x = self.proj(x)
-		Hp, Wp = x.shape[2], x.shape[3]
-
-		x = x.flatten(2).transpose(1, 2)
-		return x, (Hp, Wp)
-
-
 class RelativePositionBias(nn.Module):
 
 	def __init__(self, window_size, num_heads):
@@ -227,16 +198,13 @@ class RelativePositionBias(nn.Module):
 		relative_coords[:, :, 0] += window_size[0] - 1  # shift to start from 0
 		relative_coords[:, :, 1] += window_size[1] - 1
 		relative_coords[:, :, 0] *= 2 * window_size[1] - 1
-		relative_position_index = \
-			torch.zeros(size=(window_size[0] * window_size[1] + 1,) * 2, dtype=relative_coords.dtype)
+		relative_position_index = torch.zeros(size=(window_size[0] * window_size[1] + 1,) * 2, dtype=relative_coords.dtype)
 		relative_position_index[1:, 1:] = relative_coords.sum(-1)  # Wh*Ww, Wh*Ww
 		relative_position_index[0, 0:] = self.num_relative_distance - 3
 		relative_position_index[0:, 0] = self.num_relative_distance - 2
 		relative_position_index[0, 0] = self.num_relative_distance - 1
 
 		self.register_buffer("relative_position_index", relative_position_index)
-
-		# trunc_normal_(self.relative_position_bias_table, std=.02)
 
 	def forward(self):
 		relative_position_bias = \
@@ -247,27 +215,41 @@ class RelativePositionBias(nn.Module):
 
 
 @BACKBONES.register_module()
-class BEiT(nn.Module):
+class BEiT(BaseModule):
 	""" Vision Transformer with support for patch or hybrid CNN input stage
 	"""
-	def __init__(self, img_size=224, patch_size=16, in_chans=3, num_classes=80, embed_dim=768, depth=12,
-				 num_heads=12, mlp_ratio=4., qkv_bias=False, qk_scale=None, drop_rate=0., attn_drop_rate=0.,
-				 drop_path_rate=0., norm_layer=None, init_values=None, use_checkpoint=False, 
-				 use_abs_pos_emb=True, use_rel_pos_bias=False, use_shared_rel_pos_bias=False,
-				 out_indices=[3, 5, 7, 11]):
-		super().__init__()
+	def __init__(self,
+				 pretrain_img_size=224,
+				 in_channels=3,
+				 embed_dims=768,
+				 patch_size=16,
+				 depth=12,
+				 num_heads=12,
+				 mlp_ratio=4.,
+				 qkv_bias=False,
+				 qk_scale=None,
+				 drop_rate=0.,
+				 attn_drop_rate=0.,
+				 drop_path_rate=0.,
+				 norm_layer=None,
+				 init_values=None,
+				 use_checkpoint=False, 
+				 use_abs_pos_emb=True,
+				 use_rel_pos_bias=False,
+				 use_shared_rel_pos_bias=False,
+				 out_indices=[3, 5, 7, 11],
+				 init_cfg = None):
+		super(BEiT, self).__init__(init_cfg = init_cfg)
 		norm_layer = norm_layer or partial(nn.LayerNorm, eps=1e-6)
-		self.num_classes = num_classes
-		self.num_features = self.embed_dim = embed_dim  # num_features for consistency with other models
+		self.num_features = self.embed_dims = embed_dims  # num_features for consistency with other models
 
-		self.patch_embed = PatchEmbed(img_size=img_size, patch_size=patch_size, in_chans=in_chans, embed_dim=embed_dim)
+		self.patch_embed = PatchEmbed(in_channels = in_channels, embed_dims = embed_dims, kernel_size = patch_size, stride = patch_size)
 		num_patches = self.patch_embed.num_patches
 		self.out_indices = out_indices
 
-		self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
-		# self.mask_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
+		self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dims))
 		if use_abs_pos_emb:
-			self.pos_embed = nn.Parameter(torch.zeros(1, num_patches + 1, embed_dim))
+			self.pos_embed = nn.Parameter(torch.zeros(1, num_patches + 1, embed_dims))
 		else:
 			self.pos_embed = None
 		self.pos_drop = nn.Dropout(p=drop_rate)
@@ -282,27 +264,26 @@ class BEiT(nn.Module):
 		self.use_checkpoint = use_checkpoint
 		self.blocks = nn.ModuleList([
 			Block(
-				dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
+				dim=embed_dims, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
 				drop=drop_rate, attn_drop=attn_drop_rate, drop_path=dpr[i], norm_layer=norm_layer,
 				init_values=init_values, window_size=self.patch_embed.patch_shape if use_rel_pos_bias else None)
 			for i in range(depth)])
 
 		if self.pos_embed is not None:
-			trunc_normal_(self.pos_embed, std=.02)
-		trunc_normal_(self.cls_token, std=.02)
-		# trunc_normal_(self.mask_token, std=.02)
+			trunc_normal_init(self.pos_embed, std=.02)
+		trunc_normal_init(self.cls_token, std=.02)
 		self.out_indices = out_indices
 
 		if patch_size == 16:
 			self.fpn1 = nn.Sequential(
-				nn.ConvTranspose2d(embed_dim, embed_dim, kernel_size=2, stride=2),
-				nn.SyncBatchNorm(embed_dim),
+				nn.ConvTranspose2d(embed_dims, embed_dims, kernel_size=2, stride=2),
+				nn.BatchNorm2d(embed_dims),
 				nn.GELU(),
-				nn.ConvTranspose2d(embed_dim, embed_dim, kernel_size=2, stride=2),
+				nn.ConvTranspose2d(embed_dims, embed_dims, kernel_size=2, stride=2),
 			)
 
 			self.fpn2 = nn.Sequential(
-				nn.ConvTranspose2d(embed_dim, embed_dim, kernel_size=2, stride=2),
+				nn.ConvTranspose2d(embed_dims, embed_dims, kernel_size=2, stride=2),
 			)
 
 			self.fpn3 = nn.Identity()
@@ -310,7 +291,7 @@ class BEiT(nn.Module):
 			self.fpn4 = nn.MaxPool2d(kernel_size=2, stride=2)
 		elif patch_size == 8:
 			self.fpn1 = nn.Sequential(
-				nn.ConvTranspose2d(embed_dim, embed_dim, kernel_size=2, stride=2),
+				nn.ConvTranspose2d(embed_dims, embed_dims, kernel_size=2, stride=2),
 			)
 
 			self.fpn2 = nn.Identity()
@@ -322,64 +303,85 @@ class BEiT(nn.Module):
 			self.fpn4 = nn.Sequential(
 				nn.MaxPool2d(kernel_size=4, stride=4),
 			)
-		self.apply(self._init_weights)
-		self.fix_init_weight()
 
-	def fix_init_weight(self):
-		def rescale(param, layer_id):
-			param.div_(math.sqrt(2.0 * layer_id))
-
-		for layer_id, layer in enumerate(self.blocks):
-			rescale(layer.attn.proj.weight.data, layer_id + 1)
-			rescale(layer.mlp.fc2.weight.data, layer_id + 1)
-
-	def _init_weights(self, m):
-		if isinstance(m, nn.Linear):
-			trunc_normal_(m.weight, std=.02)
-			if isinstance(m, nn.Linear) and m.bias is not None:
-				nn.init.constant_(m.bias, 0)
-		elif isinstance(m, nn.LayerNorm):
-			nn.init.constant_(m.bias, 0)
-			nn.init.constant_(m.weight, 1.0)
-
-	def init_weights(self, pretrained=None):
-		"""Initialize the weights in backbone.
-		Args:
-			pretrained (str, optional): Path to pre-trained weights.
-				Defaults to None.
-		"""
-
-		def _init_weights(m):
-			if isinstance(m, nn.Linear):
-				trunc_normal_(m.weight, std=.02)
-				if isinstance(m, nn.Linear) and m.bias is not None:
-					nn.init.constant_(m.bias, 0)
-			elif isinstance(m, nn.LayerNorm):
-				nn.init.constant_(m.bias, 0)
-				nn.init.constant_(m.weight, 1.0)
-
-		if isinstance(pretrained, str):
-			self.apply(_init_weights)
-			logger = get_root_logger()
-			load_checkpoint(self, pretrained, strict=False, logger=logger)
-		elif pretrained is None:
-			self.apply(_init_weights)
+	def init_weights(self):
+		logger = get_root_logger()
+		if self.init_cfg is None:
+			logger.warn(f'No pre-trained weights for '
+						f'{self.__class__.__name__}, '
+						f'training start from scratch')
+			if self.use_abs_pos_embed:
+				trunc_normal_init(self.absolute_pos_embed, std=0.02)
+			for m in self.modules():
+				if isinstance(m, nn.Linear):
+					trunc_normal_init(m.weight, std=.02)
+					if m.bias is not None:
+						constant_init(m.bias, 0)
+				elif isinstance(m, nn.LayerNorm):
+					constant_init(m.bias, 0)
+					constant_init(m.weight, 1.0)
 		else:
-			raise TypeError('pretrained must be a str or None')
+			assert 'checkpoint' in self.init_cfg, f'Only support ' \
+												  f'specify `Pretrained` in ' \
+												  f'`init_cfg` in ' \
+												  f'{self.__class__.__name__} '
+			ckpt = _load_checkpoint(self.init_cfg.checkpoint, logger=logger, map_location='cpu')
+			if 'state_dict' in ckpt:
+				_state_dict = ckpt['state_dict']
+			elif 'model' in ckpt:
+				_state_dict = ckpt['model']
+			else:
+				_state_dict = ckpt
 
-	def get_num_layers(self):
-		return len(self.blocks)
+			state_dict = OrderedDict()
+			for k, v in _state_dict.items():
+				if k.startswith('backbone.'):
+					state_dict[k[9:].replace('proj.', 'projection.')] = v
 
-	@torch.jit.ignore
-	def no_weight_decay(self):
-		return {'pos_embed', 'cls_token'}
+			# strip prefix of state_dict
+			if list(state_dict.keys())[0].startswith('module.'):
+				state_dict = {k[7:]: v for k, v in state_dict.items()}
+
+			# reshape absolute position embedding
+			if state_dict.get('pos_embed') is not None:
+				absolute_pos_embed = state_dict['pos_embed']
+				N1, L, C1 = absolute_pos_embed.size()
+				N2, C2, H, W = self.absolute_pos_embed.size()
+				if N1 != N2 or C1 != C2 or L != H * W:
+					logger.warning('Error in loading pos_embed, pass')
+				else:
+					state_dict['pos_embed'] = absolute_pos_embed.view(N2, H, W, C2).permute(0, 3, 1, 2).contiguous()
+
+			# interpolate position bias table if needed
+			relative_position_bias_table_keys = [
+				k for k in state_dict.keys()
+				if 'relative_position_bias_table' in k
+			]
+			for table_key in relative_position_bias_table_keys:
+				table_pretrained = state_dict[table_key]
+				table_current = self.state_dict()[table_key]
+				L1, nH1 = table_pretrained.size()
+				L2, nH2 = table_current.size()
+				if nH1 != nH2:
+					logger.warning(f'Error in loading {table_key}, pass')
+				elif L1 != L2:
+					S1 = int(L1**0.5)
+					S2 = int(L2**0.5)
+					table_pretrained_resized = F.interpolate(
+						table_pretrained.permute(1, 0).reshape(1, nH1, S1, S1),
+						size=(S2, S2),
+						mode='bicubic')
+					state_dict[table_key] = table_pretrained_resized.view(nH2, L2).permute(1, 0).contiguous()
+
+			# load state_dict
+			self.load_state_dict(state_dict, False)
 
 	def forward_features(self, x):
 		B, C, H, W = x.shape
 		x, (Hp, Wp) = self.patch_embed(x)
 		batch_size, seq_len, _ = x.size()
 
-		cls_tokens = self.cls_token.expand(batch_size, -1, -1)  # stole cls_tokens impl from Phil Wang, thanks
+		cls_tokens = self.cls_token.expand(batch_size, -1, -1)
 		x = torch.cat((cls_tokens, x), dim=1)
 		if self.pos_embed is not None:
 			x = x + self.pos_embed

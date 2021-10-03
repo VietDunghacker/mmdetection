@@ -3,23 +3,24 @@ _base_ = [
 ]
 model = dict(
 	type='TOOD',
-    backbone=dict(
-        type='XCiT',
-        patch_size=16,
-        embed_dim=512,
-        depth=24,
-        num_heads=8,
-        mlp_ratio=4,
-        qkv_bias=True,
-        eta=1e-5,
-        drop_path_rate=0.15,
-        out_indices=[11, 15, 23],
+	backbone=dict(
+		type='BEiT',
+		patch_size=16,
+		embed_dim=768,
+		depth=12,
+		num_heads=12,
+		mlp_ratio=4,
+		qkv_bias=True,
+		use_abs_pos_emb=False,
+		use_rel_pos_bias=True,
+		init_values=0.1,
+		drop_path_rate=0.1,
 		init_cfg=dict(type='Pretrained', checkpoint='/gdrive/My Drive/checkpoints/xcit_medium_24_p16.pth'),
 		use_checkpoint = True,
-    ),
+	),
 	neck=dict(
 		type='BiFPN',
-		in_channels=[512, 512, 512],
+		in_channels=[768, 768, 768],
 		out_channels=256,
 		input_indices=(1, 2, 3),
 		num_outs=5,
@@ -221,7 +222,10 @@ optimizer = dict(
 	lr=0.0001,
 	betas=(0.9, 0.999),
 	weight_decay=0.05,
-	paramwise_cfg=dict(custom_keys={'norm': dict(decay_mult=0.)}))
+	paramwise_cfg=dict(
+		custom_keys=
+			{'pos_embed': dict(decay_mult=0.)},
+			{'cls_token': dict(decay_mult=0.)}))
 optimizer_config = dict(grad_clip=None)
 log_config = dict(interval = 10)
 # learning policy

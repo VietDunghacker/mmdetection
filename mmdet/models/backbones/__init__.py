@@ -2,6 +2,7 @@
 from .crossformer import CrossFormer_S, CrossFormer_B, CrossFormer_L
 from .csp_darknet import CSPDarknet
 from .darknet import Darknet
+from .detectors_res2net import DetectoRS_Res2Net
 from .detectors_resnet import DetectoRS_ResNet
 from .detectors_resnext import DetectoRS_ResNeXt
 from .dla import DLA
@@ -23,7 +24,7 @@ from .xcit import XCiT
 
 __all__ = [
     'RegNet', 'ResNet', 'ResNetV1d', 'ResNeXt', 'SSDVGG', 'HRNet',
-    'MobileNetV2', 'Res2Net', 'HourglassNet', 'DetectoRS_ResNet',
+    'MobileNetV2', 'Res2Net', 'HourglassNet', 'DetectoRS_ResNet', 'DetectoRS_Res2Net',
     'DetectoRS_ResNeXt', 'Darknet', 'ResNeSt', 'TridentResNet', 'CSPDarknet',
     'SwinTransformer', 'EfficientNet', 'DLA', 'PyramidVisionTransformer', 'PyramidVisionTransformerV2',
     'CrossFormer_S', 'CrossFormer_B', 'CrossFormer_L', 'LIT', 'XCiT'

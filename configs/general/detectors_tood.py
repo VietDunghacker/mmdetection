@@ -1,100 +1,93 @@
 _base_ = [
 	'../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py'
 ]
-num_stages = 6
-num_proposals = 32
 model = dict(
-	type='SparseRCNN',
+	type='TOOD',
 	backbone=dict(
-		type='SwinTransformer',
-		embed_dims=128,
-		depths=[2, 2, 18, 2],
-		num_heads=[4, 8, 16, 32],
-		window_size=7,
-		mlp_ratio=4,
-		qkv_bias=True,
-		qk_scale=None,
-		drop_rate=0.,
-		attn_drop_rate=0.,
-		drop_path_rate=0.3,
-		patch_norm=True,
-		out_indices=(1, 2, 3),
-		with_cp=True,
-		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
+		type='DetectoRS_Res2Net',
+		depth=101,
+		scales=4,
+		base_width=26,
+		num_stages=4,
+		frozen_stages=-1,
+		norm_cfg=dict(type='BN', requires_grad=True),
+		norm_eval=False,
+		conv_cfg=dict(type='ConvAWS'),
+		sac=dict(type='SAC', use_deform=True),
+		stage_with_sac=(False, True, True, True),
+		output_img=True),
 	neck=dict(
-		type='BiFPN',
-		in_channels=[256, 512, 1024],
-		out_channels=256,
-		input_indices=(1, 2, 3),
-		num_outs=5,
-		strides=[8, 16, 32],
-		num_layers=1,
-		weight_method='fast_attn',
-		act_cfg='silu',
-		separable_conv=True,
-		epsilon=0.0001
+		type='RFP',
+		rfp_steps=2,
+		aspp_out_channels=64,
+		aspp_dilations=(1, 3, 6, 1),
+		rfp_backbone=dict(
+			rfp_inplanes=256,
+			type='DetectoRS_Res2Net',
+			depth=101,
+			scales=4,
+			base_width=26,
+			num_stages=4,
+			out_indices=(0, 1, 2, 3),
+			frozen_stages=-1,
+			norm_cfg=dict(type='BN', requires_grad=True),
+			norm_eval=False,
+			conv_cfg=dict(type='ConvAWS'),
+			sac=dict(type='SAC', use_deform=True),
+			stage_with_sac=(False, True, True, True),
+			pretrained='torchvision://resnet50',
+			style='pytorch')),
+	bbox_head=dict(
+		type='TOODHead',
+		num_classes=80,
+		in_channels=256,
+		stacked_convs=6,
+		num_dcn_on_head=2,
+		feat_channels=256,
+		anchor_type='anchor_free',
+		anchor_generator=dict(
+			type='AnchorGenerator',
+			ratios=[1.0],
+			octave_base_scale=8,
+			scales_per_octave=1,
+			strides=[8, 16, 32, 64, 128]),
+		bbox_coder=dict(
+			type='DeltaXYWHBBoxCoder',
+			target_means=[.0, .0, .0, .0],
+			target_stds=[0.1, 0.1, 0.2, 0.2]),
+		initial_loss_cls=dict(
+			type='FocalLossWithProb',
+			use_sigmoid=True,
+			gamma=2.0,
+			alpha=0.25,
+			loss_weight=1.0),
+		loss_cls=dict(
+			type='TaskAlignedFocalLoss',
+			use_sigmoid=True,
+			gamma=2.0,
+			loss_weight=1.0),
+		loss_bbox=dict(type='CIoULoss', loss_weight=2.0),
 	),
-	rpn_head=dict(
-		type='EmbeddingRPNHead',
-		num_proposals=num_proposals,
-		proposal_feature_channel=256),
-	roi_head=dict(
-		type='SparseRoIHead',
-		num_stages=num_stages,
-		stage_loss_weights=[1] * num_stages,
-		proposal_feature_channel=256,
-		bbox_roi_extractor=dict(
-			type='SingleRoIExtractor',
-			roi_layer=dict(type='RoIAlign', output_size=7, sampling_ratio=0),
-			out_channels=256,
-			featmap_strides=[4, 8, 16, 32]),
-		bbox_head=[
-			dict(
-				type='DIIHead',
-				num_classes=80,
-				num_ffn_fcs=2,
-				num_heads=8,
-				num_cls_fcs=1,
-				num_reg_fcs=3,
-				feedforward_channels=2048,
-				in_channels=256,
-				dropout=0.0,
-				ffn_act_cfg=dict(type='ReLU', inplace=True),
-				dynamic_conv_cfg=dict(
-					type='DynamicConv',
-					in_channels=256,
-					feat_channels=64,
-					out_channels=256,
-					input_feat_shape=7,
-					act_cfg=dict(type='ReLU', inplace=True),
-					norm_cfg=dict(type='LN')),
-				loss_bbox=dict(type='L1Loss', loss_weight=5.0),
-				loss_iou=dict(type='GIoULoss', loss_weight=2.0),
-				loss_cls=dict(type='FocalLoss', use_sigmoid=True, gamma=2.0, alpha=0.25, loss_weight=2.0),
-				bbox_coder=dict(
-					type='DeltaXYWHBBoxCoder',
-					clip_border=False,
-					target_means=[0., 0., 0., 0.],
-					target_stds=[0.5, 0.5, 1., 1.])) for _ in range(num_stages)
-		]),
-	# training and testing settings
-	train_cfg=dict(
-		rpn=None,
-		rcnn=[
-			dict(
-				assigner=dict(
-					type='HungarianAssigner',
-					cls_cost=dict(type='FocalLossCost', weight=2.0),
-					reg_cost=dict(type='BBoxL1Cost', weight=5.0),
-					iou_cost=dict(type='IoUCost', iou_mode='giou', weight=2.0)),
-				sampler=dict(type='PseudoSampler'),
-				pos_weight=1) for _ in range(num_stages)
-		]),
-	test_cfg=dict(rpn=None, rcnn=dict(max_per_img=num_proposals, score_threshold = 0.05, nms = dict(type='nms', iou_threshold=0.6))))
+	train_cfg = dict(
+		initial_iter=0,
+		initial_assigner=dict(type='ATSSAssigner', topk=9),
+		assigner=dict(type='TaskAlignedAssigner', topk=13),
+		alpha=1,
+		beta=6,
+		allowed_border=-1,
+		pos_weight=-1,
+		debug=False),
+	test_cfg = dict(
+		nms_pre=1000,
+		min_bbox_size=0,
+		score_thr=0.05,
+		nms=dict(type='nms', iou_threshold=0.6),
+		max_per_img=100)
+	)
 
 # data setting
 dataset_type = 'CocoDataset'
-data_root = '/content/data/'
+data_root = 'data/coco/'
 img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 albu_train_transforms = [
 	dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0, rotate_limit=0, interpolation=1, p=0.5, border_mode = 0),
@@ -201,6 +194,7 @@ train_pipeline = [
 		update_pad_shape=False,
 		skip_img_without_anno=False),	
 	dict(type='Normalize', **img_norm_cfg),
+	dict(type='Pad', size_divisor=1),
 	dict(type='DefaultFormatBundle'),
 	dict(type='Collect', keys=['img', 'gt_bboxes', 'gt_labels']),
 ]
@@ -220,6 +214,7 @@ test_pipeline = [
 			dict(type='Collect', keys=['img']),
 		])
 ]
+
 data = dict(
 	workers_per_gpu=4,
 	train=dict(pipeline=train_pipeline),
@@ -230,9 +225,9 @@ data = dict(
 optimizer = dict(
 	_delete_ = True,
 	type='AdamW',
-	lr=0.000025,
+	lr=0.0001,
 	betas=(0.9, 0.999),
-	weight_decay=0.0001,
+	weight_decay=0.05,
 	paramwise_cfg=dict(
 		custom_keys={
 			'absolute_pos_embed': dict(decay_mult=0.),
@@ -259,3 +254,7 @@ fp16 = dict(loss_scale = 512.)
 load_from = None
 resume_from = None
 workflow = [('train', 1)]
+
+custom_hooks = [
+	dict(type="HeadHook")
+]

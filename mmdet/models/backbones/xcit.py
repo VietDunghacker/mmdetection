@@ -19,7 +19,7 @@ from timm.models.vision_transformer import Mlp
 from timm.models.layers import to_2tuple, DropPath
 
 from mmcv.cnn import constant_init, trunc_normal_init
-from mmcv.runner import BaseModule, ModuleList, _load_checkpoint
+from mmcv.runner import BaseModule
 from mmdet.utils import get_root_logger
 from mmdet.models.builder import BACKBONES
 
