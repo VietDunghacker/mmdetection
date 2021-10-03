@@ -18,20 +18,22 @@ model = dict(
 		attn_drop_rate=0.,
 		drop_path_rate=0.3,
 		patch_norm=True,
-		out_indices=(0, 1, 2, 3),
+		out_indices=(1, 2, 3),
 		with_cp=True,
 		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
 	neck=dict(
-		type='PAFPNX',
-		in_channels=[128, 256, 512, 1024],
+		type='BiFPN',
+		in_channels=[256, 512, 1024],
 		out_channels=256,
-		start_level=1,
-		add_extra_convs='on_output',
+		input_indices=(1, 2, 3),
 		num_outs=5,
-		relu_before_extra_convs=True,
-		pafpn_conv_cfg=dict(type='DCNv2'),
-		no_norm_on_lateral=True,
-		norm_cfg=dict(type='GN', num_groups=32, requires_grad=True)),
+		strides=[8, 16, 32],
+		num_layers=1,
+		weight_method='fast_attn',
+		act_cfg='silu',
+		separable_conv=True,
+		epsilon=0.0001
+	),
 	rpn_head=dict(
 		type='EmbeddingRPNHead',
 		num_proposals=num_proposals,
@@ -109,73 +111,8 @@ albu_train_transforms = [
 ]
 
 train_pipeline = [
-	dict(
-		type = 'AutoAugment',
-		policies = [
-			[
-				dict(type='Mosaic', center_ratio_range=(0.9, 1.1), img_scale=(720, 720), pad_val=0.0),
-				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
-			],
-			[
-				dict(type='Mosaic', center_ratio_range=(0.95, 1.05), img_scale=(720, 720), pad_val=0.0),
-				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
-			],
-			[
-				dict(
-					type='Albu',
-					transforms=[dict(type = "Crop", x_min = 0, y_min = 400, x_max = 800, y_max = 800)],
-					bbox_params=dict(
-						type='BboxParams',
-						format='pascal_voc',
-						label_fields=['gt_labels'],
-						min_visibility=0.8,
-						filter_lost_elements=True),
-					keymap={
-						'img': 'image',
-						'gt_bboxes': 'bboxes'
-					},
-					update_pad_shape=False,
-					skip_img_without_anno=False),
-				dict(type = 'Pad', size_divisor = 800),
-			],
-			[
-				dict(
-					type='Albu',
-					transforms=[
-						dict(
-							type = "OneOf",
-							transforms=[dict(type = "Crop", x_min = 0, y_min = i, x_max = 800, y_max = 800) for i in range(400, 700, 10)],
-							p=1.0),							
-						],
-					bbox_params=dict(
-						type='BboxParams',
-						format='pascal_voc',
-						label_fields=['gt_labels'],
-						min_visibility=0.8,
-						filter_lost_elements=True),
-					keymap={
-						'img': 'image',
-						'gt_bboxes': 'bboxes'
-					},
-					update_pad_shape=False,
-					skip_img_without_anno=False),
-				dict(type = 'Pad', size_divisor = 800),
-				dict(
-					type='MixUp',
-					img_scale=(800, 800),
-					ratio_range=(1.0, 1.0),
-					pad_val=0.0),
-			],
-			[
-				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
-				dict(type='Resize', img_scale=[(640, 640), (800, 800)], multiscale_mode='range', keep_ratio=True),
-			],
-			[
-				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
-				dict(type='Resize', img_scale=[(640, 640), (800, 800)], multiscale_mode='range', keep_ratio=True),
-			]
-		]
-	),
+	dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
+	dict(type='Resize', img_scale=[(640, 640), (800, 800)], multiscale_mode='range', keep_ratio=True),
 	dict(
 		type='CutOut',
 		n_holes=(5, 10),
