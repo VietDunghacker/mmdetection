@@ -19,7 +19,7 @@ from timm.models.vision_transformer import Mlp
 from timm.models.layers import to_2tuple
 
 from mmcv.cnn import constant_init, trunc_normal_init
-from mmcv.runner import load_checkpoint
+from mmcv.runner import BaseModule, ModuleList, _load_checkpoint
 from mmdet.utils import get_root_logger
 from mmdet.models.builder import BACKBONES
 
@@ -427,6 +427,10 @@ class XCiT(BaseModule):
 				elif isinstance(m, nn.LayerNorm):
 					constant_init(m.bias, 0)
 					constant_init(m.weight, 1.0)
+		else:
+			assert 'checkpoint' in self.init_cfg, f'Only support specify `Pretrained` in `init_cfg` in {self.__class__.__name__} '
+            load_checkpoint(self, self.init_cfg.checkpoint, strict=False, logger=logger)
+
 
 	def forward_features(self, x):
 		B, C, H, W = x.shape
