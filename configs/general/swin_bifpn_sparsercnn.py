@@ -2,7 +2,7 @@ _base_ = [
 	'../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py'
 ]
 num_stages = 6
-num_proposals = 300
+num_proposals = 32
 model = dict(
 	type='SparseRCNN',
 	backbone=dict(
@@ -18,22 +18,20 @@ model = dict(
 		attn_drop_rate=0.,
 		drop_path_rate=0.3,
 		patch_norm=True,
-		out_indices=(1, 2, 3),
+		out_indices=(0, 1, 2, 3),
 		with_cp=True,
 		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
 	neck=dict(
-		type='BiFPN',
-		in_channels=[256, 512, 1024],
+		type='PAFPNX',
+		in_channels=[128, 256, 512, 1024],
 		out_channels=256,
-		input_indices=(1, 2, 3),
+		start_level=1,
+		add_extra_convs='on_output',
 		num_outs=5,
-		strides=[8, 16, 32],
-		num_layers=1,
-		weight_method='fast_attn',
-		act_cfg='silu',
-		separable_conv=True,
-		epsilon=0.0001
-	),
+		relu_before_extra_convs=True,
+		pafpn_conv_cfg=dict(type='DCNv2'),
+		no_norm_on_lateral=True,
+		norm_cfg=dict(type='GN', num_groups=32, requires_grad=True)),
 	rpn_head=dict(
 		type='EmbeddingRPNHead',
 		num_proposals=num_proposals,
