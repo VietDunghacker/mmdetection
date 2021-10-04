@@ -2,6 +2,8 @@
 import numpy as np
 import torch
 
+from mmcv.ops import batched_nms
+
 from mmdet.core import bbox2result, bbox2roi, bbox_xyxy_to_cxcywh
 from mmdet.core.bbox.samplers import PseudoSampler
 from ..builder import HEADS
