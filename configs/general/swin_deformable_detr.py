@@ -1,7 +1,7 @@
 _base_ = [
 	'../_base_/default_runtime.py'
 ]
-max_per_img = 256
+max_per_img = 300
 model = dict(
 	type='DeformableDETR',
 	backbone=dict(
