@@ -2,7 +2,7 @@ _base_ = [
 	'../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py'
 ]
 num_stages = 6
-num_proposals = 128
+num_proposals = 256
 model = dict(
 	type='SparseRCNN',
 	backbone=dict(
@@ -30,6 +30,7 @@ model = dict(
 		num_outs=4,
 		relu_before_extra_convs=True,
 		pafpn_conv_cfg=dict(type='DCNv2'),
+		no_norm_on_lateral = True,
 		norm_cfg=dict(type='GN', num_groups=32, requires_grad=True)),
 	rpn_head=dict(
 		type='EmbeddingRPNHead',
