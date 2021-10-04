@@ -80,8 +80,7 @@ class DIIHead(BBoxHead):
 
 		self.instance_interactive_conv = build_transformer(dynamic_conv_cfg)
 		self.instance_interactive_conv_dropout = nn.Dropout(dropout)
-		self.instance_interactive_conv_norm = build_norm_layer(
-			dict(type='LN'), in_channels)[1]
+		self.instance_interactive_conv_norm = build_norm_layer(dict(type='LN'), in_channels)[1]
 
 		self.ffn = FFN(
 			in_channels,

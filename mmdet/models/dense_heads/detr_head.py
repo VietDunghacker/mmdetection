@@ -596,12 +596,13 @@ class DETRHead(AnchorFreeHead):
 			bbox_pred = bbox_preds[img_id]
 			img_shape = img_metas[img_id]['img_shape']
 			scale_factor = img_metas[img_id]['scale_factor']
-			proposals = self._get_bboxes_single(cls_score, bbox_pred,
-												img_shape, scale_factor,
-												rescale)
-			#result_list.append(proposals)
+			proposals = self._get_bboxes_single(cls_score, bbox_pred, img_shape, scale_factor, rescale)
 			bboxes, labels = proposals
-			result_list.append(tuple(self._bboxes_nms(bboxes, labels, self.test_cfg)))
+
+			keep = bboxes[:, -1] > self.test_cfg.score_threshold
+			bboxes = bboxes[keep]
+			labels = labels[keep]
+			result_list.append((bboxes, labels))
 		return result_list
 
 	def _get_bboxes_single(self,
@@ -646,11 +647,6 @@ class DETRHead(AnchorFreeHead):
 			det_labels = det_labels[bbox_index]
 		else:
 			scores, det_labels = F.softmax(cls_score, dim=-1)[..., :-1].max(-1)
-
-			'''fg_index = det_labels < self.num_classes
-			scores = scores[fg_index]
-			bbox_pred = bbox_pred[fg_index]
-			det_labels = det_labels[fg_index]'''
 
 			scores, bbox_index = scores.topk(min(max_per_img, len(scores)))
 			bbox_pred = bbox_pred[bbox_index]
@@ -830,10 +826,6 @@ class DETRHead(AnchorFreeHead):
 
 		return det_bboxes, det_labels
 	def _bboxes_nms(self, bboxes, labels, cfg):
-		keep = bboxes[:, -1] > cfg.score_threshold
-		bboxes = bboxes[keep]
-		labels = labels[keep]
-
 		if labels.numel() == 0:
 			return bboxes, labels
 
