@@ -64,7 +64,7 @@ model = dict(
 					feat_channels=64,
 					out_channels=256,
 					input_feat_shape=7,
-					act_cfg=dict(type='ReLU'),
+					act_cfg=dict(type='Swish'),
 					norm_cfg=dict(type='LN')),
 				loss_bbox=dict(type='L1Loss', loss_weight=5.0),
 				loss_iou=dict(type='GIoULoss', loss_weight=2.0),
