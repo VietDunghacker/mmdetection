@@ -2,7 +2,7 @@ _base_ = [
 	'../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py'
 ]
 num_stages = 6
-num_proposals = 256
+num_proposals = 128
 model = dict(
 	type='SparseRCNN',
 	backbone=dict(
@@ -56,14 +56,14 @@ model = dict(
 				feedforward_channels=2048,
 				in_channels=256,
 				dropout=0.0,
-				ffn_act_cfg=dict(type='ReLU', inplace=True),
+				ffn_act_cfg=dict(type='Swish'),
 				dynamic_conv_cfg=dict(
 					type='DynamicConv',
 					in_channels=256,
 					feat_channels=64,
 					out_channels=256,
 					input_feat_shape=7,
-					act_cfg=dict(type='ReLU', inplace=True),
+					act_cfg=dict(type='ReLU'),
 					norm_cfg=dict(type='LN')),
 				loss_bbox=dict(type='L1Loss', loss_weight=5.0),
 				loss_iou=dict(type='GIoULoss', loss_weight=2.0),
