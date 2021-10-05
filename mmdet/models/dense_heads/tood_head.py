@@ -22,7 +22,7 @@ class TaskDecomposition(nn.Module):
 		self.conv_cfg = conv_cfg
 		self.norm_cfg = norm_cfg
 		self.la_conv1 = nn.Conv2d(self.in_channels,  self.in_channels // la_down_rate, 1)
-		self.relu = nn.ReLU(inplace=True)
+		self.relu = nn.SiLU(inplace=True)
 		self.la_conv2 = nn.Conv2d(self.in_channels // la_down_rate,  self.stacked_convs, 1, padding=0)
 		self.sigmoid = nn.Sigmoid()
 
@@ -46,7 +46,7 @@ class TaskDecomposition(nn.Module):
 		b, c, h, w = feat.shape
 		if avg_feat is None:
 			avg_feat = F.adaptive_avg_pool2d(feat, (1, 1))
-		weight = self.relu(self.la_conv1(avg_feat))
+		weight = self.silu(self.la_conv1(avg_feat), inplace = True)
 		weight = self.sigmoid(self.la_conv2(weight))
 
 		conv_weight = weight.reshape(b, 1, self.stacked_convs, 1) * self.reduction_conv.conv.weight.reshape(1, self.feat_channels, self.stacked_convs, self.feat_channels)
@@ -89,12 +89,12 @@ class TOODHead(AnchorHead):
 		self.norm_cfg = norm_cfg
 		self.num_dcn_on_head = num_dcn_on_head
 		self.anchor_type = anchor_type
-		self.iter = 0 # which would be update in head hook!
+		self.epoch = 0 # which would be update in head hook!
 		super(TOODHead, self).__init__(num_classes, in_channels, init_cfg = init_cfg, **kwargs)
 
 		self.sampling = False
 		if self.train_cfg:
-			self.initial_iter = self.train_cfg.initial_iter
+			self.initial_epoch = self.train_cfg.initial_epoch
 			self.initial_assigner = build_assigner(self.train_cfg.initial_assigner)
 			self.initial_loss_cls = build_loss(initial_loss_cls)
 			self.alingment_assigner = build_assigner(self.train_cfg.assigner)
@@ -106,7 +106,7 @@ class TOODHead(AnchorHead):
 
 	def _init_layers(self):
 		"""Initialize layers of the head."""
-		self.relu = nn.ReLU(inplace=True)
+		self.relu = nn.SiLU(inplace=True)
 		self.inter_convs = nn.ModuleList()
 		for i in range(self.stacked_convs):
 			if i < self.num_dcn_on_head:
@@ -210,7 +210,7 @@ class TOODHead(AnchorHead):
 
 		# cls prediction and alignment
 		cls_logits = self.tood_cls(cls_feat)
-		cls_prob = F.relu(self.cls_prob_conv1(feat))
+		cls_prob = F.silu(self.cls_prob_conv1(feat), inplace = True)
 		cls_prob = self.cls_prob_conv2(cls_prob)
 		cls_score = (cls_logits.sigmoid() * cls_prob.sigmoid()).sqrt()
 
@@ -225,7 +225,7 @@ class TOODHead(AnchorHead):
 			reg_bbox = self.bbox_coder.decode(anchor, reg_dist).reshape(b, h, w, 4).permute(0, 3, 1, 2) / stride[0]
 		else:
 			raise NotImplementedError
-		reg_offset = F.relu(self.reg_offset_conv1(feat))
+		reg_offset = F.silu(self.reg_offset_conv1(feat), inplace = True)
 		reg_offset = self.reg_offset_conv2(reg_offset)
 		bbox_pred = self.deform_sampling(reg_bbox.contiguous(), reg_offset.contiguous())
 
@@ -298,7 +298,7 @@ class TOODHead(AnchorHead):
 		labels = labels.reshape(-1)
 
 		# classification loss
-		if self.iter < self.initial_iter:
+		if self.epoch < self.initial_epoch:
 			label_weights = label_weights.reshape(-1)
 			loss_cls = self.initial_loss_cls(cls_score, labels, label_weights, avg_factor=1.0)
 		else:
@@ -318,7 +318,7 @@ class TOODHead(AnchorHead):
 			pos_decode_bbox_targets = pos_bbox_targets / stride[0]
 
 			# regression loss
-			if self.iter < self.initial_iter:
+			if self.epoch < self.initial_epoch:
 				pos_bbox_weight = self.centerness_target(pos_anchors, pos_bbox_targets)
 			else:
 				pos_bbox_weight = alignment_metrics[pos_inds]
@@ -636,7 +636,7 @@ class TOODHead(AnchorHead):
 		bbox_weights_list = images_to_levels(all_bbox_weights,
 											 num_level_anchors)
 
-		if self.iter < self.initial_iter:
+		if self.epoch < self.initial_epoch:
 			norm_alignment_metrics_list = [bbox_weights[:, :, 0] for bbox_weights in bbox_weights_list]
 		else:
 			# for alignment metric
@@ -722,7 +722,7 @@ class TOODHead(AnchorHead):
 
 		num_level_anchors_inside = self.get_num_level_anchors_inside(
 			num_level_anchors, inside_flags)
-		if self.iter < self.initial_iter:
+		if self.epoch < self.initial_epoch:
 			assign_result = self.initial_assigner.assign(anchors, num_level_anchors_inside,
 												 gt_bboxes, gt_bboxes_ignore,
 												 gt_labels)
