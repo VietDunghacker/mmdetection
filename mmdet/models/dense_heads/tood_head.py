@@ -46,7 +46,7 @@ class TaskDecomposition(nn.Module):
 		b, c, h, w = feat.shape
 		if avg_feat is None:
 			avg_feat = F.adaptive_avg_pool2d(feat, (1, 1))
-		weight = self.silu(self.la_conv1(avg_feat), inplace = True)
+		weight = self.relu(self.la_conv1(avg_feat))
 		weight = self.sigmoid(self.la_conv2(weight))
 
 		conv_weight = weight.reshape(b, 1, self.stacked_convs, 1) * self.reduction_conv.conv.weight.reshape(1, self.feat_channels, self.stacked_convs, self.feat_channels)
