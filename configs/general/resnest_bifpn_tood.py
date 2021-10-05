@@ -4,12 +4,10 @@ _base_ = [
 model = dict(
 	type='TOOD',
 	backbone=dict(
-		type='ResNeSt',
-		stem_channels=128,
+		type='Res2Net',
 		depth=101,
-		radix=2,
-		reduction_factor=4,
-		avg_down_stride=True,
+		scales=4,
+		base_width=26,
 		num_stages=4,
 		out_indices=(1, 2, 3),
 		frozen_stages=-1,
@@ -19,7 +17,7 @@ model = dict(
 		norm_eval=False,
 		with_cp=True,
 		style='pytorch',
-		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/pretrain/third_party/resnest101_d2-f3b931b2.pth')),
+		init_cfg=dict(type='Pretrained', checkpoint='open-mmlab://res2net101_v1d_26w_4s')),
 	neck=dict(
 		type='BiFPN',
 		in_channels=[512, 1024, 2048],
@@ -223,12 +221,7 @@ optimizer = dict(
 	type='AdamW',
 	lr=0.0001,
 	betas=(0.9, 0.999),
-	weight_decay=0.05,
-	paramwise_cfg=dict(
-		custom_keys={
-			'absolute_pos_embed': dict(decay_mult=0.),
-			'relative_position_bias_table': dict(decay_mult=0.),
-			'norm': dict(decay_mult=0.)}))
+	weight_decay=0.0001)
 optimizer_config = dict(grad_clip=None)
 log_config = dict(interval = 10)
 # learning policy
