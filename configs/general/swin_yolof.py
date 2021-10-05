@@ -2,7 +2,7 @@ _base_ = [
 	'../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py'
 ]
 model = dict(
-	type='TOOD',
+	type='YOLOF',
 	backbone=dict(
 		type='SwinTransformer',
 		embed_dims=128,
