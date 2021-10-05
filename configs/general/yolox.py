@@ -45,16 +45,16 @@ train_pipeline = [
 		policies = [
 			[
 				dict(type='Mosaic', center_ratio_range=(0.9, 1.1), img_scale=(720, 720), pad_val=0.0),
-				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
+				dict(type='Resize', img_scale=(768, 768), keep_ratio=True),
 			],
 			[
 				dict(type='Mosaic', center_ratio_range=(0.95, 1.05), img_scale=(720, 720), pad_val=0.0),
-				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
+				dict(type='Resize', img_scale=(768, 768), keep_ratio=True),
 			],
 			[
 				dict(
 					type='Albu',
-					transforms=[dict(type = "Crop", x_min = 0, y_min = 400, x_max = 800, y_max = 800)],
+					transforms=[dict(type = "Crop", x_min = 0, y_min = 384, x_max = 768, y_max = 768)],
 					bbox_params=dict(
 						type='BboxParams',
 						format='pascal_voc',
@@ -75,7 +75,7 @@ train_pipeline = [
 					transforms=[
 						dict(
 							type = "OneOf",
-							transforms=[dict(type = "Crop", x_min = 0, y_min = i, x_max = 800, y_max = 800) for i in range(400, 700, 10)],
+							transforms=[dict(type = "Crop", x_min = 0, y_min = i, x_max = 768, y_max = 768) for i in range(384, 720, 16)],
 							p=1.0),							
 						],
 					bbox_params=dict(
@@ -90,20 +90,20 @@ train_pipeline = [
 					},
 					update_pad_shape=False,
 					skip_img_without_anno=False),
-				dict(type = 'Pad', size_divisor = 800),
+				dict(type = 'Pad', size_divisor = 768),
 				dict(
 					type='MixUp',
-					img_scale=(800, 800),
+					img_scale=(768, 768),
 					ratio_range=(1.0, 1.0),
 					pad_val=0.0),
 			],
 			[
 				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
-				dict(type='Resize', img_scale=[(640, 640), (800, 800)], multiscale_mode='range', keep_ratio=True),
+				dict(type='Resize', img_scale=[(640, 640), (768, 768)], multiscale_mode='range', keep_ratio=True),
 			],
 			[
 				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
-				dict(type='Resize', img_scale=[(640, 640), (800, 800)], multiscale_mode='range', keep_ratio=True),
+				dict(type='Resize', img_scale=[(640, 640), (768, 768)], multiscale_mode='range', keep_ratio=True),
 			]
 		]
 	),
@@ -130,7 +130,7 @@ train_pipeline = [
 		update_pad_shape=False,
 		skip_img_without_anno=False),	
 	dict(type='Normalize', **img_norm_cfg),
-	dict(type='Pad', size_divisor=1),
+	dict(type='Pad', size_divisor=64),
 	dict(type='DefaultFormatBundle'),
 	dict(type='Collect', keys=['img', 'gt_bboxes', 'gt_labels']),
 ]
