@@ -13,7 +13,7 @@ model = dict(
 		num_stages=4,
 		out_indices=(1, 2, 3),
 		frozen_stages=-1,
-		dcn=dict(type='DCNv2', deformable_groups=1, fallback_on_stride=False),
+		dcn=dict(type='DCNv2', deform_groups=1, fallback_on_stride=False),
 		stage_with_dcn=(False, False, True, True),
 		norm_cfg=dict(type='GN', num_groups=32, requires_grad=True),
 		norm_eval=False,
