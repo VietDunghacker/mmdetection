@@ -11,7 +11,7 @@ model = dict(
 		widen_factor=1.25),
 	neck=dict(
 		type='YOLOXPAFPN',
-		in_channels=[320, 640, 1280],
+		in_channels=[320, 640, 960, 1280],
 		out_channels=320,
 		num_csp_blocks=4),
 	bbox_head=dict(type='YOLOXHead', num_classes=80, in_channels=320, feat_channels=320),
