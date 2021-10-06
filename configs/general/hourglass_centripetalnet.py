@@ -50,6 +50,7 @@ albu_train_transforms = [
 ]
 
 train_pipeline = [
+	dict(type='Resize', img_scale=(768, 768), keep_ratio=True),
 	dict(
 		type = 'AutoAugment',
 		policies = [
@@ -58,12 +59,62 @@ train_pipeline = [
 				dict(type='Resize', img_scale=(768, 768), keep_ratio=True),
 			],
 			[
-				dict(type='Mosaic', center_ratio_range=(0.8, 1.2), img_scale=(720, 720), pad_val=0.0),
+				dict(type='Mosaic', center_ratio_range=(0.95, 1.05), img_scale=(720, 720), pad_val=0.0),
 				dict(type='Resize', img_scale=(768, 768), keep_ratio=True),
 			],
 			[
+				dict(
+					type='Albu',
+					transforms=[dict(type = "Crop", x_min = 0, y_min = 384, x_max = 768, y_max = 768)],
+					bbox_params=dict(
+						type='BboxParams',
+						format='pascal_voc',
+						label_fields=['gt_labels'],
+						min_visibility=0.8,
+						filter_lost_elements=True),
+					keymap={
+						'img': 'image',
+						'gt_bboxes': 'bboxes'
+					},
+					update_pad_shape=False,
+					skip_img_without_anno=False),
+				dict(type = 'Pad', size_divisor = 768),
+			],
+			[
+				dict(
+					type='Albu',
+					transforms=[
+						dict(
+							type = "OneOf",
+							transforms=[dict(type = "Crop", x_min = 0, y_min = i, x_max = 768, y_max = 768) for i in range(384, 704, 16)],
+							p=1.0),							
+						],
+					bbox_params=dict(
+						type='BboxParams',
+						format='pascal_voc',
+						label_fields=['gt_labels'],
+						min_visibility=0.8,
+						filter_lost_elements=True),
+					keymap={
+						'img': 'image',
+						'gt_bboxes': 'bboxes'
+					},
+					update_pad_shape=False,
+					skip_img_without_anno=False),
+				dict(type = 'Pad', size_divisor = 768),
+				dict(
+					type='MixUp',
+					img_scale=(768, 768),
+					ratio_range=(1.0, 1.0),
+					pad_val=0.0),
+			],
+			[
 				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
-				dict(type='Resize', img_scale=(768, 768), keep_ratio=True),
+				dict(type='Resize', img_scale=[(640, 640), (768, 768)], multiscale_mode='range', keep_ratio=True),
+			],
+			[
+				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
+				dict(type='Resize', img_scale=[(640, 640), (768, 768)], multiscale_mode='range', keep_ratio=True),
 			]
 		]
 	),
