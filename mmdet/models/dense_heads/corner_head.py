@@ -891,7 +891,7 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 		br_xs -= x_off
 		br_ys -= y_off
 
-		print(tl_xs.dtype, tl_ys.dtype, zeros.dtype)
+		print(tl_xs.dtype, tl_ys.dtype)
 		zeros = tl_xs.new_zeros(*tl_xs.size())
 		print(tl_xs.dtype, tl_ys.dtype, zeros.dtype)
 		tl_xs = torch.where(tl_xs > 0.0, tl_xs, zeros)
