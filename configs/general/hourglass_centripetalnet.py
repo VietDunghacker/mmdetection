@@ -56,11 +56,11 @@ train_pipeline = [
 		policies = [
 			[
 				dict(type='Mosaic', center_ratio_range=(0.9, 1.1), img_scale=(720, 720), pad_val=0.0),
-				dict(type='Resize', img_scale=(768, 768), keep_ratio=True),
+				dict(type='Resize', img_scale=(768, 768), keep_ratio=True, override = True),
 			],
 			[
 				dict(type='Mosaic', center_ratio_range=(0.95, 1.05), img_scale=(720, 720), pad_val=0.0),
-				dict(type='Resize', img_scale=(768, 768), keep_ratio=True),
+				dict(type='Resize', img_scale=(768, 768), keep_ratio=True, override = True),
 			],
 			[
 				dict(
@@ -110,11 +110,11 @@ train_pipeline = [
 			],
 			[
 				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
-				dict(type='Resize', img_scale=[(640, 640), (768, 768)], multiscale_mode='range', keep_ratio=True),
+				dict(type='Resize', img_scale=[(640, 640), (768, 768)], multiscale_mode='range', keep_ratio=True, override = True),
 			],
 			[
 				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
-				dict(type='Resize', img_scale=[(640, 640), (768, 768)], multiscale_mode='range', keep_ratio=True),
+				dict(type='Resize', img_scale=[(640, 640), (768, 768)], multiscale_mode='range', keep_ratio=True, override = True),
 			]
 		]
 	),
