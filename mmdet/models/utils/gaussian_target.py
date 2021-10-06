@@ -228,7 +228,7 @@ def get_topk_from_heatmap(scores, k=20):
 	topk_clses = topk_inds // (height * width)
 	topk_inds = topk_inds % (height * width)
 	topk_ys = topk_inds // width
-	topk_xs = (topk_inds % width).int().float()
+	topk_xs = (topk_inds % width).int().type_as(topk_ys)
 	return topk_scores, topk_inds, topk_clses, topk_ys, topk_xs
 
 '''def get_topk_from_heatmap(scores, k=20):
