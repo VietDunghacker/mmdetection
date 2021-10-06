@@ -22,7 +22,7 @@ class TaskDecomposition(nn.Module):
 		self.conv_cfg = conv_cfg
 		self.norm_cfg = norm_cfg
 		self.la_conv1 = nn.Conv2d(self.in_channels,  self.in_channels // la_down_rate, 1)
-		self.relu = nn.SiLU(inplace=True)
+		self.relu = nn.ReLU(inplace=True)
 		self.la_conv2 = nn.Conv2d(self.in_channels // la_down_rate,  self.stacked_convs, 1, padding=0)
 		self.sigmoid = nn.Sigmoid()
 
@@ -106,7 +106,7 @@ class TOODHead(AnchorHead):
 
 	def _init_layers(self):
 		"""Initialize layers of the head."""
-		self.relu = nn.SiLU(inplace=True)
+		self.relu = nn.ReLU(inplace=True)
 		self.inter_convs = nn.ModuleList()
 		for i in range(self.stacked_convs):
 			if i < self.num_dcn_on_head:
@@ -210,7 +210,7 @@ class TOODHead(AnchorHead):
 
 		# cls prediction and alignment
 		cls_logits = self.tood_cls(cls_feat)
-		cls_prob = F.silu(self.cls_prob_conv1(feat), inplace = True)
+		cls_prob = F.relu(self.cls_prob_conv1(feat), inplace = True)
 		cls_prob = self.cls_prob_conv2(cls_prob)
 		cls_score = (cls_logits.sigmoid() * cls_prob.sigmoid()).sqrt()
 
@@ -225,7 +225,7 @@ class TOODHead(AnchorHead):
 			reg_bbox = self.bbox_coder.decode(anchor, reg_dist).reshape(b, h, w, 4).permute(0, 3, 1, 2) / stride[0]
 		else:
 			raise NotImplementedError
-		reg_offset = F.silu(self.reg_offset_conv1(feat), inplace = True)
+		reg_offset = F.relu(self.reg_offset_conv1(feat), inplace = True)
 		reg_offset = self.reg_offset_conv2(reg_offset)
 		bbox_pred = self.deform_sampling(reg_bbox.contiguous(), reg_offset.contiguous())
 
