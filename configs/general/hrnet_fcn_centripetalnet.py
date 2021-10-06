@@ -71,6 +71,7 @@ model = dict(
 # data setting
 img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 albu_train_transforms = [
+	dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0, rotate_limit=0, interpolation=1, p=0.5, border_mode = 0),
 	dict(type='RandomBrightnessContrast', brightness_limit=0.1, contrast_limit=0.1),
 	dict(type='RGBShift', r_shift_limit=10, g_shift_limit=10, b_shift_limit=10),
 	dict(type='HueSaturationValue', hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20),
@@ -92,19 +93,72 @@ train_pipeline = [
 				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
 			],
 			[
-				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
+				dict(type='Mosaic', center_ratio_range=(0.95, 1.05), img_scale=(720, 720), pad_val=0.0),
 				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
+			],
+			[
+				dict(
+					type='Albu',
+					transforms=[dict(type = "Crop", x_min = 0, y_min = 400, x_max = 800, y_max = 800)],
+					bbox_params=dict(
+						type='BboxParams',
+						format='pascal_voc',
+						label_fields=['gt_labels'],
+						min_visibility=0.8,
+						filter_lost_elements=True),
+					keymap={
+						'img': 'image',
+						'gt_bboxes': 'bboxes'
+					},
+					update_pad_shape=False,
+					skip_img_without_anno=False),
+				dict(type = 'Pad', size_divisor = 800),
+			],
+			[
+				dict(
+					type='Albu',
+					transforms=[
+						dict(
+							type = "OneOf",
+							transforms=[dict(type = "Crop", x_min = 0, y_min = i, x_max = 800, y_max = 800) for i in range(400, 700, 10)],
+							p=1.0),							
+						],
+					bbox_params=dict(
+						type='BboxParams',
+						format='pascal_voc',
+						label_fields=['gt_labels'],
+						min_visibility=0.8,
+						filter_lost_elements=True),
+					keymap={
+						'img': 'image',
+						'gt_bboxes': 'bboxes'
+					},
+					update_pad_shape=False,
+					skip_img_without_anno=False),
+				dict(type = 'Pad', size_divisor = 800),
+				dict(
+					type='MixUp',
+					img_scale=(800, 800),
+					ratio_range=(1.0, 1.0),
+					pad_val=0.0),
+			],
+			[
+				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
+				dict(type='Resize', img_scale=[(640, 640), (800, 800)], multiscale_mode='range', keep_ratio=True),
+			],
+			[
+				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
+				dict(type='Resize', img_scale=[(640, 640), (800, 800)], multiscale_mode='range', keep_ratio=True),
 			]
 		]
 	),
-	dict(type='Pad', size_divisor=800),
-	dict(type='RandomFlip', flip_ratio=0.5),
 	dict(
 		type='CutOut',
 		n_holes=(5, 10),
 		cutout_shape=[(4, 4), (4, 8), (8, 4), (8, 8),
 					  (16, 8), (8, 16), (16, 16), (16, 32), (32, 16), (32, 32),
 					  (32, 48), (48, 32), (48, 48)]),
+	dict(type='RandomFlip', flip_ratio=0.5),
 	dict(
 		type='Albu',
 		transforms=albu_train_transforms,
@@ -119,8 +173,9 @@ train_pipeline = [
 			'gt_bboxes': 'bboxes'
 		},
 		update_pad_shape=False,
-		skip_img_without_anno=False),
+		skip_img_without_anno=False),	
 	dict(type='Normalize', **img_norm_cfg),
+	dict(type='Pad', size_divisor=1),
 	dict(type='DefaultFormatBundle'),
 	dict(type='Collect', keys=['img', 'gt_bboxes', 'gt_labels']),
 ]
