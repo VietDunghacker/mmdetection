@@ -4,7 +4,7 @@ _base_ = [
 
 # model settings
 model = dict(
-	type='CenterNet',
+	type='CornerNet',
 	backbone=dict(
 		type='HRNet',
 		extra=dict(
