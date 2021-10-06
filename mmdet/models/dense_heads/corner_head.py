@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 from mmcv.cnn import ConvModule, bias_init_with_prob
 from mmcv.ops import CornerPool, batched_nms
-from mmcv.runner import BaseModule
+from mmcv.runner import BaseModule, force_fp32
 
 from mmdet.core import multi_apply
 from ..builder import HEADS, build_loss
@@ -259,6 +259,7 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 		lvl_ind = list(range(self.num_feat_levels))
 		return multi_apply(self.forward_single, feats, lvl_ind)
 
+	@force_fp32(apply_to=('x'))
 	def forward_single(self, x, lvl_ind, return_pool=False):
 		"""Forward feature of a single level.
 
