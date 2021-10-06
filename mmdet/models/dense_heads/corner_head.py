@@ -886,6 +886,7 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 				x_off = img_meta['border'][2]
 				y_off = img_meta['border'][0]
 
+		print(tl_xs.dtype, tl_ys.dtype)
 		tl_xs -= x_off
 		tl_ys -= y_off
 		br_xs -= x_off
