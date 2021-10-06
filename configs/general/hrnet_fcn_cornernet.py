@@ -99,24 +99,6 @@ train_pipeline = [
 			[
 				dict(
 					type='Albu',
-					transforms=[dict(type = "Crop", x_min = 0, y_min = 400, x_max = 800, y_max = 800)],
-					bbox_params=dict(
-						type='BboxParams',
-						format='pascal_voc',
-						label_fields=['gt_labels'],
-						min_visibility=0.8,
-						filter_lost_elements=True),
-					keymap={
-						'img': 'image',
-						'gt_bboxes': 'bboxes'
-					},
-					update_pad_shape=False,
-					skip_img_without_anno=False),
-				dict(type = 'Pad', size_divisor = 800),
-			],
-			[
-				dict(
-					type='Albu',
 					transforms=[
 						dict(
 							type = "OneOf",
