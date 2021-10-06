@@ -829,6 +829,7 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 		br_heat = get_local_maximum(br_heat, kernel=kernel)
 
 		tl_scores, tl_inds, tl_clses, tl_ys, tl_xs = get_topk_from_heatmap(tl_heat, k=k)
+		print(tl_xs.dtype, tl_ys.dtype)
 		br_scores, br_inds, br_clses, br_ys, br_xs = get_topk_from_heatmap(br_heat, k=k)
 
 		# We use repeat instead of expand here because expand is a
@@ -886,15 +887,12 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 				x_off = img_meta['border'][2]
 				y_off = img_meta['border'][0]
 
-		print(tl_xs.dtype, tl_ys.dtype)
 		tl_xs -= x_off
 		tl_ys -= y_off
 		br_xs -= x_off
 		br_ys -= y_off
 
-		print(tl_xs.dtype, tl_ys.dtype)
 		zeros = tl_xs.new_zeros(*tl_xs.size())
-		print(tl_xs.dtype, tl_ys.dtype, zeros.dtype)
 		tl_xs = torch.where(tl_xs > 0.0, tl_xs, zeros)
 		tl_ys = torch.where(tl_ys > 0.0, tl_ys, zeros)
 		br_xs = torch.where(br_xs > 0.0, br_xs, zeros)
