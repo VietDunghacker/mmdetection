@@ -19,7 +19,7 @@ model = dict(
 		patch_norm=True,
 		out_indices=(0, 1, 2, 3),
 		with_cp=True,
-		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/swin_base_224_b16x64_300e_imagenet_20210616_190742-93230b0d.pth')),
+		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
 	neck = dict(
 		type='PAFPNX',
 		in_channels=[128, 256, 512, 1024],
@@ -34,14 +34,13 @@ model = dict(
 		anchor_generator=dict(
 			type='AnchorGenerator',
 			scales=[8],
-			ratios=[0.5, 1.0, 2.0, 3.0, 4.0, 5.0],
+			ratios=[1.0 / 3, 1.0, 3.0],
 			strides=[4, 8, 16, 32, 64]),
 		bbox_coder=dict(
 			type='DeltaXYWHBBoxCoder',
 			target_means=[.0, .0, .0, .0],
 			target_stds=[1.0, 1.0, 1.0, 1.0]),
-		loss_cls=dict(
-			type='CrossEntropyLoss', use_sigmoid=True, loss_weight=1.0),
+		loss_cls=dict(type='CrossEntropyLoss', use_sigmoid=True, loss_weight=1.0),
 		loss_bbox=dict(type='SmoothL1Loss', beta=1.0 / 9.0, loss_weight=1.0)),
 	roi_head=dict(
 		type='CascadeRoIHead',
@@ -61,7 +60,7 @@ model = dict(
 				conv_out_channels=256,
 				fc_out_channels=1024,
 				roi_feat_size=7,
-				num_classes=34,
+				num_classes=36,
 				bbox_coder=dict(
 					type='DeltaXYWHBBoxCoder',
 					target_means=[0., 0., 0., 0.],
@@ -85,7 +84,7 @@ model = dict(
 				conv_out_channels=256,
 				fc_out_channels=1024,
 				roi_feat_size=7,
-				num_classes=34,
+				num_classes=36,
 				bbox_coder=dict(
 					type='DeltaXYWHBBoxCoder',
 					target_means=[0., 0., 0., 0.],
@@ -109,7 +108,7 @@ model = dict(
 				conv_out_channels=256,
 				fc_out_channels=1024,
 				roi_feat_size=7,
-				num_classes=34,
+				num_classes=36,
 				bbox_coder=dict(
 					type='DeltaXYWHBBoxCoder',
 					target_means=[0., 0., 0., 0.],
@@ -121,7 +120,7 @@ model = dict(
 					type='SeesawLoss',
 					p=0.8,
 					q=2.0,
-					num_classes=34,
+					num_classes=36,
 					loss_weight=1.0),
 				reg_decoded_bbox=True,
 				loss_bbox=dict(type='CIoULoss', loss_weight=12.0))
@@ -216,34 +215,86 @@ dataset_type = 'CocoDataset'
 data_root = '/content/data/'
 img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 albu_train_transforms = [
-	dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.0, rotate_limit=0, interpolation=1, p=0.5),
+	dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0, rotate_limit=0, interpolation=1, p=0.5, border_mode = 0),
+	dict(type='RandomBrightnessContrast', brightness_limit=0.1, contrast_limit=0.1),
+	dict(type='RGBShift', r_shift_limit=10, g_shift_limit=10, b_shift_limit=10),
+	dict(type='HueSaturationValue', hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20),
 	dict(
 		type='OneOf',
 		transforms=[
-			dict(type='Blur', blur_limit=3, p=1.0),
-			dict(type='MedianBlur', blur_limit=3, p=1.0)
+			dict(type='ChannelShuffle', p=1.0),
+			dict(type='ToGray', p = 1.0)
 		],
 		p=0.1),
 ]
 
 train_pipeline = [
-	dict(type='LoadImageFromFile', to_float32=True),
-	dict(type='LoadAnnotations', with_bbox=True),
 	dict(
-		type='RandomCrop',
-		crop_type='relative_range',
-		crop_size=(0.9, 0.9)),
-	dict(
-		type='Resize',
-		img_scale=(800, 800),
-		multiscale_mode='range',
-		keep_ratio=True),
-	dict(
-		type='PhotoMetricDistortion',
-		brightness_delta=10,
-		contrast_range=(0.9, 1.1),
-		saturation_range=(0.9, 1.1),
-		hue_delta=9
+		type = 'AutoAugment',
+		policies = [
+			[
+				dict(type='Mosaic', center_ratio_range=(0.9, 1.1), img_scale=(720, 720), pad_val=0.0),
+				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
+			],
+			[
+				dict(type='Mosaic', center_ratio_range=(0.95, 1.05), img_scale=(720, 720), pad_val=0.0),
+				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
+			],
+			[
+				dict(
+					type='Albu',
+					transforms=[dict(type = "Crop", x_min = 0, y_min = 400, x_max = 800, y_max = 800)],
+					bbox_params=dict(
+						type='BboxParams',
+						format='pascal_voc',
+						label_fields=['gt_labels'],
+						min_visibility=0.8,
+						filter_lost_elements=True),
+					keymap={
+						'img': 'image',
+						'gt_bboxes': 'bboxes'
+					},
+					update_pad_shape=False,
+					skip_img_without_anno=False),
+				dict(type = 'Pad', size_divisor = 800),
+			],
+			[
+				dict(
+					type='Albu',
+					transforms=[
+						dict(
+							type = "OneOf",
+							transforms=[dict(type = "Crop", x_min = 0, y_min = i, x_max = 800, y_max = 800) for i in range(400, 700, 10)],
+							p=1.0),							
+						],
+					bbox_params=dict(
+						type='BboxParams',
+						format='pascal_voc',
+						label_fields=['gt_labels'],
+						min_visibility=0.8,
+						filter_lost_elements=True),
+					keymap={
+						'img': 'image',
+						'gt_bboxes': 'bboxes'
+					},
+					update_pad_shape=False,
+					skip_img_without_anno=False),
+				dict(type = 'Pad', size_divisor = 800),
+				dict(
+					type='MixUp',
+					img_scale=(800, 800),
+					ratio_range=(1.0, 1.0),
+					pad_val=0.0),
+			],
+			[
+				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
+				dict(type='Resize', img_scale=[(640, 640), (800, 800)], multiscale_mode='range', keep_ratio=True),
+			],
+			[
+				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
+				dict(type='Resize', img_scale=[(640, 640), (800, 800)], multiscale_mode='range', keep_ratio=True),
+			]
+		]
 	),
 	dict(
 		type='CutOut',
@@ -266,9 +317,9 @@ train_pipeline = [
 			'gt_bboxes': 'bboxes'
 		},
 		update_pad_shape=False,
-		skip_img_without_anno=True),	
-	dict(type='Pad', size_divisor=800),
+		skip_img_without_anno=False),	
 	dict(type='Normalize', **img_norm_cfg),
+	dict(type='Pad', size_divisor=1),
 	dict(type='DefaultFormatBundle'),
 	dict(type='Collect', keys=['img', 'gt_bboxes', 'gt_labels']),
 ]
@@ -288,18 +339,11 @@ test_pipeline = [
 			dict(type='Collect', keys=['img']),
 		])
 ]
+
 data = dict(
-	samples_per_gpu=12,
 	workers_per_gpu=4,
-	train=dict(type = dataset_type,
-		ann_file = data_root + '/annotations/instances_train2017.json',
-		img_prefix = 'train_images/',
-		pipeline=train_pipeline),
-	val=dict(type = dataset_type,
-		ann_file = data_root + '/annotations/instances_val2017.json',
-		img_prefix = 'val_images/',
-		pipeline=test_pipeline,
-		samples_per_gpu = 24),
+	train=dict(pipeline=train_pipeline),
+	val=dict(pipeline=test_pipeline),
 	test=dict(pipeline=test_pipeline))
 
 # optimizer
