@@ -152,6 +152,7 @@ train_pipeline = [
 			]
 		]
 	),
+	dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
 	dict(type='Pad', size_divisor=800),	
 	dict(
 		type='CutOut',
