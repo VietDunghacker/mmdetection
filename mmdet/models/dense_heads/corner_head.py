@@ -829,7 +829,6 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 		br_heat = get_local_maximum(br_heat, kernel=kernel)
 
 		tl_scores, tl_inds, tl_clses, tl_ys, tl_xs = get_topk_from_heatmap(tl_heat, k=k)
-		print(tl_xs.dtype, tl_ys.dtype)
 		br_scores, br_inds, br_clses, br_ys, br_xs = get_topk_from_heatmap(br_heat, k=k)
 
 		# We use repeat instead of expand here because expand is a
