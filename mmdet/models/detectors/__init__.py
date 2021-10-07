@@ -5,6 +5,7 @@ from .base import BaseDetector
 from .bvr import BVR
 from .cascade_rcnn import CascadeRCNN
 from .centernet import CenterNet
+from .centernet2 import CenterNet2
 from .cornernet import CornerNet
 from .deformable_detr import DeformableDETR
 from .detr import DETR
@@ -50,5 +51,5 @@ __all__ = [
     'VFNet', 'DETR', 'TridentFasterRCNN', 'SparseRCNN', 'SCNet',
     'DeformableDETR', 'AutoAssign', 'YOLOF', 'CenterNet', 'YOLOX',
     'TwoStagePanopticSegmentor', 'PanopticFPN', 'RepPointsV2Detector', 'BVR',
-    'TOOD', 'OATNet'
+    'TOOD', 'OATNet', 'CenterNet2'
 ]

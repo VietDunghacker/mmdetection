@@ -2,7 +2,7 @@ _base_ = [
 	'../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py'
 ]
 num_stages = 6
-num_proposals = 256
+num_proposals = 300
 model = dict(
 	type='SparseRCNN',
 	backbone=dict(
@@ -25,12 +25,11 @@ model = dict(
 		type='PAFPNX',
 		in_channels=[128, 256, 512, 1024],
 		out_channels=256,
-		start_level=0,
+		start_level=1,
 		add_extra_convs='on_output',
-		num_outs=4,
+		num_outs=5,
 		relu_before_extra_convs=True,
 		pafpn_conv_cfg=dict(type='DCNv2'),
-		no_norm_on_lateral = True,
 		norm_cfg=dict(type='GN', num_groups=32, requires_grad=True)),
 	rpn_head=dict(
 		type='EmbeddingRPNHead',
@@ -45,7 +44,7 @@ model = dict(
 			type='SingleRoIExtractor',
 			roi_layer=dict(type='RoIAlign', output_size=7, sampling_ratio=0),
 			out_channels=256,
-			featmap_strides=[4, 8, 16, 32]),
+			featmap_strides=[8, 16, 32, 64, 128]),
 		bbox_head=[
 			dict(
 				type='DIIHead',
