@@ -19,40 +19,24 @@ model = dict(
 		out_indices=(1, 2, 3),
 		with_cp=True,
 		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
-	neck=[
-		dict(
-			type='BiFPN',
-			in_channels=[256, 512, 1024],
-			out_channels=256,
-			input_indices=(1, 2, 3),
-			num_outs=5,
-			strides=[8, 16, 32],
-			num_layers=1,
-			weight_method='fast_attn',
-			act_cfg='silu',
-			separable_conv=True,
-			epsilon=0.0001
-		),
-		dict(
-			type='SEPC',
-			in_channels=[256] * 5,
-			out_channels=256,
-			stacked_convs=4,
-			num_outs = 5,
-			pconv_deform=True,
-			lcconv_deform=True,
-			ibn=True,  # please set imgs/gpu >= 4
-			pnorm_eval=False,
-			lcnorm_eval=False,
-			lcconv_padding=1,
-			pnorm_cfg=dict(type='GN', num_groups=32, requires_grad=True),
-			lcnorm_cfg=dict(type='GN', num_groups=32, requires_grad=True))
-	],
+	neck=dict(
+		type='BiFPN',
+		in_channels=[256, 512, 1024],
+		out_channels=256,
+		input_indices=(1, 2, 3),
+		num_outs=5,
+		strides=[8, 16, 32],
+		num_layers=1,
+		weight_method='fast_attn',
+		act_cfg='silu',
+		separable_conv=True,
+		epsilon=0.0001
+	),
 	bbox_head=dict(
 		type='DDODHead',
 		num_classes=80,
 		in_channels=256,
-		stacked_convs=0,
+		stacked_convs=4,
 		feat_channels=256,
 		anchor_generator=dict(
 			type='AnchorGenerator',
@@ -84,7 +68,7 @@ model = dict(
 # data setting
 img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 albu_train_transforms = [
-	dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0, rotate_limit=0., interpolation=1, p=0.5, border_mode = 0),
+	dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0, rotate_limit=0, interpolation=1, p=0.5, border_mode = 0),
 	dict(type='RandomBrightnessContrast', brightness_limit=0.1, contrast_limit=0.1),
 	dict(type='RGBShift', r_shift_limit=10, g_shift_limit=10, b_shift_limit=10),
 	dict(type='HueSaturationValue', hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20),
@@ -179,7 +163,7 @@ train_pipeline = [
 			type='BboxParams',
 			format='pascal_voc',
 			label_fields=['gt_labels'],
-			min_visibility=0.1,
+			min_visibility=0.0,
 			filter_lost_elements=True),
 		keymap={
 			'img': 'image',
@@ -187,8 +171,8 @@ train_pipeline = [
 		},
 		update_pad_shape=False,
 		skip_img_without_anno=False),	
-	dict(type='Pad', size_divisor=32),
 	dict(type='Normalize', **img_norm_cfg),
+	dict(type='Pad', size_divisor=1),
 	dict(type='DefaultFormatBundle'),
 	dict(type='Collect', keys=['img', 'gt_bboxes', 'gt_labels']),
 ]
