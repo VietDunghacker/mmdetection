@@ -249,7 +249,7 @@ class CascadeRoIHead(BaseRoIHead, BBoxTestMixin, MaskTestMixin):
                                                     rcnn_train_cfg)
 
             for name, value in bbox_results['loss_bbox'].items():
-                losses[f's{i}.{name}'] = (
+                losses[f's{i + 1}.{name}'] = (
                     value * lw if 'loss' in name else value)
 
             # mask head forward and loss
@@ -258,7 +258,7 @@ class CascadeRoIHead(BaseRoIHead, BBoxTestMixin, MaskTestMixin):
                     i, x, sampling_results, gt_masks, rcnn_train_cfg,
                     bbox_results['bbox_feats'])
                 for name, value in mask_results['loss_mask'].items():
-                    losses[f's{i}.{name}'] = (
+                    losses[f's{i + 1}.{name}'] = (
                         value * lw if 'loss' in name else value)
 
             # refine bboxes
