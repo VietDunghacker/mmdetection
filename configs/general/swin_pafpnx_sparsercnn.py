@@ -21,16 +21,23 @@ model = dict(
 		out_indices=(0, 1, 2, 3),
 		with_cp=True,
 		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
-	neck=dict(
-		type='PAFPNX',
-		in_channels=[128, 256, 512, 1024],
-		out_channels=256,
-		start_level=0,
-		add_extra_convs='on_output',
-		num_outs=4,
-		relu_before_extra_convs=True,
-		pafpn_conv_cfg=dict(type='DCNv2'),
-		norm_cfg=dict(type='GN', num_groups=32, requires_grad=True)),
+	neck=[dict(
+			type='PAFPNX',
+			in_channels=[128, 256, 512, 1024],
+			out_channels=256,
+			start_level=0,
+			add_extra_convs='on_output',
+			num_outs=4,
+			relu_before_extra_convs=True,
+			pafpn_conv_cfg=dict(type='DCNv2'),
+			norm_cfg=dict(type='GN', num_groups=32, requires_grad=True)),
+		dict(
+			type='BFP',
+			in_channels=256,
+			num_levels=4,
+			refine_level=2,
+			refine_type='non_local')
+	],
 	rpn_head=dict(
 		type='EmbeddingRPNHead',
 		num_proposals=num_proposals,
