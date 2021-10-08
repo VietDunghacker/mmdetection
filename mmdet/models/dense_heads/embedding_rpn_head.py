@@ -51,9 +51,9 @@ class EmbeddingRPNHead(BaseModule):
 		b = torch.rand(a.shape)
 		b *= a
 		b *= 2
+		init_weight = torch.cat((a, b), -1)
 
-		self.init_proposal_bboxes.weight[:, :2] = a
-		self.init_proposal_bboxes.weight[:, 2:] = b
+		self.init_proposal_bboxes.weight = nn.Parameter(init_weight)
 
 	def _decode_init_proposals(self, imgs, img_metas):
 		"""Decode init_proposal_bboxes according to the size of images and
