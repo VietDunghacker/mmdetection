@@ -280,7 +280,7 @@ class DetectoRS_Res2Net(DetectoRS_ResNet):
 				 **kwargs):
 		self.scales = scales
 		self.base_width = base_width
-		super(Res2Net, self).__init__(
+		super(DetectoRS_Res2Net, self).__init__(
 			style='pytorch',
 			deep_stem=True,
 			avg_down=True,
