@@ -173,8 +173,68 @@ class Bottle2neck(_Bottleneck):
 			out = _inner_forward(x)
 
 		out = self.relu(out)
+		return out
+
+	def rfp_forward(self, x, rfp_feat):
+		"""The forward function that also takes the RFP features as input."""
+
+		def _inner_forward(x):
+			identity = x
+
+			out = self.conv1(x)
+			out = self.norm1(out)
+			out = self.relu(out)
+
+			if self.with_plugins:
+				out = self.forward_plugin(out, self.after_conv1_plugin_names)
+
+			spx = torch.split(out, self.width, 1)
+			sp = self.convs[0](spx[0].contiguous())
+			sp = self.relu(self.bns[0](sp))
+			out = sp
+			for i in range(1, self.scales - 1):
+				if self.stage_type == 'stage':
+					sp = spx[i]
+				else:
+					sp = sp + spx[i]
+				sp = self.convs[i](sp.contiguous())
+				sp = self.relu(self.bns[i](sp))
+				out = torch.cat((out, sp), 1)
+
+			if self.stage_type == 'normal' or self.conv2_stride == 1:
+				out = torch.cat((out, spx[self.scales - 1]), 1)
+			elif self.stage_type == 'stage':
+				out = torch.cat((out, self.pool(spx[self.scales - 1])), 1)
+
+			if self.with_plugins:
+				out = self.forward_plugin(out, self.after_conv2_plugin_names)
+
+			out = self.conv3(out)
+			out = self.norm3(out)
+
+			if self.with_plugins:
+				out = self.forward_plugin(out, self.after_conv3_plugin_names)
+
+			if self.downsample is not None:
+				identity = self.downsample(x)
+
+			out += identity
+
+			return out
+
+		if self.with_cp and x.requires_grad:
+			out = cp.checkpoint(_inner_forward, x)
+		else:
+			out = _inner_forward(x)
+
+		if self.rfp_inplanes:
+			rfp_feat = self.rfp_conv(rfp_feat)
+			out = out + rfp_feat
+
+		out = self.relu(out)
 
 		return out
+
 
 class Res2Layer(Sequential):
 	"""Res2Layer to build Res2Net style backbone.
