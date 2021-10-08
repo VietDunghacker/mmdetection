@@ -130,7 +130,7 @@ def build_dataloader(dataset,
 		worker_init_fn, num_workers=num_workers, rank=rank,
 		seed=seed) if seed is not None else None
 
-	#sampler = ClassAwareSampler(dataset, samples_per_gpu) if shuffle else None
+	sampler = ClassAwareSampler(dataset, samples_per_gpu) if shuffle else None
 
 	data_loader = DataLoader(
 		dataset,
