@@ -47,8 +47,8 @@ class EmbeddingRPNHead(BaseModule):
 		image.
 		"""
 		super(EmbeddingRPNHead, self).init_weights()
-		nn.init.constant_(self.init_proposal_bboxes.weight[:, :2], 0.5)
-		nn.init.constant_(self.init_proposal_bboxes.weight[:, 2:], 1)
+		nn.init.uniform_(self.init_proposal_bboxes.weight[:, :2], a = 0.0, b = 1.0)
+		nn.init.uniform_(self.init_proposal_bboxes.weight[:, 2:], a = 0.0, b = 1.0)
 
 	def _decode_init_proposals(self, imgs, img_metas):
 		"""Decode init_proposal_bboxes according to the size of images and
