@@ -167,9 +167,7 @@ class PAAHead(ATSSHead):
 		bboxes_target = torch.cat(bboxes_target,
 								  0).view(-1, bboxes_target[0].size(-1))
 
-		pos_inds_flatten = ((labels >= 0)
-							&
-							(labels < self.num_classes)).nonzero().reshape(-1)
+		pos_inds_flatten = ((labels >= 0) & (labels < self.num_classes)).nonzero().reshape(-1)
 
 		losses_cls = self.loss_cls(
 			cls_scores,
@@ -542,23 +540,18 @@ class PAAHead(ATSSHead):
 		mlvl_bboxes = []
 		mlvl_scores = []
 		mlvl_iou_preds = []
-		for cls_score, bbox_pred, iou_preds, anchors in zip(
-				cls_scores, bbox_preds, iou_preds, mlvl_anchors):
+		for cls_score, bbox_pred, iou_preds, anchors in zip(cls_scores, bbox_preds, iou_preds, mlvl_anchors):
 			assert cls_score.size()[-2:] == bbox_pred.size()[-2:]
 
-			scores = cls_score.permute(0, 2, 3, 1).reshape(
-				batch_size, -1, self.cls_out_channels).sigmoid()
-			bbox_pred = bbox_pred.permute(0, 2, 3,
-										  1).reshape(batch_size, -1, 4)
-			iou_preds = iou_preds.permute(0, 2, 3, 1).reshape(batch_size,
-															  -1).sigmoid()
+			scores = cls_score.permute(0, 2, 3, 1).reshape(batch_size, -1, self.cls_out_channels).sigmoid()
+			bbox_pred = bbox_pred.permute(0, 2, 3, 1).reshape(batch_size, -1, 4)
+			iou_preds = iou_preds.permute(0, 2, 3, 1).reshape(batch_size, -1).sigmoid()
 
 			nms_pre = cfg.get('nms_pre', -1)
 			if nms_pre > 0 and scores.shape[1] > nms_pre:
 				max_scores, _ = (scores * iou_preds[..., None]).sqrt().max(-1)
 				_, topk_inds = max_scores.topk(nms_pre)
-				batch_inds = torch.arange(batch_size).view(
-					-1, 1).expand_as(topk_inds).long()
+				batch_inds = torch.arange(batch_size).view(-1, 1).expand_as(topk_inds).long()
 				anchors = anchors[topk_inds, :]
 				bbox_pred = bbox_pred[batch_inds, topk_inds, :]
 				scores = scores[batch_inds, topk_inds, :]
@@ -566,8 +559,7 @@ class PAAHead(ATSSHead):
 			else:
 				anchors = anchors.expand_as(bbox_pred)
 
-			bboxes = self.bbox_coder.decode(
-				anchors, bbox_pred, max_shape=img_shapes)
+			bboxes = self.bbox_coder.decode(anchors, bbox_pred, max_shape=img_shapes)
 			mlvl_bboxes.append(bboxes)
 			mlvl_scores.append(scores)
 			mlvl_iou_preds.append(iou_preds)
@@ -580,16 +572,13 @@ class PAAHead(ATSSHead):
 		# Add a dummy background class to the backend when using sigmoid
 		# remind that we set FG labels to [0, num_class-1] since mmdet v2.0
 		# BG cat_id: num_class
-		padding = batch_mlvl_scores.new_zeros(batch_size,
-											  batch_mlvl_scores.shape[1], 1)
+		padding = batch_mlvl_scores.new_zeros(batch_size, batch_mlvl_scores.shape[1], 1)
 		batch_mlvl_scores = torch.cat([batch_mlvl_scores, padding], dim=-1)
 		batch_mlvl_iou_preds = torch.cat(mlvl_iou_preds, dim=1)
-		batch_mlvl_nms_scores = (batch_mlvl_scores *
-								 batch_mlvl_iou_preds[..., None]).sqrt()
+		batch_mlvl_nms_scores = (batch_mlvl_scores * batch_mlvl_iou_preds[..., None]).sqrt()
 
 		det_results = []
-		for (mlvl_bboxes, mlvl_scores) in zip(batch_mlvl_bboxes,
-											  batch_mlvl_nms_scores):
+		for (mlvl_bboxes, mlvl_scores) in zip(batch_mlvl_bboxes, batch_mlvl_nms_scores):
 			det_bbox, det_label = multiclass_nms(
 				mlvl_bboxes,
 				mlvl_scores,
@@ -598,9 +587,7 @@ class PAAHead(ATSSHead):
 				cfg.max_per_img,
 				score_factors=None)
 			if self.with_score_voting and len(det_bbox) > 0:
-				det_bbox, det_label = self.score_voting(
-					det_bbox, det_label, mlvl_bboxes, mlvl_scores,
-					cfg.score_thr)
+				det_bbox, det_label = self.score_voting(det_bbox, det_label, mlvl_bboxes, mlvl_scores, cfg.score_thr)
 			det_results.append(tuple([det_bbox, det_label]))
 
 		return det_results

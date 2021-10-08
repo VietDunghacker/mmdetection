@@ -169,8 +169,7 @@ class ATSSHead(AnchorHead):
 		"""
 
 		anchors = anchors.reshape(-1, 4)
-		cls_score = cls_score.permute(0, 2, 3, 1).reshape(
-			-1, self.cls_out_channels).contiguous()
+		cls_score = cls_score.permute(0, 2, 3, 1).reshape(-1, self.cls_out_channels).contiguous()
 		bbox_pred = bbox_pred.permute(0, 2, 3, 1).reshape(-1, 4)
 		centerness = centerness.permute(0, 2, 3, 1).reshape(-1)
 		bbox_targets = bbox_targets.reshape(-1, 4)
@@ -178,8 +177,7 @@ class ATSSHead(AnchorHead):
 		label_weights = label_weights.reshape(-1)
 
 		# classification loss
-		loss_cls = self.loss_cls(
-			cls_score, labels, label_weights, avg_factor=num_total_samples)
+		loss_cls = self.loss_cls(cls_score, labels, label_weights, avg_factor=num_total_samples)
 
 		# FG cat_id: [0, num_classes -1], BG cat_id: num_classes
 		bg_class_ind = self.num_classes
