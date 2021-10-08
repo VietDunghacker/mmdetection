@@ -1,8 +1,10 @@
 _base_ = [
 	'../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py'
 ]
+num_stages = 6
+num_proposals = 64
 model = dict(
-	type='TOOD',
+	type='SparseRCNN',
 	backbone=dict(
 		type='DetectoRS_Res2Net',
 		depth=101,
@@ -22,8 +24,7 @@ model = dict(
 		type='RFP',
 		in_channels=(256, 512, 1024, 2048),
 		out_channels=256,
-		num_outs=5,
-		start_level=1,
+		num_outs=4,
 		add_extra_convs='on_output',
 		relu_before_extra_convs=True,
 		rfp_steps=2,
@@ -44,55 +45,65 @@ model = dict(
 			sac=dict(type='SAC', use_deform=True),
 			stage_with_sac=(False, True, True, True),
 			init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/pretrain/third_party/res2net101_v1d_26w_4s_mmdetv2-f0a600f9.pth'),
-			with_cp = True,
+			with_cp=True,
 			style='pytorch')),
-	bbox_head=dict(
-		type='TOODHead',
-		num_classes=80,
-		in_channels=256,
-		stacked_convs=6,
-		num_dcn_on_head=2,
-		feat_channels=256,
-		anchor_type='anchor_free',
-		anchor_generator=dict(
-			type='AnchorGenerator',
-			ratios=[1.0],
-			octave_base_scale=8,
-			scales_per_octave=1,
-			strides=[8, 16, 32, 64, 128]),
-		bbox_coder=dict(
-			type='DeltaXYWHBBoxCoder',
-			target_means=[.0, .0, .0, .0],
-			target_stds=[0.1, 0.1, 0.2, 0.2]),
-		initial_loss_cls=dict(
-			type='FocalLossWithProb',
-			use_sigmoid=True,
-			gamma=2.0,
-			alpha=0.25,
-			loss_weight=1.0),
-		loss_cls=dict(
-			type='TaskAlignedFocalLoss',
-			use_sigmoid=True,
-			gamma=2.0,
-			loss_weight=1.0),
-		loss_bbox=dict(type='CIoULoss', loss_weight=2.0),
-	),
-	train_cfg = dict(
-		initial_iter=0,
-		initial_assigner=dict(type='ATSSAssigner', topk=9),
-		assigner=dict(type='TaskAlignedAssigner', topk=13),
-		alpha=1,
-		beta=6,
-		allowed_border=-1,
-		pos_weight=-1,
-		debug=False),
-	test_cfg = dict(
-		nms_pre=1000,
-		min_bbox_size=0,
-		score_thr=0.05,
-		nms=dict(type='nms', iou_threshold=0.6),
-		max_per_img=100)
-	)
+	rpn_head=dict(
+		type='EmbeddingRPNHead',
+		num_proposals=num_proposals,
+		proposal_feature_channel=256),
+	roi_head=dict(
+		type='SparseRoIHead',
+		num_stages=num_stages,
+		stage_loss_weights=[1] * num_stages,
+		proposal_feature_channel=256,
+		bbox_roi_extractor=dict(
+			type='SingleRoIExtractor',
+			roi_layer=dict(type='RoIAlign', output_size=7, sampling_ratio=0),
+			out_channels=256,
+			featmap_strides=[4, 8, 16, 32]),
+		bbox_head=[
+			dict(
+				type='DIIHead',
+				num_classes=36,
+				num_ffn_fcs=2,
+				num_heads=8,
+				num_cls_fcs=1,
+				num_reg_fcs=3,
+				feedforward_channels=2048,
+				in_channels=256,
+				dropout=0.0,
+				ffn_act_cfg=dict(type='ReLU', inplace=True),
+				dynamic_conv_cfg=dict(
+					type='DynamicConv',
+					in_channels=256,
+					feat_channels=64,
+					out_channels=256,
+					input_feat_shape=7,
+					act_cfg=dict(type='ReLU', inplace=True),
+					norm_cfg=dict(type='LN')),
+				loss_bbox=dict(type='L1Loss', loss_weight=5.0),
+				loss_iou=dict(type='GIoULoss', loss_weight=2.0),
+				loss_cls=dict(type='FocalLoss', use_sigmoid=True, gamma=2.0, alpha=0.25, loss_weight=2.0),
+				bbox_coder=dict(
+					type='DeltaXYWHBBoxCoder',
+					clip_border=False,
+					target_means=[0., 0., 0., 0.],
+					target_stds=[0.5, 0.5, 1., 1.])) for _ in range(num_stages)
+		]),
+	# training and testing settings
+	train_cfg=dict(
+		rpn=None,
+		rcnn=[
+			dict(
+				assigner=dict(
+					type='HungarianAssigner',
+					cls_cost=dict(type='FocalLossCost', weight=2.0),
+					reg_cost=dict(type='BBoxL1Cost', weight=5.0),
+					iou_cost=dict(type='IoUCost', iou_mode='giou', weight=2.0)),
+				sampler=dict(type='PseudoSampler'),
+				pos_weight=1) for _ in range(num_stages)
+		]),
+	test_cfg=dict(rpn=None, rcnn=dict(max_per_img=num_proposals, score_threshold = 0.05, nms = dict(type='nms', iou_threshold=0.6))))
 
 # data setting
 dataset_type = 'CocoDataset'
