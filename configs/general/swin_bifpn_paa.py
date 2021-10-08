@@ -33,7 +33,7 @@ model = dict(
 		epsilon=0.0001
 	),
 	bbox_head=dict(
-		type='RankBasedPAAHead',
+		type='PAAHead',
 		reg_decoded_bbox=True,
 		score_voting=True,
 		topk=9,
@@ -57,9 +57,10 @@ model = dict(
 			gamma=2.0,
 			alpha=0.25,
 			loss_weight=1.0),
-		loss_bbox=dict(type='CIoULoss', reduction='none'),
-		rank_loss_type = 'RankSort'),
-	train_cfg = dict(
+		loss_bbox=dict(type='CIoULoss', loss_weight=1.3),
+		loss_centerness=dict(type='CrossEntropyLoss', use_sigmoid=True, loss_weight=0.5)),
+	# training and testing settings
+	train_cfg=dict(
 		assigner=dict(
 			type='MaxIoUAssigner',
 			pos_iou_thr=0.1,
@@ -69,13 +70,12 @@ model = dict(
 		allowed_border=-1,
 		pos_weight=-1,
 		debug=False),
-	test_cfg = dict(
+	test_cfg=dict(
 		nms_pre=1000,
 		min_bbox_size=0,
 		score_thr=0.05,
-		nms=dict(type='voting_cluster_diounms', iou_threshold=0.6),
-		max_per_img=100)
-	)
+		nms=dict(type='nms', iou_threshold=0.6),
+		max_per_img=100))
 
 # data setting
 img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
@@ -102,7 +102,61 @@ train_pipeline = [
 				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
 			],
 			[
-				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9)),
+				dict(type='Mosaic', center_ratio_range=(0.95, 1.05), img_scale=(720, 720), pad_val=0.0),
+				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
+			],
+			[
+				dict(
+					type='Albu',
+					transforms=[dict(type = "Crop", x_min = 0, y_min = 400, x_max = 800, y_max = 800)],
+					bbox_params=dict(
+						type='BboxParams',
+						format='pascal_voc',
+						label_fields=['gt_labels'],
+						min_visibility=0.8,
+						filter_lost_elements=True),
+					keymap={
+						'img': 'image',
+						'gt_bboxes': 'bboxes'
+					},
+					update_pad_shape=False,
+					skip_img_without_anno=False),
+				dict(type = 'Pad', size_divisor = 800),
+			],
+			[
+				dict(
+					type='Albu',
+					transforms=[
+						dict(
+							type = "OneOf",
+							transforms=[dict(type = "Crop", x_min = 0, y_min = i, x_max = 800, y_max = 800) for i in range(400, 700, 10)],
+							p=1.0),							
+						],
+					bbox_params=dict(
+						type='BboxParams',
+						format='pascal_voc',
+						label_fields=['gt_labels'],
+						min_visibility=0.8,
+						filter_lost_elements=True),
+					keymap={
+						'img': 'image',
+						'gt_bboxes': 'bboxes'
+					},
+					update_pad_shape=False,
+					skip_img_without_anno=False),
+				dict(type = 'Pad', size_divisor = 800),
+				dict(
+					type='MixUp',
+					img_scale=(800, 800),
+					ratio_range=(1.0, 1.0),
+					pad_val=0.0),
+			],
+			[
+				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
+				dict(type='Resize', img_scale=[(640, 640), (800, 800)], multiscale_mode='range', keep_ratio=True),
+			],
+			[
+				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
 				dict(type='Resize', img_scale=[(640, 640), (800, 800)], multiscale_mode='range', keep_ratio=True),
 			]
 		]
