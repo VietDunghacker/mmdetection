@@ -75,7 +75,7 @@ class FPN(BaseModule):
 				 init_cfg=dict(
 					 type='Xavier', layer='Conv2d', distribution='uniform')):
 		super(FPN, self).__init__(init_cfg)
-		assert isinstance(in_channels, list)
+		assert isinstance(in_channels, list) or isinstance(in_channels, tuple)
 		self.in_channels = in_channels
 		self.out_channels = out_channels
 		self.num_ins = len(in_channels)
