@@ -282,6 +282,8 @@ class BiFPN(BaseModule):
 				extra_inputs.append(self.extra_convs[i](extra_inputs[-1]))
 
 		outputs = inputs + extra_inputs
+		print(outputs)
+		assert False
 		for layer in self.layers:
 			if self.with_cp and inputs[0].requires_grad:
 				outputs = cp.checkpoint(layer, outputs)
