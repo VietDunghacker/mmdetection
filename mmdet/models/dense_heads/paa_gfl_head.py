@@ -3,7 +3,7 @@ import numpy as np
 import torch
 from mmcv.runner import force_fp32
 
-from mmdet.core import bbox2distance, distance2bbox, multi_apply, multiclass_nms, reduce_mean
+from mmdet.core import anchor_inside_flags, bbox2distance, distance2bbox, multi_apply, multiclass_nms, reduce_mean
 from mmdet.core.bbox.iou_calculators import bbox_overlaps
 from mmdet.models import HEADS
 from mmdet.models.dense_heads import GFLHead
