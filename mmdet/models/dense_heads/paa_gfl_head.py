@@ -165,7 +165,7 @@ class PAAGFLHead(GFLHead):
 			pos_strides = flatten_strides[pos_inds_flatten]
 			pos_anchor_centers = self.anchor_center(pos_anchors) / pos_strides
 
-			weight_targets = cls_score.detach()
+			weight_targets = cls_scores.detach()
 			if not self.use_dgqp:
 				weight_targets = weight_targets.sigmoid()
 			weight_targets = weight_targets.max(dim=1)[0][pos_inds_flatten]
@@ -243,7 +243,6 @@ class PAAGFLHead(GFLHead):
 		pos_bbox_weight = bbox_weight[pos_inds]
 		pos_anchors = anchors_all_level[pos_inds]
 		pos_strides = strides_all_level[pos_inds]
-		print(pos_anchors.shape, pos_strides.shape)
 		pos_anchor_centers = self.anchor_center(pos_anchors) / pos_strides
 
 		pos_bbox_pred_corners = self.integral(pos_bbox_pred)
