@@ -268,7 +268,7 @@ class BiFPN(BaseModule):
 				input_channels = in_channels + [out_channels, ] * (self.num_outs - self.num_backbone_features)
 			else:
 				input_channels = [out_channels, ] * self.num_outs
-			self.layers.append(BiFPNBlock(input_channels, self.num_backbone_features, self.num_outs, out_channels, weight_method, act_cfg, separable_conv, epsilon, input_offsets, reduction, norm_cfg = norm_cfg, with_cp = with_cp))
+			self.layers.append(BiFPNBlock(input_channels, self.num_backbone_features, self.num_outs, out_channels, weight_method, act_cfg, separable_conv, epsilon, input_offsets, reduction, norm_cfg = norm_cfg))
 
 	@auto_fp16()
 	def forward(self, inputs):
