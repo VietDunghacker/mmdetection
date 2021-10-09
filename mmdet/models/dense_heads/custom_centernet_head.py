@@ -52,13 +52,15 @@ class CustomCenterNetHead(BaseDenseHead, BBoxTestMixin):
 					 ignore_high_fp=0.85,
 					 loss_weight=0.5),
 				 loss_bbox=dict(type='GIoULoss', loss_weight=1.0),
+				 conv_cfg=None,
 				 norm_cfg=dict(type='BN', requires_grad = True),
-				 act_cfg=None,
+				 act_cfg=dict(type='ReLU'),
 				 train_cfg=None,
 				 test_cfg=None,
 				 init_cfg=None):
 		super(CustomCenterNetHead, self).__init__(init_cfg)
 		self.out_kernel = 3
+		self.conv_cfg = conv_cfg
 		self.norm_cfg = norm_cfg
 		self.act_cfg = act_cfg
 		self.in_channel = in_channel
@@ -104,8 +106,7 @@ class CustomCenterNetHead(BaseDenseHead, BBoxTestMixin):
 
 	def _init_layers(self):
 		self._build_tower(self.head_configs, self.channels)
-		self.scales = nn.ModuleList(
-			[Scale(scale=1.0) for _ in range(self.num_features)])
+		self.scales = nn.ModuleList([Scale(scale=1.0) for _ in range(self.num_features)])
 		self.agn_hm = self._build_head(self.in_channel, 1)
 		self.bbox_pred = self._build_head(self.in_channel, 4)
 
@@ -124,16 +125,21 @@ class CustomCenterNetHead(BaseDenseHead, BBoxTestMixin):
 			num_convs, use_deformable = head_configs[head]
 			channel = channels[head]
 			for i in range(num_convs):
-				conv_func = nn.Conv2d
-				tower.append(conv_func(
-					channel,
-					channel,
-					kernel_size=3, stride=1,
-					padding=1, bias=True
-				))
-				if self.norm == 'GN' and channel % 32 != 0:
-					tower.append(nn.GroupNorm(25, channel))
-				tower.append(nn.ReLU())
+				if use_deformable:
+					conv_cfg = dict(type='DCNv2', deform_groups=4)
+				else:
+					conv_cfg = self.conv_cfg
+				tower.append(
+					ConvModule(
+						channel,
+						channel,
+						3,
+						stride=1,
+						padding=1,
+						bias = True,
+						conv_cfg=conv_cfg,
+						norm_cfg=self.norm_cfg,
+						act_cfg=self.act_cfg))
 			self.add_module('{}_tower'.format(head), nn.Sequential(*tower))
 
 	def init_weights(self):
