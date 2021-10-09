@@ -282,7 +282,7 @@ class BiFPN(BaseModule):
 				extra_inputs.append(self.extra_convs[i](extra_inputs[-1]))
 
 		outputs = inputs + extra_inputs
-		p3, p4, p5, p6, p7 = ouputs
+		p3, p4, p5, p6, p7 = outputs
 		for layer in self.layers:
 			if self.with_cp and p3.requires_grad:
 				p3, p4, p5, p6, p7 = cp.checkpoint(layer, p3, p4, p5, p6, p7)
