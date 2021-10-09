@@ -634,8 +634,7 @@ class GFLHead(AnchorHead):
 		if unmap_outputs:
 			num_total_anchors = flat_anchors.size(0)
 			anchors = unmap(anchors, num_total_anchors, inside_flags)
-			labels = unmap(
-				labels, num_total_anchors, inside_flags, fill=self.num_classes)
+			labels = unmap(labels, num_total_anchors, inside_flags, fill=self.num_classes)
 			label_weights = unmap(label_weights, num_total_anchors,
 								  inside_flags)
 			bbox_targets = unmap(bbox_targets, num_total_anchors, inside_flags)

@@ -511,40 +511,34 @@ class PAAGFLHead(GFLHead):
 							img_meta,
 							label_channels=1,
 							unmap_outputs=True):
-		"""Compute regression, classification targets for anchors in a single
-		image.
+		"""Compute regression and classification targets for anchors in a
+		single image.
+
 		Args:
 			flat_anchors (Tensor): Multi-level anchors of the image, which are
-				concatenated into a single tensor of shape (num_anchors, 4)
+				concatenated into a single tensor of shape (num_anchors ,4)
 			valid_flags (Tensor): Multi level valid flags of the image,
 				which are concatenated into a single tensor of
 					shape (num_anchors,).
-			num_level_anchors Tensor): Number of anchors of each scale level.
 			gt_bboxes (Tensor): Ground truth bboxes of the image,
 				shape (num_gts, 4).
 			gt_bboxes_ignore (Tensor): Ground truth bboxes to be
 				ignored, shape (num_ignored_gts, 4).
+			img_meta (dict): Meta info of the image.
 			gt_labels (Tensor): Ground truth labels of each box,
 				shape (num_gts,).
-			img_meta (dict): Meta info of the image.
 			label_channels (int): Channel of label.
 			unmap_outputs (bool): Whether to map outputs back to the original
 				set of anchors.
+
 		Returns:
-			tuple: N is the number of total anchors in the image.
-				anchors (Tensor): All anchors in the image with shape (N, 4).
-				labels (Tensor): Labels of all anchors in the image with shape
-					(N,).
-				label_weights (Tensor): Label weights of all anchor in the
-					image with shape (N,).
-				bbox_targets (Tensor): BBox targets of all anchors in the
-					image with shape (N, 4).
-				bbox_weights (Tensor): BBox weights of all anchors in the
-					image with shape (N, 4).
-				pos_inds (Tensor): Indices of positive anchor with shape
-					(num_pos,).
-				neg_inds (Tensor): Indices of negative anchor with shape
-					(num_neg,).
+			tuple:
+				labels_list (list[Tensor]): Labels of each level
+				label_weights_list (list[Tensor]): Label weights of each level
+				bbox_targets_list (list[Tensor]): BBox targets of each level
+				bbox_weights_list (list[Tensor]): BBox weights of each level
+				num_total_pos (int): Number of positive samples in all images
+				num_total_neg (int): Number of negative samples in all images
 		"""
 		assert unmap_outputs, 'We must map outputs back to the original set of anchors in PAAhead'
 		inside_flags = anchor_inside_flags(flat_anchors, valid_flags, img_meta['img_shape'][:2], self.train_cfg.allowed_border)
@@ -553,29 +547,33 @@ class PAAGFLHead(GFLHead):
 		# assign gt and sample anchors
 		anchors = flat_anchors[inside_flags, :]
 
-		num_level_anchors_inside = self.get_num_level_anchors_inside(num_level_anchors, inside_flags)
-		assign_result = self.assigner.assign(anchors, num_level_anchors_inside, gt_bboxes, gt_bboxes_ignore, gt_labels)
-
+		assign_result = self.assigner.assign(anchors, gt_bboxes, gt_bboxes_ignore, None if self.sampling else gt_labels)
 		sampling_result = self.sampler.sample(assign_result, anchors, gt_bboxes)
 
 		num_valid_anchors = anchors.shape[0]
 		bbox_targets = torch.zeros_like(anchors)
 		bbox_weights = torch.zeros_like(anchors)
-		labels = anchors.new_full((num_valid_anchors, ), self.num_classes, dtype=torch.long)
+		labels = anchors.new_full((num_valid_anchors, ),
+								  self.num_classes,
+								  dtype=torch.long)
 		label_weights = anchors.new_zeros(num_valid_anchors, dtype=torch.float)
 
 		pos_inds = sampling_result.pos_inds
 		neg_inds = sampling_result.neg_inds
 		if len(pos_inds) > 0:
-			pos_bbox_targets = sampling_result.pos_gt_bboxes
+			if not self.reg_decoded_bbox:
+				pos_bbox_targets = self.bbox_coder.encode(sampling_result.pos_bboxes, sampling_result.pos_gt_bboxes)
+			else:
+				pos_bbox_targets = sampling_result.pos_gt_bboxes
 			bbox_targets[pos_inds, :] = pos_bbox_targets
 			bbox_weights[pos_inds, :] = 1.0
 			if gt_labels is None:
 				# Only rpn gives gt_labels as None
-				# Foreground is the first class
+				# Foreground is the first class since v2.5.0
 				labels[pos_inds] = 0
 			else:
-				labels[pos_inds] = gt_labels[sampling_result.pos_assigned_gt_inds]
+				labels[pos_inds] = gt_labels[
+					sampling_result.pos_assigned_gt_inds]
 			if self.train_cfg.pos_weight <= 0:
 				label_weights[pos_inds] = 1.0
 			else:
@@ -586,12 +584,14 @@ class PAAGFLHead(GFLHead):
 		# map up to original set of anchors
 		if unmap_outputs:
 			num_total_anchors = flat_anchors.size(0)
-			anchors = unmap(anchors, num_total_anchors, inside_flags)
-			labels = unmap(labels, num_total_anchors, inside_flags, fill=self.num_classes)
+			labels = unmap(
+				labels, num_total_anchors, inside_flags,
+				fill=self.num_classes)  # fill bg label
 			label_weights = unmap(label_weights, num_total_anchors,
 								  inside_flags)
 			bbox_targets = unmap(bbox_targets, num_total_anchors, inside_flags)
 			bbox_weights = unmap(bbox_weights, num_total_anchors, inside_flags)
 
-		return (anchors, labels, label_weights, bbox_targets, bbox_weights,
-				pos_inds, neg_inds)
+		return (labels, label_weights, bbox_targets, bbox_weights, pos_inds,
+				neg_inds, sampling_result)
+
