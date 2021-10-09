@@ -201,9 +201,8 @@ class PAAGFLHead(GFLHead):
 
 		loss_cls = self.loss_cls(
 			cls_scores, (labels, score),
-			weight=label_weights,
+			weight=labels_weight,
 			avg_factor=max(num_pos, 1.0))
-		avg_factor = reduce_mean(avg_factor).clamp_(min=1).item()
 		return dict(loss_cls=loss_cls, loss_bbox=loss_bbox, loss_dfl=loss_dfl)
 
 	def get_pos_loss(self, anchors, cls_score, bbox_pred, label, label_weight,
