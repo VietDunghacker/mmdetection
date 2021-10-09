@@ -177,34 +177,36 @@ class PAAGFLHead(GFLHead):
 			pred_corners = pos_bbox_pred.reshape(-1, self.reg_max + 1)
 			target_corners = bbox2distance(pos_anchor_centers, pos_decode_bbox_targets, self.reg_max).reshape(-1)
 
+			avg_factor = weight_targets.sum()
+			avg_factor = reduce_mean(avg_factor).clamp_(min=1).item()
+	
 			# regression loss
 			loss_bbox = self.loss_bbox(
 				pos_decode_bbox_pred,
 				pos_decode_bbox_targets,
 				weight=weight_targets,
-				avg_factor=1.0)
+				avg_factor=avg_factor)
 
 			# dfl loss
 			loss_dfl = self.loss_dfl(
 				pred_corners,
 				target_corners,
 				weight=weight_targets[:, None].expand(-1, 4).reshape(-1),
-				avg_factor=4.0)
+				avg_factor=4.0 * avg_factor)
 
-			avg_factor = weight_targets.sum()
 		else:
 			loss_bbox = bbox_preds.sum() * 0
 			loss_dfl = bbox_preds.sum() * 0
 			avg_factor = bbox_preds.new_tensor(0)
 
 		loss_cls = self.loss_cls(
-			cls_score, (labels, score),
+			cls_scores, (labels, score),
 			weight=label_weights,
 			avg_factor=max(num_pos, 1.0))
 		avg_factor = reduce_mean(avg_factor).clamp_(min=1).item()
-		losses_bbox = list(map(lambda x: x / avg_factor, losses_bbox))
-		losses_dfl = list(map(lambda x: x / avg_factor, losses_dfl))
-		return dict(loss_cls=losses_cls, loss_bbox=losses_bbox, loss_dfl=losses_dfl)
+		loss_bbox = list(map(lambda x: x / avg_factor, loss_bbox))
+		loss_dfl = list(map(lambda x: x / avg_factor, loss_bbox))
+		return dict(loss_cls=loss_cls, loss_bbox=loss_bbox, loss_dfl=loss_dfl)
 
 	def get_pos_loss(self, anchors, cls_score, bbox_pred, label, label_weight,
 					 bbox_target, bbox_weight, pos_inds):
