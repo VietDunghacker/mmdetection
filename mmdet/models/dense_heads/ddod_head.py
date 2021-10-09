@@ -183,8 +183,7 @@ class DDODHead(AnchorHead):
 		"""
 
 		anchors = anchors.reshape(-1, 4)
-		cls_score = cls_score.permute(0, 2, 3, 1).reshape(
-			-1, self.cls_out_channels).contiguous()
+		cls_score = cls_score.permute(0, 2, 3, 1).reshape(-1, self.cls_out_channels).contiguous()
 		bbox_pred = bbox_pred.permute(0, 2, 3, 1).reshape(-1, 4)
 		iou_pred = iou_pred.permute(0, 2, 3, 1).reshape(-1, )
 		bbox_targets = bbox_targets.reshape(-1, 4)
@@ -323,8 +322,7 @@ class DDODHead(AnchorHead):
 			num_total_samples=num_total_samples)
 
 		# ######################### reg assigner #########################
-		anchor_list, valid_flag_list = self.get_anchors(
-			featmap_sizes, img_metas, device=device)
+		anchor_list, valid_flag_list = self.get_anchors(featmap_sizes, img_metas, device=device)
 		cls_reg_targets = self.get_targets(
 			anchor_list,
 			valid_flag_list,

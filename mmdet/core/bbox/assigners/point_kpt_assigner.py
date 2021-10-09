@@ -76,19 +76,15 @@ class PointKptAssigner(BaseAssigner):
 			selected_points = points[pos_points_inds]  # num_gt,3
 			# offset_targets[pos_points_inds, :] = (
 			#	 gt_points - selected_points[:, :2]) / selected_points[:, 2:]
-			offset = points_xy[point_range[i]:point_range[i + 1],
-							   None, :2] - selected_points[None, :, :2]
-			score_targets[point_range[i]:point_range[i + 1]] = torch.exp(
-				-0.5 * torch.pow(offset, 2).sum(dim=-1) / sigma_square)
+			offset = points_xy[point_range[i]:point_range[i + 1], None, :2] - selected_points[None, :, :2]
+			score_targets[point_range[i]:point_range[i + 1]] = torch.exp(-0.5 * torch.pow(offset, 2).sum(dim=-1) / sigma_square)
 			pos_mask[pos_points_inds] = 1
 
 		score_target_max, max_inds = score_targets.max(dim=1)
 		offset_targets = points.new_zeros(num_points, 2)
 		valid_points = points[pos_mask == 1]
 		valid_point_gts = gt_points[max_inds][pos_mask == 1]
-		offset_targets[pos_mask == 1] = (valid_point_gts[:, :2] -
-										 valid_points[:, :2]) / (
-											 valid_points[:, 2:])
+		offset_targets[pos_mask == 1] = (valid_point_gts[:, :2] - valid_points[:, :2]) / (valid_points[:, 2:])
 
 		if num_classes is None:
 			score_target = score_target_max

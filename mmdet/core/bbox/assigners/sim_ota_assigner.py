@@ -119,14 +119,12 @@ class SimOTAAssigner(BaseAssigner):
 		Returns:
 			:obj:`AssignResult`: The assigned result.
 		"""
-		INF = 100000000
+		INF = 10000000
 		num_gt = gt_bboxes.size(0)
 		num_bboxes = decoded_bboxes.size(0)
 
 		# assign 0 by default
-		assigned_gt_inds = decoded_bboxes.new_full((num_bboxes, ),
-												   0,
-												   dtype=torch.long)
+		assigned_gt_inds = decoded_bboxes.new_full((num_bboxes, ), 0, dtype=torch.long)
 		if num_gt == 0 or num_bboxes == 0:
 			# No ground truth or boxes, return empty assignment
 			max_overlaps = decoded_bboxes.new_zeros((num_bboxes, ))
@@ -139,11 +137,9 @@ class SimOTAAssigner(BaseAssigner):
 				assigned_labels = decoded_bboxes.new_full((num_bboxes, ),
 														  -1,
 														  dtype=torch.long)
-			return AssignResult(
-				num_gt, assigned_gt_inds, max_overlaps, labels=assigned_labels)
+			return AssignResult(num_gt, assigned_gt_inds, max_overlaps, labels=assigned_labels)
 
-		valid_mask, is_in_boxes_and_center = self.get_in_gt_and_in_center_info(
-			priors, gt_bboxes)
+		valid_mask, is_in_boxes_and_center = self.get_in_gt_and_in_center_info(priors, gt_bboxes)
 
 		valid_decoded_bbox = decoded_bboxes[valid_mask]
 		valid_pred_scores = pred_scores[valid_mask]
@@ -174,9 +170,7 @@ class SimOTAAssigner(BaseAssigner):
 		assigned_gt_inds[valid_mask] = matched_gt_inds + 1
 		assigned_labels = assigned_gt_inds.new_full((num_bboxes, ), -1)
 		assigned_labels[valid_mask] = gt_labels[matched_gt_inds].long()
-		max_overlaps = assigned_gt_inds.new_full((num_bboxes, ),
-												 -INF,
-												 dtype=torch.float32)
+		max_overlaps = assigned_gt_inds.new_full((num_bboxes, ), -INF, dtype=torch.float32)
 		max_overlaps[valid_mask] = matched_pred_ious
 		return AssignResult(
 			num_gt, assigned_gt_inds, max_overlaps, labels=assigned_labels)
@@ -220,9 +214,7 @@ class SimOTAAssigner(BaseAssigner):
 		is_in_gts_or_centers = is_in_gts_all | is_in_cts_all
 
 		# both in boxes and centers, shape: [num_fg, num_gt]
-		is_in_boxes_and_centers = (
-			is_in_gts[is_in_gts_or_centers, :]
-			& is_in_cts[is_in_gts_or_centers, :])
+		is_in_boxes_and_centers = (is_in_gts[is_in_gts_or_centers, :] & is_in_cts[is_in_gts_or_centers, :])
 		return is_in_gts_or_centers, is_in_boxes_and_centers
 
 	def dynamic_k_matching(self, cost, pairwise_ious, num_gt, valid_mask):

@@ -5,6 +5,7 @@ import numpy
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.utils.checkpoint as cp
 from mmcv.cnn.bricks import DepthwiseSeparableConvModule
 from mmcv.runner import BaseModule, auto_fp16
 
@@ -55,7 +56,7 @@ class ActLayer(nn.Module):
 class BiFPNNode(nn.Module):
 	def __init__(self, input_channels, output_channel, num_backbone_features,
 				 weight_method, act_fn, separable_conv, epsilon, input_offsets,
-				 target_reduction, reduction):
+				 target_reduction, reduction, norm_cfg):
 		super().__init__()
 
 		self.weight_method = weight_method
@@ -76,7 +77,7 @@ class BiFPNNode(nn.Module):
 			reduction_ratio = target_reduction / input_reduction
 
 			if used_input != output_channel:
-				conv = ConvModule(used_input, output_channel, kernel_size=1, norm_cfg=dict(type='BN', requires_grad = True), act_cfg=None)
+				conv = ConvModule(used_input, output_channel, kernel_size=1, norm_cfg=norm_cfg, act_cfg=None)
 				offset_nodes.add_module("conv", conv)
 
 			if reduction_ratio > 1:
@@ -92,7 +93,7 @@ class BiFPNNode(nn.Module):
 		if self.weight_method != "sum":
 			self.edge_weights = nn.Parameter(torch.ones(len(input_offsets)), requires_grad=True)
 
-		conv_kwargs = dict(in_channels=output_channel, out_channels=output_channel, kernel_size=3, stride = 1, padding = 1, dilation = 1, act_cfg=None, norm_cfg=dict(type='BN', requires_grad = True))
+		conv_kwargs = dict(in_channels=output_channel, out_channels=output_channel, kernel_size=3, stride = 1, padding = 1, dilation = 1, act_cfg=None, norm_cfg=norm_cfg)
 
 		if separable_conv:
 			self.fusion_convs = DepthwiseSeparableConvModule(**conv_kwargs)
@@ -137,7 +138,7 @@ class BiFPNBlock(nn.Module):
 
 	def __init__(self, input_channels, num_backbone_features, num_outs,
 				 channels, weight_method, act_fn, separable_conv, epsilon,
-				 input_offsets, reduction):
+				 input_offsets, reduction, norm_cfg):
 		super().__init__()
 
 		weight_method_list = ["attn", "fast_attn", "sum"]
@@ -158,7 +159,8 @@ class BiFPNBlock(nn.Module):
 										epsilon,
 										input_offsets[i],
 										reduction[num_outs + i],
-										reduction))
+										reduction,
+										norm_cfg))
 
 		for i in range(1, num_outs):
 			self.nodes.append(BiFPNNode(input_channels[i],
@@ -170,7 +172,8 @@ class BiFPNBlock(nn.Module):
 										epsilon,
 										input_offsets[num_outs + i - 2],
 										reduction[num_outs * 2 + i - 2],
-										reduction))
+										reduction,
+										norm_cfg))
 
 	def forward(self, inputs):
 		output = list(inputs)
@@ -196,10 +199,12 @@ class BiFPN(BaseModule):
 				 separable_conv=True,
 				 epsilon=0.0001,
 				 reduction_ratio=2.0,
-				 init_cfg=dict(
-					 type='Xavier', layer='Conv2d', distribution='uniform')):
+				 with_cp=False,
+				 norm_cfg=dict(type="BN", requires_grad =True),
+				 init_cfg=dict(type='Xavier', layer='Conv2d', distribution='uniform')):
 		super(BiFPN, self).__init__(init_cfg = init_cfg)
 		assert isinstance(in_channels, list)
+		self.with_cp = with_cp
 		self.num_backbone_features = len(in_channels)
 
 		assert self.num_backbone_features >= 2
@@ -231,7 +236,7 @@ class BiFPN(BaseModule):
 			if input_channels != out_channels:
 				self.extra_convs.append(
 					nn.Sequential(
-						ConvModule(input_channels, out_channels, kernel_size=1, norm_cfg=dict(type='BN', requires_grad = True), act_cfg=None),
+						ConvModule(input_channels, out_channels, kernel_size=1, norm_cfg=norm_cfg, act_cfg=None),
 						nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
 					)
 				)
@@ -263,7 +268,7 @@ class BiFPN(BaseModule):
 				input_channels = in_channels + [out_channels, ] * (self.num_outs - self.num_backbone_features)
 			else:
 				input_channels = [out_channels, ] * self.num_outs
-			self.layers.append(BiFPNBlock(input_channels, self.num_backbone_features, self.num_outs, out_channels, weight_method, act_cfg, separable_conv, epsilon, input_offsets, reduction))
+			self.layers.append(BiFPNBlock(input_channels, self.num_backbone_features, self.num_outs, out_channels, weight_method, act_cfg, separable_conv, epsilon, input_offsets, reduction, norm_cfg = norm_cfg))
 
 	@auto_fp16()
 	def forward(self, inputs):
@@ -278,6 +283,9 @@ class BiFPN(BaseModule):
 
 		outputs = inputs + extra_inputs
 		for layer in self.layers:
-			outputs = layer(outputs)
+			if self.with_cp and inputs[0].requires_grad:
+				outputs = cp.checkpoint(layer, outputs)
+			else:
+				outputs = layer(outputs)
 
 		return tuple(outputs)

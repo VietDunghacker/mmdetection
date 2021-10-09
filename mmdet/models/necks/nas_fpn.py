@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import torch.nn as nn
+import torch.utils.checkpoint as cp
 from mmcv.cnn import ConvModule
 from mmcv.ops.merge_cells import GlobalPoolingCell, SumCell
 from mmcv.runner import BaseModule, ModuleList
@@ -38,6 +39,7 @@ class NASFPN(BaseModule):
 				 start_level=0,
 				 end_level=-1,
 				 add_extra_convs=False,
+				 with_cp=False,
 				 norm_cfg=None,
 				 init_cfg=dict(type='Caffe2Xavier', layer='Conv2d')):
 		super(NASFPN, self).__init__(init_cfg)
@@ -47,6 +49,7 @@ class NASFPN(BaseModule):
 		self.num_ins = len(in_channels)  # num of input feature levels
 		self.num_outs = num_outs  # num of output feature levels
 		self.stack_times = stack_times
+		self.with_cp = False
 		self.norm_cfg = norm_cfg
 
 		if end_level == -1:
@@ -138,21 +141,28 @@ class NASFPN(BaseModule):
 		p3, p4, p5, p6, p7 = feats
 
 		for stage in self.fpn_stages:
-			# gp(p6, p4) -> p4_1
-			p4_1 = stage['gp_64_4'](p6, p4, out_size=p4.shape[-2:])
-			# sum(p4_1, p4) -> p4_2
-			p4_2 = stage['sum_44_4'](p4_1, p4, out_size=p4.shape[-2:])
-			# sum(p4_2, p3) -> p3_out
-			p3 = stage['sum_43_3'](p4_2, p3, out_size=p3.shape[-2:])
-			# sum(p3_out, p4_2) -> p4_out
-			p4 = stage['sum_34_4'](p3, p4_2, out_size=p4.shape[-2:])
-			# sum(p5, gp(p4_out, p3_out)) -> p5_out
-			p5_tmp = stage['gp_43_5'](p4, p3, out_size=p5.shape[-2:])
-			p5 = stage['sum_55_5'](p5, p5_tmp, out_size=p5.shape[-2:])
-			# sum(p7, gp(p5_out, p4_2)) -> p7_out
-			p7_tmp = stage['gp_54_7'](p5, p4_2, out_size=p7.shape[-2:])
-			p7 = stage['sum_77_7'](p7, p7_tmp, out_size=p7.shape[-2:])
-			# gp(p7_out, p5_out) -> p6_out
-			p6 = stage['gp_75_6'](p7, p5, out_size=p6.shape[-2:])
+			def _inner_forward(p3, p4, p5, p6, p7):
+				# gp(p6, p4) -> p4_1
+				p4_1 = stage['gp_64_4'](p6, p4, out_size=p4.shape[-2:])
+				# sum(p4_1, p4) -> p4_2
+				p4_2 = stage['sum_44_4'](p4_1, p4, out_size=p4.shape[-2:])
+				# sum(p4_2, p3) -> p3_out
+				p3 = stage['sum_43_3'](p4_2, p3, out_size=p3.shape[-2:])
+				# sum(p3_out, p4_2) -> p4_out
+				p4 = stage['sum_34_4'](p3, p4_2, out_size=p4.shape[-2:])
+				# sum(p5, gp(p4_out, p3_out)) -> p5_out
+				p5_tmp = stage['gp_43_5'](p4, p3, out_size=p5.shape[-2:])
+				p5 = stage['sum_55_5'](p5, p5_tmp, out_size=p5.shape[-2:])
+				# sum(p7, gp(p5_out, p4_2)) -> p7_out
+				p7_tmp = stage['gp_54_7'](p5, p4_2, out_size=p7.shape[-2:])
+				p7 = stage['sum_77_7'](p7, p7_tmp, out_size=p7.shape[-2:])
+				# gp(p7_out, p5_out) -> p6_out
+				p6 = stage['gp_75_6'](p7, p5, out_size=p6.shape[-2:])
+				return p3, p4, p5, p6, p7
+			if self.with_cp and p3.requires_grad:
+				p3, p4, p5, p6, p7 = cp.checkpoint(_inner_forward, p3, p4, p5, p6, p7)
+			else:
+				p3, p4, p5, p6, p7 = _inner_forward(p3, p4, p5, p6, p7)
+
 
 		return p3, p4, p5, p6, p7
