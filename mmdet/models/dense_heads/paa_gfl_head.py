@@ -115,7 +115,7 @@ class PAAGFLHead(GFLHead):
 
 		device = cls_scores[0].device
 		anchor_list, valid_flag_list = self.get_anchors(featmap_sizes, img_metas, device=device)
-		stride_list = [[torch.full(anchor, stride[0], device = anchor.device) for anchor, stride in zip(anchor_list[0], self.anchor_generator.strides)] for _ in range(len(anchor_list))]
+		stride_list = [[torch.full(len(anchor), stride[0], device = anchor.device) for anchor, stride in zip(anchor_list[0], self.anchor_generator.strides)] for _ in range(len(anchor_list))]
 
 		label_channels = self.cls_out_channels if self.use_sigmoid_cls else 1
 		cls_reg_targets = self.get_targets(
