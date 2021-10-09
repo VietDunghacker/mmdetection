@@ -175,8 +175,8 @@ class BiFPNBlock(nn.Module):
 										reduction,
 										norm_cfg))
 
-	def forward(self, inputs):
-		output = list(inputs)
+	def forward(self, p3, p4, p5, p6, p7):
+		output = list(p3, p4, p5, p6, p7)
 
 		for node in self.nodes:
 			output.append(node(output))
@@ -282,9 +282,11 @@ class BiFPN(BaseModule):
 				extra_inputs.append(self.extra_convs[i](extra_inputs[-1]))
 
 		outputs = inputs + extra_inputs
-		print(len(outputs))
-		assert False
+		p3, p4, p5, p6, p7 = ouputs
 		for layer in self.layers:
-			outputs = layer(outputs)
+			if self.with_cp and p3.requires_grad:
+				p3, p4, p5, p6, p7 = cp.checkpoint(layer, p3, p4, p5, p6, p7)
+			else:
+				p3, p4, p5, p6, p7 = layer(p3, p4, p5, p6, p7)
 
 		return tuple(outputs)
