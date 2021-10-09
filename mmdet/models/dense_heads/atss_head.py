@@ -622,8 +622,7 @@ class ATSSHead(AnchorHead):
 		neg_inds = sampling_result.neg_inds
 		if len(pos_inds) > 0:
 			if hasattr(self, 'bbox_coder'):
-				pos_bbox_targets = self.bbox_coder.encode(
-					sampling_result.pos_bboxes, sampling_result.pos_gt_bboxes)
+				pos_bbox_targets = self.bbox_coder.encode(sampling_result.pos_bboxes, sampling_result.pos_gt_bboxes)
 			else:
 				# used in VFNetHead
 				pos_bbox_targets = sampling_result.pos_gt_bboxes
@@ -634,8 +633,7 @@ class ATSSHead(AnchorHead):
 				# Foreground is the first class since v2.5.0
 				labels[pos_inds] = 0
 			else:
-				labels[pos_inds] = gt_labels[
-					sampling_result.pos_assigned_gt_inds]
+				labels[pos_inds] = gt_labels[sampling_result.pos_assigned_gt_inds]
 			if self.train_cfg.pos_weight <= 0:
 				label_weights[pos_inds] = 1.0
 			else:
