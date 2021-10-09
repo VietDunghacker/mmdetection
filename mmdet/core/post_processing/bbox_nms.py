@@ -13,7 +13,7 @@ def intersect(box_a, box_b):
 	inter = torch.clamp((max_xy - min_xy), min=0)
 	return inter[:, :, :, 0] * inter[:, :, :, 1]
 
-def jaccard(box_a, box_b, iscrowd:bool=False):
+def jaccard(box_a, box_b, iscrowd : bool = False):
 	use_batch = True
 	if box_a.dim() == 2:
 		use_batch = False
@@ -28,7 +28,7 @@ def jaccard(box_a, box_b, iscrowd:bool=False):
 
 	return out if use_batch else out.squeeze(0)
 
-def diou(box_a, box_b, beta=1.0, iscrowd:bool=False):
+def diou(box_a, box_b, beta=1.0, iscrowd : bool = False):
 	use_batch = True
 	if box_a.dim() == 2:
 		use_batch = False
@@ -36,15 +36,13 @@ def diou(box_a, box_b, beta=1.0, iscrowd:bool=False):
 		box_b = box_b[None, ...]
 
 	inter = intersect(box_a, box_b)
-	area_a = ((box_a[:, :, 2]-box_a[:, :, 0]) *
-			  (box_a[:, :, 3]-box_a[:, :, 1])).unsqueeze(2).expand_as(inter)  # [A,B]
-	area_b = ((box_b[:, :, 2]-box_b[:, :, 0]) *
-			  (box_b[:, :, 3]-box_b[:, :, 1])).unsqueeze(1).expand_as(inter)  # [A,B]
+	area_a = ((box_a[:, :, 2] - box_a[:, :, 0]) * (box_a[:, :, 3] - box_a[:, :, 1])).unsqueeze(2).expand_as(inter)  # [A,B]
+	area_b = ((box_b[:, :, 2] - box_b[:, :, 0]) * (box_b[:, :, 3] - box_b[:, :, 1])).unsqueeze(1).expand_as(inter)  # [A,B]
 	union = area_a + area_b - inter
-	x1 = ((box_a[:, :, 2]+box_a[:, :, 0]) / 2).unsqueeze(2).expand_as(inter)
-	y1 = ((box_a[:, :, 3]+box_a[:, :, 1]) / 2).unsqueeze(2).expand_as(inter)
-	x2 = ((box_b[:, :, 2]+box_b[:, :, 0]) / 2).unsqueeze(1).expand_as(inter)
-	y2 = ((box_b[:, :, 3]+box_b[:, :, 1]) / 2).unsqueeze(1).expand_as(inter)
+	x1 = ((box_a[:, :, 2] + box_a[:, :, 0]) / 2).unsqueeze(2).expand_as(inter)
+	y1 = ((box_a[:, :, 3] + box_a[:, :, 1]) / 2).unsqueeze(2).expand_as(inter)
+	x2 = ((box_b[:, :, 2] + box_b[:, :, 0]) / 2).unsqueeze(1).expand_as(inter)
+	y2 = ((box_b[:, :, 3] + box_b[:, :, 1]) / 2).unsqueeze(1).expand_as(inter)
 
 	t1 = box_a[:, :, 1].unsqueeze(2).expand_as(inter)
 	b1 = box_a[:, :, 3].unsqueeze(2).expand_as(inter)

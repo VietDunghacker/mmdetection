@@ -156,15 +156,13 @@ class AnchorHead(BaseDenseHead, BBoxTestMixin):
 
 		# since feature map sizes of all images are the same, we only compute
 		# anchors for one time
-		multi_level_anchors = self.anchor_generator.grid_priors(
-			featmap_sizes, device)
+		multi_level_anchors = self.anchor_generator.grid_priors(featmap_sizes, device)
 		anchor_list = [multi_level_anchors for _ in range(num_imgs)]
 
 		# for each image, we compute valid flags of multi level anchors
 		valid_flag_list = []
 		for img_id, img_meta in enumerate(img_metas):
-			multi_level_flags = self.anchor_generator.valid_flags(
-				featmap_sizes, img_meta['pad_shape'], device)
+			multi_level_flags = self.anchor_generator.valid_flags(featmap_sizes, img_meta['pad_shape'], device)
 			valid_flag_list.append(multi_level_flags)
 
 		return anchor_list, valid_flag_list

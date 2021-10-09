@@ -294,14 +294,11 @@ class GFLHead(AnchorHead):
 				weight_targets = weight_targets.sigmoid()
 			weight_targets = weight_targets.max(dim=1)[0][pos_inds]
 			pos_bbox_pred_corners = self.integral(pos_bbox_pred)
-			pos_decode_bbox_pred = distance2bbox(pos_anchor_centers,
-												 pos_bbox_pred_corners)
+			pos_decode_bbox_pred = distance2bbox(pos_anchor_centers, pos_bbox_pred_corners)
 			pos_decode_bbox_targets = pos_bbox_targets / stride[0]
 			score[pos_inds] = bbox_overlaps(pos_decode_bbox_pred.detach(), pos_decode_bbox_targets, is_aligned=True)
 			pred_corners = pos_bbox_pred.reshape(-1, self.reg_max + 1)
-			target_corners = bbox2distance(pos_anchor_centers,
-										   pos_decode_bbox_targets,
-										   self.reg_max).reshape(-1)
+			target_corners = bbox2distance(pos_anchor_centers, pos_decode_bbox_targets, self.reg_max).reshape(-1)
 
 			# regression loss
 			loss_bbox = self.loss_bbox(
@@ -359,8 +356,7 @@ class GFLHead(AnchorHead):
 		assert len(featmap_sizes) == self.anchor_generator.num_levels
 
 		device = cls_scores[0].device
-		anchor_list, valid_flag_list = self.get_anchors(
-			featmap_sizes, img_metas, device=device)
+		anchor_list, valid_flag_list = self.get_anchors(featmap_sizes, img_metas, device=device)
 		label_channels = self.cls_out_channels if self.use_sigmoid_cls else 1
 
 		cls_reg_targets = self.get_targets(
@@ -377,15 +373,13 @@ class GFLHead(AnchorHead):
 		(anchor_list, labels_list, label_weights_list, bbox_targets_list,
 		 bbox_weights_list, num_total_pos, num_total_neg) = cls_reg_targets
 
-		num_total_samples = reduce_mean(
-			torch.tensor(num_total_pos, dtype=torch.float,
+		num_total_samples = reduce_mean(torch.tensor(num_total_pos, dtype=torch.float,
 						 device=device)).item()
 		if self.avg_samples_to_int:
 			num_total_samples = int(num_total_samples)
 		num_total_samples = max(num_total_samples, 1.0)
 
-		losses_cls, losses_bbox, losses_dfl,\
-			avg_factor = multi_apply(
+		losses_cls, losses_bbox, losses_dfl, avg_factor = multi_apply(
 				self.loss_single,
 				anchor_list,
 				cls_scores,
@@ -548,15 +542,10 @@ class GFLHead(AnchorHead):
 		# split targets to a list w.r.t. multiple levels
 		anchors_list = images_to_levels(all_anchors, num_level_anchors)
 		labels_list = images_to_levels(all_labels, num_level_anchors)
-		label_weights_list = images_to_levels(all_label_weights,
-											  num_level_anchors)
-		bbox_targets_list = images_to_levels(all_bbox_targets,
-											 num_level_anchors)
-		bbox_weights_list = images_to_levels(all_bbox_weights,
-											 num_level_anchors)
-		return (anchors_list, labels_list, label_weights_list,
-				bbox_targets_list, bbox_weights_list, num_total_pos,
-				num_total_neg)
+		label_weights_list = images_to_levels(all_label_weights, num_level_anchors)
+		bbox_targets_list = images_to_levels(all_bbox_targets, num_level_anchors)
+		bbox_weights_list = images_to_levels(all_bbox_weights, num_level_anchors)
+		return (anchors_list, labels_list, label_weights_list, bbox_targets_list, bbox_weights_list, num_total_pos, num_total_neg)
 
 	def _get_target_single(self,
 						   flat_anchors,
@@ -661,8 +650,3 @@ class GFLHead(AnchorHead):
 			int(flags.sum()) for flags in split_inside_flags
 		]
 		return num_level_anchors_inside
-
-
-@HEADS.register_module()
-class GFLSEPCHead(GFLHead):
-	pass

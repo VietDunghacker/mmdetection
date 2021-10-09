@@ -86,12 +86,9 @@ class ATSSHead(AnchorHead):
 			self.num_anchors * self.cls_out_channels,
 			3,
 			padding=1)
-		self.atss_reg = nn.Conv2d(
-			self.feat_channels, self.num_anchors * 4, 3, padding=1)
-		self.atss_centerness = nn.Conv2d(
-			self.feat_channels, self.num_anchors * 1, 3, padding=1)
-		self.scales = nn.ModuleList(
-			[Scale(1.0) for _ in self.anchor_generator.strides])
+		self.atss_reg = nn.Conv2d(self.feat_channels, self.num_anchors * 4, 3, padding=1)
+		self.atss_centerness = nn.Conv2d(self.feat_channels, self.num_anchors * 1, 3, padding=1)
+		self.scales = nn.ModuleList([Scale(1.0) for _ in self.anchor_generator.strides])
 
 	def forward(self, feats):
 		"""Forward features from the upstream network.
@@ -249,8 +246,7 @@ class ATSSHead(AnchorHead):
 		assert len(featmap_sizes) == self.anchor_generator.num_levels
 
 		device = cls_scores[0].device
-		anchor_list, valid_flag_list = self.get_anchors(
-			featmap_sizes, img_metas, device=device)
+		anchor_list, valid_flag_list = self.get_anchors(featmap_sizes, img_metas, device=device)
 		label_channels = self.cls_out_channels if self.use_sigmoid_cls else 1
 
 		cls_reg_targets = self.get_targets(
@@ -419,47 +415,37 @@ class ATSSHead(AnchorHead):
 		mlvl_bboxes = []
 		mlvl_scores = []
 		mlvl_centerness = []
-		for cls_score, bbox_pred, centerness, anchors in zip(
-				cls_scores, bbox_preds, centernesses, mlvl_anchors):
+		for cls_score, bbox_pred, centerness, anchors in zip(cls_scores, bbox_preds, centernesses, mlvl_anchors):
 			assert cls_score.size()[-2:] == bbox_pred.size()[-2:]
-			scores = cls_score.permute(0, 2, 3, 1).reshape(
-				batch_size, -1, self.cls_out_channels).sigmoid()
-			centerness = centerness.permute(0, 2, 3,
-											1).reshape(batch_size,
-													   -1).sigmoid()
-			bbox_pred = bbox_pred.permute(0, 2, 3,
-										  1).reshape(batch_size, -1, 4)
+			scores = cls_score.permute(0, 2, 3, 1).reshape(batch_size, -1, self.cls_out_channels).sigmoid()
+			centerness = centerness.permute(0, 2, 3, 1).reshape(batch_size, -1).sigmoid()
+			bbox_pred = bbox_pred.permute(0, 2, 3, 1).reshape(batch_size, -1, 4)
 
 			# Always keep topk op for dynamic input in onnx
-			if nms_pre_tensor > 0 and (torch.onnx.is_in_onnx_export()
-									   or scores.shape[-2] > nms_pre_tensor):
+			if nms_pre_tensor > 0 and (torch.onnx.is_in_onnx_export() or scores.shape[-2] > nms_pre_tensor):
 				from torch import _shape_as_tensor
 				# keep shape as tensor and get k
 				num_anchor = _shape_as_tensor(scores)[-2].to(device)
-				nms_pre = torch.where(nms_pre_tensor < num_anchor,
-									  nms_pre_tensor, num_anchor)
+				nms_pre = torch.where(nms_pre_tensor < num_anchor, nms_pre_tensor, num_anchor)
 
 				max_scores, _ = (scores * centerness[..., None]).max(-1)
 				_, topk_inds = max_scores.topk(nms_pre)
 				anchors = anchors[topk_inds, :]
-				batch_inds = torch.arange(batch_size).view(
-					-1, 1).expand_as(topk_inds).long()
+				batch_inds = torch.arange(batch_size).view(-1, 1).expand_as(topk_inds).long()
 				bbox_pred = bbox_pred[batch_inds, topk_inds, :]
 				scores = scores[batch_inds, topk_inds, :]
 				centerness = centerness[batch_inds, topk_inds]
 			else:
 				anchors = anchors.expand_as(bbox_pred)
 
-			bboxes = self.bbox_coder.decode(
-				anchors, bbox_pred, max_shape=img_shapes)
+			bboxes = self.bbox_coder.decode(anchors, bbox_pred, max_shape=img_shapes)
 			mlvl_bboxes.append(bboxes)
 			mlvl_scores.append(scores)
 			mlvl_centerness.append(centerness)
 
 		batch_mlvl_bboxes = torch.cat(mlvl_bboxes, dim=1)
 		if rescale:
-			batch_mlvl_bboxes /= batch_mlvl_bboxes.new_tensor(
-				scale_factors).unsqueeze(1)
+			batch_mlvl_bboxes /= batch_mlvl_bboxes.new_tensor(scale_factors).unsqueeze(1)
 		batch_mlvl_scores = torch.cat(mlvl_scores, dim=1)
 		batch_mlvl_centerness = torch.cat(mlvl_centerness, dim=1)
 
@@ -471,16 +457,13 @@ class ATSSHead(AnchorHead):
 				batch_mlvl_centerness.unsqueeze(2).expand_as(batch_mlvl_scores)
 			).max(-1)
 			_, topk_inds = batch_mlvl_scores.topk(deploy_nms_pre)
-			batch_inds = torch.arange(batch_size).view(-1,
-													   1).expand_as(topk_inds)
+			batch_inds = torch.arange(batch_size).view(-1, 1).expand_as(topk_inds)
 			batch_mlvl_scores = batch_mlvl_scores[batch_inds, topk_inds, :]
 			batch_mlvl_bboxes = batch_mlvl_bboxes[batch_inds, topk_inds, :]
-			batch_mlvl_centerness = batch_mlvl_centerness[batch_inds,
-														  topk_inds]
+			batch_mlvl_centerness = batch_mlvl_centerness[batch_inds, topk_inds]
 		# remind that we set FG labels to [0, num_class-1] since mmdet v2.0
 		# BG cat_id: num_class
-		padding = batch_mlvl_scores.new_zeros(batch_size,
-											  batch_mlvl_scores.shape[1], 1)
+		padding = batch_mlvl_scores.new_zeros(batch_size, batch_mlvl_scores.shape[1], 1)
 		batch_mlvl_scores = torch.cat([batch_mlvl_scores, padding], dim=-1)
 
 		if with_nms:

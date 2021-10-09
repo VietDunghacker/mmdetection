@@ -33,11 +33,10 @@ model = dict(
 		epsilon=0.0001
 	),
 	bbox_head=dict(
-		type='PAAHead',
-		reg_decoded_bbox=True,
+		type='PAAGFLHead',
 		score_voting=False,
 		topk=9,
-		num_classes=80,
+		num_classes=36,
 		in_channels=256,
 		stacked_convs=4,
 		feat_channels=256,
@@ -47,18 +46,10 @@ model = dict(
 			octave_base_scale=8,
 			scales_per_octave=1,
 			strides=[8, 16, 32, 64, 128]),
-		bbox_coder=dict(
-			type='DeltaXYWHBBoxCoder',
-			target_means=[.0, .0, .0, .0],
-			target_stds=[0.1, 0.1, 0.2, 0.2]),
-		loss_cls=dict(
-			type='FocalLoss',
-			use_sigmoid=True,
-			gamma=2.0,
-			alpha=0.25,
-			loss_weight=1.0),
-		loss_bbox=dict(type='CIoULoss', loss_weight=1.3),
-		loss_centerness=dict(type='CrossEntropyLoss', use_sigmoid=True, loss_weight=0.5)),
+		loss_cls=dict(type='QualityFocalLoss', use_sigmoid=False, beta=1.0, loss_weight=1.0),
+		loss_dfl=dict(type='DistributionFocalLoss', loss_weight=0.25),
+		use_dgqp = True,
+		loss_bbox=dict(type='CIoULoss', loss_weight=2.0)),
 	# training and testing settings
 	train_cfg=dict(
 		assigner=dict(
@@ -75,7 +66,7 @@ model = dict(
 		min_bbox_size=0,
 		score_thr=0.05,
 		nms=dict(type='nms', iou_threshold=0.45),
-		max_per_img=100))
+		max_per_img=16))
 
 # data setting
 img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
