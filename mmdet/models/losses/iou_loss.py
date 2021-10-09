@@ -356,9 +356,8 @@ def cdiou_loss(pred, target, eps=1e-7):
 	control_distance_loss = (ae + bf + cg + dh) / (4 * (cw ** 2 + ch ** 2 + eps).sqrt())
 
 	# EIoU
-	eious = ious - (distance_loss + aspect_loss + control_distance_loss)
-	loss = 1 - eious
-
+	cdious = ious - (distance_loss + aspect_loss + control_distance_loss * 0.001)
+	loss = 1 - cdious
 
 	return loss
 
