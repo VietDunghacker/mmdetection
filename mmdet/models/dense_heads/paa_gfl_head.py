@@ -115,7 +115,7 @@ class PAAGFLHead(GFLHead):
 
 		device = cls_scores[0].device
 		anchor_list, valid_flag_list = self.get_anchors(featmap_sizes, img_metas, device=device)
-		stride_list = [[torch.full((len(anchor), ), stride[0], device = anchor.device) for anchor, stride in zip(anchor_list[0], self.anchor_generator.strides)] for _ in range(len(anchor_list))]
+		stride_list = [[torch.full((len(anchor), 1), stride[0], device = anchor.device) for anchor, stride in zip(anchor_list[0], self.anchor_generator.strides)] for _ in range(len(anchor_list))]
 
 		label_channels = self.cls_out_channels if self.use_sigmoid_cls else 1
 		cls_reg_targets = self.get_targets(
@@ -163,7 +163,6 @@ class PAAGFLHead(GFLHead):
 			pos_bbox_pred = bbox_preds[pos_inds_flatten]
 			pos_anchors = flatten_anchors[pos_inds_flatten]
 			pos_strides = flatten_strides[pos_inds_flatten]
-			print(pos_anchors.shape, pos_strides.shape)
 			pos_anchor_centers = self.anchor_center(pos_anchors) / pos_strides
 
 			weight_targets = cls_score.detach()
@@ -233,7 +232,7 @@ class PAAGFLHead(GFLHead):
 		"""
 		if not len(pos_inds):
 			return cls_score.new([]),
-		strides = [torch.full((len(anchor), ), stride[0], device = anchor.device) for anchor, stride in zip(anchors, self.anchor_generator.strides)]
+		strides = [torch.full((len(anchor), 1), stride[0], device = anchor.device) for anchor, stride in zip(anchors, self.anchor_generator.strides)]
 		anchors_all_level = torch.cat(anchors, 0)
 		strides_all_level = torch.cat(strides, 0)
 		pos_scores = cls_score[pos_inds]
@@ -243,7 +242,8 @@ class PAAGFLHead(GFLHead):
 		pos_bbox_target = bbox_target[pos_inds]
 		pos_bbox_weight = bbox_weight[pos_inds]
 		pos_anchors = anchors_all_level[pos_inds]
-		pos_anchor_centers = self.anchor_center(pos_anchors)
+		print(pos_anchors.shape, pos_strides.shape)
+		pos_anchor_centers = self.anchor_center(pos_anchors) / pos_strides
 		pos_strides = strides_all_level[pos_inds]
 
 		pos_bbox_pred_corners = self.integral(pos_bbox_pred)
