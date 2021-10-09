@@ -132,7 +132,7 @@ class PAAGFLHead(GFLHead):
 		cls_scores = levels_to_images(cls_scores)
 		cls_scores = [item.reshape(-1, self.cls_out_channels) for item in cls_scores]
 		bbox_preds = levels_to_images(bbox_preds)
-		bbox_preds = [item.reshape(-1, 4) for item in bbox_preds]
+		bbox_preds = [item.reshape(-1, 4 * (self.reg_max + 1)) for item in bbox_preds]
 		pos_losses_list, = multi_apply(self.get_pos_loss, anchor_list, cls_scores, bbox_preds, labels, labels_weight, bboxes_target, bboxes_weight, pos_inds)
 
 		with torch.no_grad():
