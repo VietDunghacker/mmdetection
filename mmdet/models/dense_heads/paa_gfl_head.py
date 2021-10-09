@@ -163,6 +163,7 @@ class PAAGFLHead(GFLHead):
 			pos_bbox_pred = bbox_preds[pos_inds_flatten]
 			pos_anchors = flatten_anchors[pos_inds_flatten]
 			pos_strides = flatten_strides[pos_inds_flatten]
+			print(pos_anchors.shape, pos_strides.shape)
 			pos_anchor_centers = self.anchor_center(pos_anchors) / pos_strides
 
 			weight_targets = cls_score.detach()
