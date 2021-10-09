@@ -19,12 +19,13 @@ from .free_anchor_retina_head import FreeAnchorRetinaHead
 from .fsaf_head import FSAFHead
 from .ga_retina_head import GARetinaHead
 from .ga_rpn_head import GARPNHead
-from .gfl_head import GFLHead, GFLSEPCHead
+from .gfl_head import GFLHead
 from .guided_anchor_head import FeatureAdaption, GuidedAnchorHead
 from .keypoint_head import KeypointHead
 from .ld_head import LDHead
 from .nasfcos_head import NASFCOSHead
 from .oat_head import OATHead
+from .paa_gfl_head import PAAGFLHead
 from .paa_head import PAAHead
 from .pisa_retinanet_head import PISARetinaHead
 from .pisa_ssd_head import PISASSDHead
@@ -54,7 +55,7 @@ __all__ = [
 	'SABLRetinaHead', 'CentripetalHead', 'VFNetHead', 'StageCascadeRPNHead',
 	'CascadeRPNHead', 'EmbeddingRPNHead', 'LDHead', 'CascadeRPNHead',
 	'AutoAssignHead', 'DETRHead', 'YOLOFHead', 'DeformableDETRHead',
-	'CenterNetHead', 'YOLOXHead', 'GFLSEPCHead', 'RepPointsV2Head',
+	'CenterNetHead', 'YOLOXHead', 'RepPointsV2Head',
 	'BVRHead', 'KeypointHead', 'TOODHead', "OATHead", 'QFLHead', 'RankBasedPAAHead',
-	'DDODHead', 'CustomCenterNetHead'
+	'DDODHead', 'CustomCenterNetHead', 'PAAGFLHead'
 ]
