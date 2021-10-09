@@ -176,7 +176,7 @@ class BiFPNBlock(nn.Module):
 										norm_cfg))
 
 	def forward(self, p3, p4, p5, p6, p7):
-		output = list(p3, p4, p5, p6, p7)
+		output = [p3, p4, p5, p6, p7]
 
 		for node in self.nodes:
 			output.append(node(output))
