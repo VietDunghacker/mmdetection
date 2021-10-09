@@ -184,7 +184,7 @@ class BiFPNBlock(nn.Module):
 		return tuple(output[-self.num_outs::])
 
 
-@NECKS.register_module('BiFPN')
+@NECKS.register_module()
 class BiFPN(BaseModule):
 
 	def __init__(self,
@@ -268,7 +268,7 @@ class BiFPN(BaseModule):
 				input_channels = in_channels + [out_channels, ] * (self.num_outs - self.num_backbone_features)
 			else:
 				input_channels = [out_channels, ] * self.num_outs
-			self.layers.append(BiFPNBlock(input_channels, self.num_backbone_features, self.num_outs, out_channels, weight_method, act_cfg, separable_conv, epsilon, input_offsets, reduction, norm_cfg = norm_cfg))
+			self.layers.append(BiFPNBlock(input_channels, self.num_backbone_features, self.num_outs, out_channels, weight_method, act_cfg, separable_conv, epsilon, input_offsets, reduction, norm_cfg = norm_cfg, with_cp = with_cp))
 
 	@auto_fp16()
 	def forward(self, inputs):
@@ -282,12 +282,9 @@ class BiFPN(BaseModule):
 				extra_inputs.append(self.extra_convs[i](extra_inputs[-1]))
 
 		outputs = inputs + extra_inputs
-		print(outputs)
+		print(len(outputs))
 		assert False
 		for layer in self.layers:
-			if self.with_cp and inputs[0].requires_grad:
-				outputs = cp.checkpoint(layer, outputs)
-			else:
-				outputs = layer(outputs)
+			outputs = layer(outputs)
 
 		return tuple(outputs)
