@@ -48,7 +48,7 @@ class PointKptAssigner(BaseAssigner):
 		num_gts = gt_bboxes.shape[0]
 
 		if num_gts == 0 or num_points == 0:
-			return points.new_zeros(num_points, 0), points.new_zeros(num_points, 0)
+			return points.new_zeros(num_points, 0), points.new_zeros(num_points, 0), points.new_zeros(num_points, )
 
 		points_xy = points[:, :2]
 		points_stride = points[:, 2]
@@ -57,14 +57,12 @@ class PointKptAssigner(BaseAssigner):
 
 		gt_bboxes_w = gt_bboxes[:, 2] - gt_bboxes[:, 0]
 		gt_bboxes_h = gt_bboxes[:, 3] - gt_bboxes[:, 1]
-		radius = gaussian_radius_torch((gt_bboxes_h, gt_bboxes_w),
-									   self.gaussian_iou)
+		radius = gaussian_radius_torch((gt_bboxes_h, gt_bboxes_w), self.gaussian_iou)
 		diameter = 2 * radius + 1
 		sigma = diameter / 6
 		sigma_square = sigma[None, :]**2
 		# compute distance
-		distance = torch.pow(points_xy[:, None, :] - gt_points[None, ...],
-							 2).sum(dim=2)
+		distance = torch.pow(points_xy[:, None, :] - gt_points[None, ...], 2).sum(dim=2)
 
 		point_range = np.cumsum([0] + num_points_list)
 		score_targets = points.new_zeros(num_points, num_gts)
