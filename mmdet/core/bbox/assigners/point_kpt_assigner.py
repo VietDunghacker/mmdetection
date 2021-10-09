@@ -48,7 +48,7 @@ class PointKptAssigner(BaseAssigner):
 		num_gts = gt_bboxes.shape[0]
 
 		if num_gts == 0 or num_points == 0:
-			return points.new_zeros(num_points, 0), points.new_zeros(num_points, 0), points.new_zeros(num_points, )
+			return points.new_zeros(num_points, 2), points.new_zeros(num_points, num_classes), points.new_zeros(num_points, )
 
 		points_xy = points[:, :2]
 		points_stride = points[:, 2]
@@ -94,9 +94,7 @@ class PointKptAssigner(BaseAssigner):
 			score_target = score_target_max
 		else:
 			score_target = points.new_zeros(points.size(0), num_classes)
-			score_target[
-				torch.arange(points.size(0)),
-				gt_labels.index_select(0, max_inds)] = score_target_max
+			score_target[torch.arange(points.size(0)), gt_labels.index_select(0, max_inds)] = score_target_max
 
 		return offset_targets, score_target, pos_mask
 
