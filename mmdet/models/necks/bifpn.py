@@ -289,4 +289,4 @@ class BiFPN(BaseModule):
 			else:
 				p3, p4, p5, p6, p7 = layer(p3, p4, p5, p6, p7)
 
-		return tuple(outputs)
+		return (p3, p4, p5, p6, p7)
