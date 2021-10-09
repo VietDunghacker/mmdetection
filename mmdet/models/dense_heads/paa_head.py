@@ -561,7 +561,7 @@ class PAAHead(ATSSHead):
 		padding = batch_mlvl_scores.new_zeros(batch_size, batch_mlvl_scores.shape[1], 1)
 		batch_mlvl_scores = torch.cat([batch_mlvl_scores, padding], dim=-1)
 		batch_mlvl_iou_preds = torch.cat(mlvl_iou_preds, dim=1)
-		batch_mlvl_nms_scores = (batch_mlvl_scores * batch_mlvl_iou_preds[..., None]).sqrt()
+		batch_mlvl_nms_scores = batch_mlvl_scores * batch_mlvl_iou_preds[..., None]
 
 		det_results = []
 		for (mlvl_bboxes, mlvl_scores) in zip(batch_mlvl_bboxes, batch_mlvl_nms_scores):
