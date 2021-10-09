@@ -22,15 +22,17 @@ model = dict(
 	neck=dict(
 		type='BiFPN',
 		in_channels=[256, 512, 1024],
-		out_channels=256,
+		out_channels=288,
 		input_indices=(1, 2, 3),
 		num_outs=5,
 		strides=[8, 16, 32],
-		num_layers=1,
+		num_layers=7,
 		weight_method='fast_attn',
 		act_cfg='silu',
 		separable_conv=True,
-		epsilon=0.0001
+		epsilon=0.0001,
+		norm_cfg=dict(type='GN', num_groups=32, requires_grad = True),
+		with_cp=True
 	),
 	bbox_head=dict(
 		type='PAAHead',
@@ -38,9 +40,9 @@ model = dict(
 		score_voting=False,
 		topk=9,
 		num_classes=80,
-		in_channels=256,
+		in_channels=288,
 		stacked_convs=4,
-		feat_channels=256,
+		feat_channels=288,
 		anchor_generator=dict(
 			type='AnchorGenerator',
 			ratios=[1.0],
@@ -108,7 +110,9 @@ train_pipeline = [
 			[
 				dict(
 					type='Albu',
-					transforms=[dict(type = "Crop", x_min = 0, y_min = 400, x_max = 800, y_max = 800)],
+					transforms=[
+						dict(type = "Crop", x_min = 0, y_min = 400, x_max = 800, y_max = 800),
+						dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.1, rotate_limit=45, interpolation=1, p=0.5, border_mode = 0)],
 					bbox_params=dict(
 						type='BboxParams',
 						format='pascal_voc',
@@ -121,7 +125,7 @@ train_pipeline = [
 					},
 					update_pad_shape=False,
 					skip_img_without_anno=False),
-				dict(type = 'Pad', size_divisor = 800),
+				dict(type='Pad', size_divisor=800),
 			],
 			[
 				dict(
@@ -129,8 +133,11 @@ train_pipeline = [
 					transforms=[
 						dict(
 							type = "OneOf",
-							transforms=[dict(type = "Crop", x_min = 0, y_min = i, x_max = 800, y_max = 800) for i in range(400, 700, 10)],
-							p=1.0),							
+							transforms=[
+								dict(type = "Crop", x_min = 0, y_min = i, x_max = 800, y_max = 800) for i in range(400, 700, 10)
+								],
+							p=1.0),
+						dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.1, rotate_limit=45, interpolation=1, p=0.5, border_mode = 0),					
 						],
 					bbox_params=dict(
 						type='BboxParams',
@@ -155,10 +162,6 @@ train_pipeline = [
 				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
 				dict(type='Resize', img_scale=[(640, 640), (800, 800)], multiscale_mode='range', keep_ratio=True),
 			],
-			[
-				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
-				dict(type='Resize', img_scale=[(640, 640), (800, 800)], multiscale_mode='range', keep_ratio=True),
-			]
 		]
 	),
 	dict(
