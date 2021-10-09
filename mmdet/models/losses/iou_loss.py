@@ -89,11 +89,9 @@ def bounded_iou_loss(pred, target, beta=0.2, eps=1e-3):
 	loss_dh = 1 - torch.min(target_h / (pred_h + eps), pred_h /
 							(target_h + eps))
 	# view(..., -1) does not work for empty tensor
-	loss_comb = torch.stack([loss_dx, loss_dy, loss_dw, loss_dh],
-							dim=-1).flatten(1)
+	loss_comb = torch.stack([loss_dx, loss_dy, loss_dw, loss_dh], dim=-1).flatten(1)
 
-	loss = torch.where(loss_comb < beta, 0.5 * loss_comb * loss_comb / beta,
-					   loss_comb - 0.5 * beta)
+	loss = torch.where(loss_comb < beta, 0.5 * loss_comb * loss_comb / beta, loss_comb - 0.5 * beta)
 	return loss
 
 
@@ -229,7 +227,7 @@ def ciou_loss(pred, target, eps=1e-7):
 	v = factor * torch.pow(torch.atan(w2 / h2) - torch.atan(w1 / h1), 2)
 
 	with torch.no_grad():
-		alpha = (ious > 0.5).float() * v / (1 - ious + v)
+		alpha = v / (1 - ious + v + eps)
 
 	# CIoU
 	cious = ious - (rho2 / c2 + alpha * v)
@@ -239,11 +237,7 @@ def ciou_loss(pred, target, eps=1e-7):
 @mmcv.jit(derivate=True, coderize=True)
 @weighted_loss
 def eiou_loss(pred, target, eps=1e-7):
-	r"""`Implementation of paper `Enhancing Geometric Factors into
-	Model Learning and Inference for Object Detection and Instance
-	Segmentation <https://arxiv.org/abs/2005.03572>`_.
-
-	Code is modified from https://github.com/Zzh-tju/CIoU.
+	r"""`Implementation of Efficient IoU Loss
 
 	Args:
 		pred (Tensor): Predicted bboxes of format (x1, y1, x2, y2),
@@ -298,12 +292,7 @@ def eiou_loss(pred, target, eps=1e-7):
 @mmcv.jit(derivate=True, coderize=True)
 @weighted_loss
 def cdiou_loss(pred, target, eps=1e-7):
-	r"""`Implementation of paper `Enhancing Geometric Factors into
-	Model Learning and Inference for Object Detection and Instance
-	Segmentation <https://arxiv.org/abs/2005.03572>`_.
-
-	Code is modified from https://github.com/Zzh-tju/CIoU.
-
+	r"""Implementation of Control Distance IoU Loss.
 	Args:
 		pred (Tensor): Predicted bboxes of format (x1, y1, x2, y2),
 			shape (n, 4).
@@ -344,7 +333,6 @@ def cdiou_loss(pred, target, eps=1e-7):
 
 	left = ((b2_x1 + b2_x2) - (b1_x1 + b1_x2))**2 / 4
 	right = ((b2_y1 + b2_y2) - (b1_y1 + b1_y2))**2 / 4
-	rho2 = left + right
 
 	distance_loss = (left + right) / (cw**2 + ch**2 + eps)
 	aspect_loss = (w2 - w1) ** 2 / (cw ** 2 + eps) + (h2 - h1) ** 2 / (ch ** 2 + eps)
@@ -355,7 +343,7 @@ def cdiou_loss(pred, target, eps=1e-7):
 	dh = ((b2_x1 - b1_x1) ** 2 + (b2_y2 - b1_y2) ** 2).sqrt()
 	control_distance_loss = (ae + bf + cg + dh) / (4 * (cw ** 2 + ch ** 2 + eps).sqrt())
 
-	# EIoU
+	# CDIoU
 	cdious = ious - (distance_loss + aspect_loss + control_distance_loss)
 	loss = 1 - cdious
 
