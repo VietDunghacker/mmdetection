@@ -11,7 +11,7 @@ from mmdet.models.dense_heads.fcos_head import FCOSHead
 from mmdet.models.dense_heads.retina_head import RetinaHead
 from mmdet.models.dense_heads.gfl_head import GFLHead
 from mmdet.models.dense_heads.vfnet_head import VFNetHead
-
+from mmdet.models.dense_heads.paa_head import PAAHead
 
 def anchorfree_forward_features(self, feats):
 	return multi_apply(self.forward_feature_single, feats)
@@ -44,7 +44,6 @@ def atss_forward_prediction_single(self, cls_feat, reg_feat, scale):
 def fcos_forward_predictions(self, cls_feats, reg_feats):
 	return multi_apply(self.forward_prediction_single, cls_feats, reg_feats,
 					   self.scales, self.strides)
-
 
 def fcos_forward_prediction_single(self, cls_feat, reg_feat, scale, stride):
 	cls_score = self.conv_cls(cls_feat)
@@ -136,7 +135,7 @@ def assign_methods_for_bvr(module: nn.Module):
 		return
 
 	# check whether BVR supports the bbox_head
-	supported_heads = ('ATSSHead', 'FCOSHead', 'RetinaHead', 'GFLHead', 'VFNetHead')
+	supported_heads = ('ATSSHead', 'FCOSHead', 'RetinaHead', 'GFLHead', 'VFNetHead', 'PAAHead')
 	module_name = module.__class__.__name__
 	assert module_name in supported_heads, 'not supported bbox_head'
 	assert hasattr(module, 'cls_convs'), 'not found cls_convs'
@@ -155,6 +154,9 @@ def assign_methods_for_bvr(module: nn.Module):
 	if isinstance(module, VFNetHead):
 		module.forward_predictions = types.MethodType(vfnet_forward_predictions, module)
 		module.forward_prediction_single = types.MethodType(vfnet_forward_prediction_single, module)	
+	elif isinstance(module, PAAHead):
+		module.forward_predictions = types.MethodType(atss_forward_predictions, module)
+		module.forward_prediction_single = types.MethodType(atss_forward_prediction_single, module)
 	elif isinstance(module, ATSSHead):
 		module.forward_predictions = types.MethodType(atss_forward_predictions, module)
 		module.forward_prediction_single = types.MethodType(atss_forward_prediction_single, module)
