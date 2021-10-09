@@ -242,9 +242,9 @@ class PAAGFLHead(GFLHead):
 		pos_bbox_target = bbox_target[pos_inds]
 		pos_bbox_weight = bbox_weight[pos_inds]
 		pos_anchors = anchors_all_level[pos_inds]
+		pos_strides = strides_all_level[pos_inds]
 		print(pos_anchors.shape, pos_strides.shape)
 		pos_anchor_centers = self.anchor_center(pos_anchors) / pos_strides
-		pos_strides = strides_all_level[pos_inds]
 
 		pos_bbox_pred_corners = self.integral(pos_bbox_pred)
 		pos_decode_bbox_pred = distance2bbox(pos_anchor_centers, pos_bbox_pred_corners)
