@@ -67,7 +67,7 @@ class DIIHead(BBoxHead):
 						type='TruncNormal',
 						layer='Linear',
 						std=0.02,
-						override=dict(type='Constant', name='fc_cls', bias_prob=0.01)),
+						override=dict(type='Normal', name='fc_cls', std=0.01, bias_prob=0.01)),
 					dict(
 						type='Constant',
 						val=1,
