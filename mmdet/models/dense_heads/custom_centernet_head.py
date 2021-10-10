@@ -40,12 +40,12 @@ class CustomCenterNetHead(BaseDenseHead, BBoxTestMixin):
 	def __init__(self,
 				 in_channel,
 				 num_classes,
-				 num_features,
 				 num_cls_convs,
 				 num_box_convs,
 				 num_share_convs,
-				 use_deformable,
-				 only_proposal,
+				 strides=[8, 16, 32, 64, 128],
+				 use_deformable=False,
+				 only_proposal=True,
 				 loss_center_heatmap=dict(
 					 type='CustomGaussianFocalLoss',
 					 alpha=0.25,
@@ -64,10 +64,9 @@ class CustomCenterNetHead(BaseDenseHead, BBoxTestMixin):
 		self.norm_cfg = norm_cfg
 		self.act_cfg = act_cfg
 		self.in_channel = in_channel
-		self.num_features = num_features
 		self.num_classes = num_classes
 		self.only_proposal = only_proposal
-		self.strides = [8, 16, 32, 64, 128]
+		self.strides = strides
 		self.hm_min_overlap = 0.8
 		self.delta = (1 - self.hm_min_overlap)/(1 + self.hm_min_overlap)
 		self.sizes_of_interest = [[0, 80], [64, 160], [128, 320], [256, 640], [512, 10000000]]
@@ -106,7 +105,7 @@ class CustomCenterNetHead(BaseDenseHead, BBoxTestMixin):
 
 	def _init_layers(self):
 		self._build_tower(self.head_configs, self.channels)
-		self.scales = nn.ModuleList([Scale(scale=1.0) for _ in range(self.num_features)])
+		self.scales = nn.ModuleList([Scale(scale=1.0) for _ in range(len(self.strides))])
 		self.agn_hm = self._build_head(self.in_channel, 1)
 		self.bbox_pred = self._build_head(self.in_channel, 4)
 

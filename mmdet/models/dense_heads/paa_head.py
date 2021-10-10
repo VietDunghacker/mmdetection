@@ -518,9 +518,6 @@ class PAAHead(ATSSHead):
 		cls_scores. Besides, score voting is used when `` score_voting``
 		is set to True.
 		"""
-		assert with_nms, 'PAA only supports "with_nms=True" now and it ' \
-						 'means PAAHead does not support ' \
-						 'test-time augmentation'
 		assert len(cls_scores) == len(bbox_preds) == len(mlvl_anchors)
 		batch_size = cls_scores[0].shape[0]
 
@@ -559,24 +556,22 @@ class PAAHead(ATSSHead):
 		# Add a dummy background class to the backend when using sigmoid
 		# remind that we set FG labels to [0, num_class-1] since mmdet v2.0
 		# BG cat_id: num_class
-		padding = batch_mlvl_scores.new_zeros(batch_size, batch_mlvl_scores.shape[1], 1)
-		batch_mlvl_scores = torch.cat([batch_mlvl_scores, padding], dim=-1)
+		if self.use_sigmoid_cls:
+			padding = batch_mlvl_scores.new_zeros(batch_size, batch_mlvl_scores.shape[1], 1)
+			batch_mlvl_scores = torch.cat([batch_mlvl_scores, padding], dim=-1)
 		batch_mlvl_iou_preds = torch.cat(mlvl_iou_preds, dim=1)
 		batch_mlvl_nms_scores = batch_mlvl_scores * batch_mlvl_iou_preds[..., None]
 
-		det_results = []
-		for (mlvl_bboxes, mlvl_scores) in zip(batch_mlvl_bboxes, batch_mlvl_nms_scores):
-			det_bbox, det_label = multiclass_nms(
-				mlvl_bboxes,
-				mlvl_scores,
-				cfg.score_thr,
-				cfg.nms,
-				cfg.max_per_img,
-				score_factors=None)
-			if self.with_score_voting and len(det_bbox) > 0:
-				det_bbox, det_label = self.score_voting(det_bbox, det_label, mlvl_bboxes, mlvl_scores, cfg.score_thr)
-			det_results.append(tuple([det_bbox, det_label]))
-
+		if with_nms:
+			det_results = []
+			for (mlvl_bboxes, mlvl_scores) in zip(batch_mlvl_bboxes, batch_mlvl_scores):
+				det_bbox, det_label = multiclass_nms(mlvl_bboxes, mlvl_scores, cfg.score_thr, cfg.nms, cfg.max_per_img)
+				det_results.append(tuple([det_bbox, det_label]))
+		else:
+			det_results = [
+				tuple(mlvl_bs)
+				for mlvl_bs in zip(batch_mlvl_bboxes, batch_mlvl_scores)
+			]
 		return det_results
 
 	def score_voting(self, det_bboxes, det_labels, mlvl_bboxes,

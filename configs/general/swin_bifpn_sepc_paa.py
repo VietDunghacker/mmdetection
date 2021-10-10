@@ -23,7 +23,7 @@ model = dict(
 		dict(
 			type='BiFPN',
 			in_channels=[256, 512, 1024],
-			out_channels=288,
+			out_channels=256,
 			input_indices=(1, 2, 3),
 			num_outs=5,
 			strides=[8, 16, 32],
