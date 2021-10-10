@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import math
 import torch
 
 from .builder import IOU_CALCULATORS
@@ -189,7 +190,7 @@ def bbox_overlaps(bboxes1, bboxes2, mode='iou', is_aligned=False, eps=1e-6):
 		>>> assert tuple(bbox_overlaps(empty, empty).shape) == (0, 0)
 	"""
 
-	assert mode in ['iou', 'iof', 'giou'], f'Unsupported mode {mode}'
+	assert mode in ['iou', 'iof', 'giou', 'ciou', 'diou'], f'Unsupported mode {mode}'
 	# Either the boxes are empty or the length of boxes' last dimension is 4
 	assert (bboxes1.size(-1) == 4 or bboxes1.size(0) == 0)
 	assert (bboxes2.size(-1) == 4 or bboxes2.size(0) == 0)
@@ -220,13 +221,36 @@ def bbox_overlaps(bboxes1, bboxes2, mode='iou', is_aligned=False, eps=1e-6):
 		wh = fp16_clamp(rb - lt, min=0)
 		overlap = wh[..., 0] * wh[..., 1]
 
-		if mode in ['iou', 'giou']:
+		if mode != 'iof':
 			union = area1 + area2 - overlap
 		else:
 			union = area1
-		if mode == 'giou':
+		if mode in ['giou', 'ciou', 'diou']:
 			enclosed_lt = torch.min(bboxes1[..., :2], bboxes2[..., :2])
 			enclosed_rb = torch.max(bboxes1[..., 2:], bboxes2[..., 2:])
+			enclosed_wh = fp16_clamp(enclosed_rb - enclosed_lt, min=0)
+
+			enclosed_w = enclosed_wh[..., 0]
+			enclosed_h = enclosed_wh[..., 1]
+
+			enclosed_diagonal = fp16_clamp(enclosed_w ** 2 + enclosed_h ** 2, min=eps)
+
+			bboxes1_cx = (bboxes1[..., 0] + bboxes1[..., 2]) / 2
+			bboxes1_cy = (bboxes1[..., 1] + bboxes1[..., 3]) / 2
+			bboxes2_cx = (bboxes2[..., 0] + bboxes2[..., 2]) / 2
+			bboxes2_cy = (bboxes2[..., 1] + bboxes2[..., 3]) / 2
+
+			center_distance = fp16_clamp((bboxes2_cx - bboxes1_cx) ** 2 + (bboxes2_cy - bboxes1_cy) ** 2, min=0)
+			print(center_distance)
+
+			if mode == 'ciou':
+				bboxes1_w = bboxes1[..., 2] - bboxes1[..., 0]
+				bboxes1_h = bboxes1[..., 3] - bboxes1[..., 1]
+
+				bboxes2_w = bboxes2[..., 2] - bboxes2[..., 0]
+				bboxes2_h = bboxes2[..., 3] - bboxes2[..., 1]
+
+				scale_factor = fp16_clamp((4 / (math.pi ** 2)) * torch.pow(torch.atan(bboxes2_w / bboxes2_h) - torch.atan(bboxes1_w / bboxes1_h), 2), min=0)
 	else:
 		lt = torch.max(bboxes1[..., :, None, :2], bboxes2[..., None, :, :2])  # [B, rows, cols, 2]
 		rb = torch.min(bboxes1[..., :, None, 2:], bboxes2[..., None, :, 2:])  # [B, rows, cols, 2]
@@ -234,13 +258,35 @@ def bbox_overlaps(bboxes1, bboxes2, mode='iou', is_aligned=False, eps=1e-6):
 		wh = fp16_clamp(rb - lt, min=0)
 		overlap = wh[..., 0] * wh[..., 1]
 
-		if mode in ['iou', 'giou']:
+		if mode != 'iof':
 			union = area1[..., None] + area2[..., None, :] - overlap
 		else:
 			union = area1[..., None]
-		if mode == 'giou':
+		if mode in ['giou', 'ciou', 'diou']:
 			enclosed_lt = torch.min(bboxes1[..., :, None, :2], bboxes2[..., None, :, :2])
 			enclosed_rb = torch.max(bboxes1[..., :, None, 2:], bboxes2[..., None, :, 2:])
+			enclosed_wh = fp16_clamp(enclosed_rb - enclosed_lt, min=0)
+
+			enclosed_w = enclosed_wh[..., 0]
+			enclosed_h = enclosed_wh[..., 1]
+
+			enclosed_diagonal = fp16_clamp(enclosed_w ** 2 + enclosed_h ** 2, min=eps)
+
+			bboxes1_cx = (bboxes1[..., :, None, 0] + bboxes1[..., :, None, 2]) / 2
+			bboxes1_cy = (bboxes1[..., :, None, 1] + bboxes1[..., :, None, 3]) / 2
+			bboxes2_cx = (bboxes2[..., None, :, 0] + bboxes2[..., None, :, 2]) / 2
+			bboxes2_cy = (bboxes2[..., None, :, 1] + bboxes2[..., None, :, 3]) / 2
+
+			center_distance = fp16_clamp((bboxes2_cx - bboxes1_cx) ** 2 + (bboxes2_cy - bboxes1_cy) ** 2, min=0)
+
+			if mode == 'ciou':
+				bboxes1_w = bboxes1[..., :, None, 2] - bboxes1[..., :, None, 0]
+				bboxes1_h = bboxes1[..., :, None, 3] - bboxes1[..., :, None, 1]
+
+				bboxes2_w = bboxes2[..., None, :, 2] - bboxes2[..., None, :, 0]
+				bboxes2_h = bboxes2[..., None, :, 3] - bboxes2[..., None, :, 1]
+
+				scale_factor = fp16_clamp((4 / (math.pi ** 2)) * torch.pow(torch.atan(bboxes2_w / bboxes2_h) - torch.atan(bboxes1_w / bboxes1_h), 2), min=0)
 
 	eps = union.new_tensor([eps])
 	union = torch.max(union, eps)
@@ -248,8 +294,17 @@ def bbox_overlaps(bboxes1, bboxes2, mode='iou', is_aligned=False, eps=1e-6):
 	if mode in ['iou', 'iof']:
 		return ious
 	# calculate gious
-	enclose_wh = fp16_clamp(enclosed_rb - enclosed_lt, min=0)
-	enclose_area = enclose_wh[..., 0] * enclose_wh[..., 1]
-	enclose_area = torch.max(enclose_area, eps)
-	gious = ious - (enclose_area - union) / enclose_area
-	return gious
+	if mode == 'giou':
+		enclose_area = enclosed_wh[..., 0] * enclosed_wh[..., 1]
+		enclose_area = torch.max(enclose_area, eps)
+		gious = ious - (enclose_area - union) / enclose_area
+		return gious
+	else:
+		dious = ious - center_distance / enclosed_diagonal
+		if mode == 'diou':
+			return dious
+		else:
+			with torch.no_grad():
+				alpha = (ious > 0.5).float() * scale_factor / (1 - ious + scale_factor).clamp_(min = eps)
+			cious = dious - alpha * scale_factor
+			return cious
