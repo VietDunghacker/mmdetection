@@ -2,7 +2,7 @@
 import torch
 import torch.nn as nn
 from mmcv.cnn import (bias_init_with_prob, build_activation_layer,
-					  build_norm_layer, constant_init)
+					  build_norm_layer, constant_init, trunc_normal_init)
 from mmcv.cnn.bricks.transformer import FFN, MultiheadAttention
 from mmcv.runner import auto_fp16, force_fp32
 
