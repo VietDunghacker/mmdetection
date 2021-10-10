@@ -1103,16 +1103,13 @@ class DynamicConv(BaseModule):
 			(num_all_proposals, out_channels).
 		"""
 		num_proposals = param_feature.size(0)
-		input_feature = input_feature.view(num_proposals, self.in_channels,
-										   -1).permute(2, 0, 1)
+		input_feature = input_feature.view(num_proposals, self.in_channels, -1).permute(2, 0, 1)
 
 		input_feature = input_feature.permute(1, 0, 2)
 		parameters = self.dynamic_layer(param_feature)
 
-		param_in = parameters[:, :self.num_params_in].view(
-			-1, self.in_channels, self.feat_channels)
-		param_out = parameters[:, -self.num_params_out:].view(
-			-1, self.feat_channels, self.out_channels)
+		param_in = parameters[:, :self.num_params_in].view(-1, self.in_channels, self.feat_channels)
+		param_out = parameters[:, -self.num_params_out:].view(-1, self.feat_channels, self.out_channels)
 
 		# input_feature has shape (num_all_proposals, H*W, in_channels)
 		# param_in has shape (num_all_proposals, in_channels, feat_channels)
