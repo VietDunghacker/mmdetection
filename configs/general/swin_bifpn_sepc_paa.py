@@ -48,11 +48,9 @@ model = dict(
 			lcconv_padding=1,
 			pnorm_cfg=dict(type='GN', num_groups=32, requires_grad=True),
 			lcnorm_cfg=dict(type='GN', num_groups=32, requires_grad=True))
-	]
-	,
+	],
 	bbox_head=dict(
 		type='PAAHead',
-		covariance_type='full',
 		reg_decoded_bbox=True,
 		score_voting=False,
 		topk=9,
