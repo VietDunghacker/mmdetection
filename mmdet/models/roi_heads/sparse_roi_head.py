@@ -115,10 +115,8 @@ class SparseRoIHead(CascadeRoIHead):
 		num_imgs = len(img_metas)
 		bbox_roi_extractor = self.bbox_roi_extractor[stage]
 		bbox_head = self.bbox_head[stage]
-		bbox_feats = bbox_roi_extractor(x[:bbox_roi_extractor.num_inputs],
-										rois)
-		cls_score, bbox_pred, object_feats = bbox_head(bbox_feats,
-													   object_feats)
+		bbox_feats = bbox_roi_extractor(x[:bbox_roi_extractor.num_inputs], rois)
+		cls_score, bbox_pred, object_feats = bbox_head(bbox_feats, object_feats)
 		proposal_list = self.bbox_head[stage].refine_bboxes(
 			rois,
 			rois.new_zeros(len(rois)),  # dummy arg
@@ -184,8 +182,7 @@ class SparseRoIHead(CascadeRoIHead):
 		all_stage_loss = {}
 		for stage in range(self.num_stages):
 			rois = bbox2roi(proposal_list)
-			bbox_results = self._bbox_forward(stage, x, rois, object_feats,
-											  img_metas)
+			bbox_results = self._bbox_forward(stage, x, rois, object_feats, img_metas)
 			all_stage_bbox_results.append(bbox_results)
 			if gt_bboxes_ignore is None:
 				# TODO support ignore

@@ -42,7 +42,7 @@ model = dict(
 		proposal_feature_channel=256,
 		bbox_roi_extractor=dict(
 			type='SingleRoIExtractor',
-			roi_layer=dict(type='ModulatedDeformRoIPoolPack', output_size=7, output_channels=256, sampling_ratio=0),
+			roi_layer=dict(type='DeformRoIPoolPack', output_size=7, output_channels=256),
 			out_channels=256,
 			featmap_strides=[4, 8, 16, 32]),
 		bbox_head=[

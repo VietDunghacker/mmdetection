@@ -159,13 +159,12 @@ class DIIHead(BBoxHead):
 		N, num_proposals = proposal_feat.shape[:2]
 
 		# Self attention
-		proposal_feat = proposal_feat.permute(1, 0, 2)
+		proposal_feat = proposal_feat.permute(1, 0, 2).contiguous()
 		proposal_feat = self.attention_norm(self.attention(proposal_feat))
 
 		# instance interactive
 		proposal_feat = proposal_feat.permute(1, 0, 2).reshape(-1, self.in_channels)
-		proposal_feat_iic = self.instance_interactive_conv(
-			proposal_feat, roi_feat)
+		proposal_feat_iic = self.instance_interactive_conv(proposal_feat, roi_feat)
 		proposal_feat = proposal_feat + self.instance_interactive_conv_dropout(proposal_feat_iic)
 		obj_feat = self.instance_interactive_conv_norm(proposal_feat)
 
