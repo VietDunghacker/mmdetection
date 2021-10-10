@@ -304,6 +304,6 @@ def bbox_overlaps(bboxes1, bboxes2, mode='iou', is_aligned=False, eps=1e-6):
 			return dious
 		else:
 			with torch.no_grad():
-				alpha = (ious > 0.5).float() * scale_factor / (1 - ious + scale_factor).clamp_(min = eps)
+				alpha = (ious > 0.5).float() * scale_factor / (1 - ious + scale_factor + eps)
 			cious = dious - alpha * scale_factor
 			return cious
