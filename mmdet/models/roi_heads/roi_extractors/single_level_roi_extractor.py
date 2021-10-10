@@ -98,9 +98,9 @@ class SingleRoIExtractor(BaseRoIExtractor):
 			inds = mask.nonzero(as_tuple=False).squeeze(1)
 			if inds.numel() > 0:
 				rois_ = rois[inds]
-				feats_i = feats[i]
-				feats_i = feats_i.register_hook(lambda grad: grad.contiguous())  # make the grad contiguous
-				roi_feats_t = self.roi_layers[i](feats_i, rois_)
+
+				contiguous_hook = feats[i].register_hook(lambda grad: grad.contiguous())  # make the grad contiguous
+				roi_feats_t = self.roi_layers[i](feats[i], rois_)
 				roi_feats[inds] = roi_feats_t
 			else:
 				# Sometimes some pyramid levels will not be used for RoI
