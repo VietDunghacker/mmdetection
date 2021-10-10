@@ -2,7 +2,7 @@
 import torch
 import torch.nn as nn
 from mmcv.cnn import (bias_init_with_prob, build_activation_layer,
-					  build_norm_layer)
+					  build_norm_layer, constant_init, trunc_normal_init)
 from mmcv.cnn.bricks.transformer import FFN, MultiheadAttention
 from mmcv.runner import auto_fp16, force_fp32
 
@@ -119,13 +119,14 @@ class DIIHead(BBoxHead):
 		"""Use xavier initialization for all weight parameter and set
 		classification head bias as a specific value when use focal loss."""
 		super(DIIHead, self).init_weights()
-		for p in self.parameters():
-			if p.dim() > 1:
-				nn.init.xavier_uniform_(p)
-			else:
-				# adopt the default initialization for
-				# the weight and bias of the layer norm
-				pass
+		for m in self.modules():
+			if isinstance(m, nn.Linear):
+				trunc_normal_init(m.weight, std=.02)
+				if m.bias is not None:
+					constant_init(m.bias, 0)
+			elif isinstance(m, nn.LayerNorm):
+				constant_init(m.bias, 0)
+				constant_init(m.weight, 1.0)
 		if self.loss_cls.use_sigmoid:
 			bias_init = bias_init_with_prob(0.01)
 			nn.init.constant_(self.fc_cls.bias, bias_init)
