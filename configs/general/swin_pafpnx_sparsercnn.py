@@ -65,8 +65,8 @@ model = dict(
 					input_feat_shape=7,
 					act_cfg=dict(type='ReLU', inplace=True),
 					norm_cfg=dict(type='LN')),
-				loss_bbox=dict(type='L1Loss', loss_weight=5.0),
-				loss_iou=dict(type='CIoULoss', loss_weight=2.0),
+				loss_bbox=dict(type='SmoothL1Loss', beta=1.0/9.0, loss_weight=5.0),
+				loss_iou=dict(type='GIoULoss', loss_weight=2.0),
 				loss_cls=dict(type='FocalLoss', use_sigmoid=True, gamma=2.0, alpha=0.25, loss_weight=2.0),
 				bbox_coder=dict(
 					type='DeltaXYWHBBoxCoder',
@@ -82,8 +82,8 @@ model = dict(
 				assigner=dict(
 					type='HungarianAssigner',
 					cls_cost=dict(type='FocalLossCost', weight=2.0),
-					reg_cost=dict(type='BBoxL1Cost', weight=5.0),
-					iou_cost=dict(type='IoUCost', iou_mode='ciou', weight=2.0)),
+					reg_cost=dict(type='BBoxL1Cost', smooth=True, beta=1.0/9.0, weight=5.0),
+					iou_cost=dict(type='IoUCost', iou_mode='giou', weight=2.0)),
 				sampler=dict(type='PseudoSampler'),
 				pos_weight=1) for _ in range(num_stages)
 		]),
