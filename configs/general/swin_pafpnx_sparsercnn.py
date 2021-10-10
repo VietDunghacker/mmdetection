@@ -24,7 +24,7 @@ model = dict(
 	neck=dict(
 		type='PAFPNX',
 		in_channels=[128, 256, 512, 1024],
-		out_channels=256,
+		out_channels=384,
 		start_level=0,
 		add_extra_convs='on_output',
 		num_outs=4,
@@ -34,16 +34,16 @@ model = dict(
 	rpn_head=dict(
 		type='EmbeddingRPNHead',
 		num_proposals=num_proposals,
-		proposal_feature_channel=256),
+		proposal_feature_channel=384),
 	roi_head=dict(
 		type='SparseRoIHead',
 		num_stages=num_stages,
 		stage_loss_weights=[1] * num_stages,
-		proposal_feature_channel=256,
+		proposal_feature_channel=384,
 		bbox_roi_extractor=dict(
 			type='SingleRoIExtractor',
 			roi_layer=dict(type='RoIAlign', output_size=14, sampling_ratio=0),
-			out_channels=256,
+			out_channels=384,
 			featmap_strides=[4, 8, 16, 32]),
 		bbox_head=[
 			dict(
@@ -53,15 +53,15 @@ model = dict(
 				num_heads=8,
 				num_cls_fcs=1,
 				num_reg_fcs=3,
-				feedforward_channels=2048,
-				in_channels=256,
+				feedforward_channels=3072,
+				in_channels=384,
 				dropout=0.0,
 				ffn_act_cfg=dict(type='ReLU', inplace=True),
 				dynamic_conv_cfg=dict(
 					type='DynamicConv',
-					in_channels=256,
-					feat_channels=64,
-					out_channels=256,
+					in_channels=384,
+					feat_channels=96,
+					out_channels=384,
 					input_feat_shape=14,
 					act_cfg=dict(type='ReLU', inplace=True),
 					norm_cfg=dict(type='LN')),
