@@ -91,14 +91,14 @@ class SingleRoIExtractor(BaseRoIExtractor):
 				rois_i = rois.clone().detach()
 				rois_i *= mask
 				mask_exp = mask.expand(*expand_dims).reshape(roi_feats.shape)
-				roi_feats_t = self.roi_layers[i](feats[i], rois_i)
+				roi_feats_t = self.roi_layers[i](feats[i].contiguous(), rois_i)
 				roi_feats_t *= mask_exp
 				roi_feats += roi_feats_t
 				continue
 			inds = mask.nonzero(as_tuple=False).squeeze(1)
 			if inds.numel() > 0:
 				rois_ = rois[inds]
-				roi_feats_t = self.roi_layers[i](feats[i], rois_)
+				roi_feats_t = self.roi_layers[i](feats[i].contiguous(), rois_)
 				roi_feats[inds] = roi_feats_t
 			else:
 				# Sometimes some pyramid levels will not be used for RoI
