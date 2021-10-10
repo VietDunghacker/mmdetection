@@ -42,7 +42,7 @@ model = dict(
 		proposal_feature_channel=384,
 		bbox_roi_extractor=dict(
 			type='SingleRoIExtractor',
-			roi_layer=dict(type='RoIAlign', output_size=9, sampling_ratio=0),
+			roi_layer=dict(type='RoIAlign', output_size=7, sampling_ratio=2),
 			out_channels=384,
 			featmap_strides=[4, 8, 16, 32]),
 		bbox_head=[
@@ -62,7 +62,7 @@ model = dict(
 					in_channels=384,
 					feat_channels=96,
 					out_channels=384,
-					input_feat_shape=9,
+					input_feat_shape=7,
 					act_cfg=dict(type='ReLU', inplace=True),
 					norm_cfg=dict(type='LN')),
 				loss_bbox=dict(type='SmoothL1Loss', beta=1.0, loss_weight=5.0),
