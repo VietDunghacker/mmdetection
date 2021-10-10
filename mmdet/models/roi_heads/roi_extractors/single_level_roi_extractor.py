@@ -100,8 +100,7 @@ class SingleRoIExtractor(BaseRoIExtractor):
 				rois_ = rois[inds]
 
 				feats_i = feats[i]
-				contiguous_hook1 = feats_i.register_hook(lambda grad: grad.contiguous())
-				contiguous_hook2 = rois_.register_hook(lambda grad: grad.contiguous())
+				contiguous_hook = feats_i.register_hook(lambda grad: grad.contiguous())
 				roi_feats_t = self.roi_layers[i](feats_i, rois_)
 				roi_feats[inds] = roi_feats_t
 			else:
