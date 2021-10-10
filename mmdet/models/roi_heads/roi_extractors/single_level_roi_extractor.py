@@ -91,14 +91,16 @@ class SingleRoIExtractor(BaseRoIExtractor):
 				rois_i = rois.clone().detach()
 				rois_i *= mask
 				mask_exp = mask.expand(*expand_dims).reshape(roi_feats.shape)
-				roi_feats_t = self.roi_layers[i](feats[i].contiguous(), rois_i)
+				roi_feats_t = self.roi_layers[i](feats[i], rois_i)
 				roi_feats_t *= mask_exp
 				roi_feats += roi_feats_t
 				continue
 			inds = mask.nonzero(as_tuple=False).squeeze(1)
 			if inds.numel() > 0:
 				rois_ = rois[inds]
-				roi_feats_t = self.roi_layers[i](feats[i].contiguous(), rois_)
+				feats_i = feats[i]
+				feats_i = feats_i.register_hook(lambda grad: grad.contiguous())  # make the grad contiguous
+				roi_feats_t = self.roi_layers[i](feats_i, rois_)
 				roi_feats[inds] = roi_feats_t
 			else:
 				# Sometimes some pyramid levels will not be used for RoI
@@ -107,7 +109,5 @@ class SingleRoIExtractor(BaseRoIExtractor):
 				# in other GPUs and will cause a hanging error.
 				# Therefore, we add it to ensure each feature pyramid is
 				# included in the computation graph to avoid runtime bugs.
-				roi_feats += sum(
-					x.view(-1)[0]
-					for x in self.parameters()) * 0. + feats[i].sum() * 0.
+				roi_feats += sum(x.view(-1)[0] for x in self.parameters()) * 0. + feats[i].sum() * 0.
 		return roi_feats
