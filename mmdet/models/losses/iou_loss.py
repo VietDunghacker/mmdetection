@@ -227,7 +227,7 @@ def ciou_loss(pred, target, eps=1e-7):
 	v = factor * torch.pow(torch.atan(w2 / h2) - torch.atan(w1 / h1), 2)
 
 	with torch.no_grad():
-		alpha = v / (1 - ious + v + eps)
+		alpha = (ious > 0.5).float() * v / (1 - ious + v + eps)
 
 	# CIoU
 	cious = ious - (rho2 / c2 + alpha * v)
