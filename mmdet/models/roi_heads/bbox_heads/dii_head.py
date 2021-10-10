@@ -62,10 +62,18 @@ class DIIHead(BBoxHead):
 					 act_cfg=dict(type='ReLU', inplace=True),
 					 norm_cfg=dict(type='LN')),
 				 loss_iou=dict(type='GIoULoss', loss_weight=2.0),
-				 init_cfg=None,
+				 init_cfg = [
+					dict(
+						type='TruncNormal',
+						layer='Linear',
+						std=0.02,
+						override=dict(type='Constant', name='fc_cls', bias_prob=0.01)),
+					dict(
+						type='Constant',
+						val=1,
+						layer='LayerNorm'),
+				],
 				 **kwargs):
-		assert init_cfg is None, 'To prevent abnormal initialization ' \
-								 'behavior, init_cfg is not allowed to be set'
 		super(DIIHead, self).__init__(
 			num_classes=num_classes,
 			reg_decoded_bbox=True,
@@ -114,22 +122,6 @@ class DIIHead(BBoxHead):
 			'suppport `reg_class_agnostic=True` '
 		assert self.reg_decoded_bbox, 'DIIHead only ' \
 			'suppport `reg_decoded_bbox=True`'
-
-	def init_weights(self):
-		"""Use xavier initialization for all weight parameter and set
-		classification head bias as a specific value when use focal loss."""
-		super(DIIHead, self).init_weights()
-		for m in self.modules():
-			if isinstance(m, nn.Linear):
-				trunc_normal_init(m.weight, std=.02)
-				if m.bias is not None:
-					constant_init(m.bias, 0)
-			elif isinstance(m, nn.LayerNorm):
-				constant_init(m.bias, 0)
-				constant_init(m.weight, 1.0)
-		if self.loss_cls.use_sigmoid:
-			bias_init = bias_init_with_prob(0.01)
-			nn.init.constant_(self.fc_cls.bias, bias_init)
 
 	@auto_fp16()
 	def forward(self, roi_feat, proposal_feat):
