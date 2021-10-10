@@ -232,7 +232,6 @@ def ciou_loss(pred, target, eps=1e-7):
 	# CIoU
 	cious = ious - (rho2 / c2 + alpha * v)
 	loss = 1 - cious.clamp(min=-1.0, max=1.0)
-	print(pred, target, loss)
 	return loss
 
 @mmcv.jit(derivate=True, coderize=True)
