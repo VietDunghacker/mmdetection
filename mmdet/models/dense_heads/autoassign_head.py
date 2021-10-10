@@ -76,8 +76,7 @@ class CenterPrior(nn.Module):
 		num_gts = len(labels)
 		num_points = sum([len(item) for item in anchor_points_list])
 		if num_gts == 0:
-			return gt_bboxes.new_zeros(num_points,
-									   num_gts), inside_gt_bbox_mask
+			return gt_bboxes.new_zeros(num_points, num_gts), inside_gt_bbox_mask
 		center_prior_list = []
 		for slvl_points, stride in zip(anchor_points_list, self.strides):
 			# slvl_points: points from single level in FPN, has shape (h*w, 2)
@@ -93,21 +92,15 @@ class CenterPrior(nn.Module):
 			# instance_sigma has shape (1, num_gt, 2)
 			instance_sigma = self.sigma[labels][None]
 			# distance has shape (num_points, num_gt, 2)
-			distance = (((single_level_points - gt_center) / float(stride) -
-						 instance_center)**2)
-			center_prior = torch.exp(-distance /
-									 (2 * instance_sigma**2)).prod(dim=-1)
+			distance = (((single_level_points - gt_center) / float(stride) - instance_center)**2)
+			center_prior = torch.exp(-distance / (2 * instance_sigma**2)).prod(dim=-1)
 			center_prior_list.append(center_prior)
 		center_prior_weights = torch.cat(center_prior_list, dim=0)
 
 		if self.force_topk:
-			gt_inds_no_points_inside = torch.nonzero(
-				inside_gt_bbox_mask.sum(0) == 0).reshape(-1)
+			gt_inds_no_points_inside = torch.nonzero(inside_gt_bbox_mask.sum(0) == 0).reshape(-1)
 			if gt_inds_no_points_inside.numel():
-				topk_center_index = \
-					center_prior_weights[:, gt_inds_no_points_inside].topk(
-															 self.topk,
-															 dim=0)[1]
+				topk_center_index = center_prior_weights[:, gt_inds_no_points_inside].topk(self.topk, dim=0)[1]
 				temp_mask = inside_gt_bbox_mask[:, gt_inds_no_points_inside]
 				inside_gt_bbox_mask[:, gt_inds_no_points_inside] = \
 					torch.scatter(temp_mask,
@@ -301,13 +294,10 @@ class AutoAssignHead(FCOSHead):
 				if idxs.any():
 					temp_weight[idxs] = normalize(temp_weight[idxs])
 
-			p_neg_weight[foreground_idxs[1],
-						 gt_labels[foreground_idxs[0]]] = 1 - temp_weight
+			p_neg_weight[foreground_idxs[1], gt_labels[foreground_idxs[0]]] = 1 - temp_weight
 
 		logits = (joint_conf * p_neg_weight)
-		neg_loss = (
-			logits**2 * F.binary_cross_entropy(
-				logits, torch.zeros_like(logits), reduction='none'))
+		neg_loss = (logits**2 * F.binary_cross_entropy(logits, torch.zeros_like(logits), reduction='none'))
 		neg_loss = neg_loss.sum() * self.neg_loss_weight
 		return neg_loss,
 
@@ -346,10 +336,8 @@ class AutoAssignHead(FCOSHead):
 		assert len(cls_scores) == len(bbox_preds) == len(objectnesses)
 		all_num_gt = sum([len(item) for item in gt_bboxes])
 		featmap_sizes = [featmap.size()[-2:] for featmap in cls_scores]
-		all_level_points = self.get_points(featmap_sizes, bbox_preds[0].dtype,
-										   bbox_preds[0].device)
-		inside_gt_bbox_mask_list, bbox_targets_list = self.get_targets(
-			all_level_points, gt_bboxes)
+		all_level_points = self.get_points(featmap_sizes, bbox_preds[0].dtype, bbox_preds[0].device)
+		inside_gt_bbox_mask_list, bbox_targets_list = self.get_targets(all_level_points, gt_bboxes)
 
 		center_prior_weight_list = []
 		temp_inside_gt_bbox_mask_list = []
@@ -371,11 +359,9 @@ class AutoAssignHead(FCOSHead):
 		ious_list = []
 		num_points = len(mlvl_points)
 
-		for bbox_pred, gt_bboxe, inside_gt_bbox_mask in zip(
-				bbox_preds, bbox_targets_list, inside_gt_bbox_mask_list):
+		for bbox_pred, gt_bboxe, inside_gt_bbox_mask in zip(bbox_preds, bbox_targets_list, inside_gt_bbox_mask_list):
 			temp_num_gt = gt_bboxe.size(1)
-			expand_mlvl_points = mlvl_points[:, None, :].expand(
-				num_points, temp_num_gt, 2).reshape(-1, 2)
+			expand_mlvl_points = mlvl_points[:, None, :].expand(num_points, temp_num_gt, 2).reshape(-1, 2)
 			gt_bboxe = gt_bboxe.reshape(-1, 4)
 			expand_bbox_pred = bbox_pred[:, None, :].expand(
 				num_points, temp_num_gt, 4).reshape(-1, 4)
@@ -383,12 +369,10 @@ class AutoAssignHead(FCOSHead):
 											   expand_bbox_pred)
 			decoded_target_preds = distance2bbox(expand_mlvl_points, gt_bboxe)
 			with torch.no_grad():
-				ious = bbox_overlaps(
-					decoded_bbox_preds, decoded_target_preds, is_aligned=True)
+				ious = bbox_overlaps(decoded_bbox_preds, decoded_target_preds, is_aligned=True)
 				ious = ious.reshape(num_points, temp_num_gt)
 				if temp_num_gt:
-					ious = ious.max(
-						dim=-1, keepdim=True).values.repeat(1, temp_num_gt)
+					ious = ious.max(dim=-1, keepdim=True).values.repeat(1, temp_num_gt)
 				else:
 					ious = ious.new_zeros(num_points, temp_num_gt)
 				ious[~inside_gt_bbox_mask] = 0
@@ -402,18 +386,13 @@ class AutoAssignHead(FCOSHead):
 
 		cls_scores = [item.sigmoid() for item in cls_scores]
 		objectnesses = [item.sigmoid() for item in objectnesses]
-		pos_loss_list, = multi_apply(self.get_pos_loss_single, cls_scores,
-									 objectnesses, reg_loss_list, gt_labels,
-									 center_prior_weight_list)
+		pos_loss_list, = multi_apply(self.get_pos_loss_single, cls_scores, objectnesses, reg_loss_list, gt_labels, center_prior_weight_list)
 		pos_avg_factor = reduce_mean(
 			bbox_pred.new_tensor(all_num_gt)).clamp_(min=1)
 		pos_loss = sum(pos_loss_list) / pos_avg_factor
 
-		neg_loss_list, = multi_apply(self.get_neg_loss_single, cls_scores,
-									 objectnesses, gt_labels, ious_list,
-									 inside_gt_bbox_mask_list)
-		neg_avg_factor = sum(item.data.sum()
-							 for item in center_prior_weight_list)
+		neg_loss_list, = multi_apply(self.get_neg_loss_single, cls_scores, objectnesses, gt_labels, ious_list, inside_gt_bbox_mask_list)
+		neg_avg_factor = sum(item.data.sum() for item in center_prior_weight_list)
 		neg_avg_factor = reduce_mean(neg_avg_factor).clamp_(min=1)
 		neg_loss = sum(neg_loss_list) / neg_avg_factor
 
@@ -421,9 +400,7 @@ class AutoAssignHead(FCOSHead):
 		for i in range(len(img_metas)):
 
 			if inside_gt_bbox_mask_list[i].any():
-				center_loss.append(
-					len(gt_bboxes[i]) /
-					center_prior_weight_list[i].sum().clamp_(min=EPS))
+				center_loss.append(len(gt_bboxes[i]) / center_prior_weight_list[i].sum().clamp_(min=EPS))
 			# when width or height of gt_bbox is smaller than stride of p3
 			else:
 				center_loss.append(center_prior_weight_list[i].sum() * 0)
@@ -433,12 +410,10 @@ class AutoAssignHead(FCOSHead):
 		# avoid dead lock in DDP
 		if all_num_gt == 0:
 			pos_loss = bbox_preds[0].sum() * 0
-			dummy_center_prior_loss = self.center_prior.mean.sum(
-			) * 0 + self.center_prior.sigma.sum() * 0
+			dummy_center_prior_loss = self.center_prior.mean.sum() * 0 + self.center_prior.sigma.sum() * 0
 			center_loss = objectnesses[0].sum() * 0 + dummy_center_prior_loss
 
-		loss = dict(
-			loss_pos=pos_loss, loss_neg=neg_loss, loss_center=center_loss)
+		loss = dict(loss_pos=pos_loss, loss_neg=neg_loss, loss_center=center_loss)
 
 		return loss
 
@@ -467,8 +442,7 @@ class AutoAssignHead(FCOSHead):
 
 		concat_points = torch.cat(points, dim=0)
 		# the number of points per img, per lvl
-		inside_gt_bbox_mask_list, bbox_targets_list = multi_apply(
-			self._get_target_single, gt_bboxes_list, points=concat_points)
+		inside_gt_bbox_mask_list, bbox_targets_list = multi_apply(self._get_target_single, gt_bboxes_list, points=concat_points)
 		return inside_gt_bbox_mask_list, bbox_targets_list
 
 	def _get_target_single(self, gt_bboxes, points):
