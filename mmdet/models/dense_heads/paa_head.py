@@ -7,6 +7,7 @@ from mmdet.core import multi_apply, multiclass_nms
 from mmdet.core.bbox.iou_calculators import bbox_overlaps
 from mmdet.models import HEADS
 from mmdet.models.dense_heads import ATSSHead
+from mmdet.models.dense_heads.gfl_head import Integral
 
 EPS = 1e-12
 try:

@@ -101,8 +101,6 @@ class GFLHead(AnchorHead):
 				 reg_channels=64,
 				 add_mean=True,
 				 avg_samples_to_int=False,
-				 use_norcal=False,
-				 instance_per_class=None,
 				 init_cfg=dict(
 					 type='Normal',
 					 layer='Conv2d',
@@ -123,11 +121,6 @@ class GFLHead(AnchorHead):
 		self.add_mean = add_mean
 		self.total_dim = reg_topk
 
-		self.use_norcal = use_norcal
-		self.instance_per_class = instance_per_class
-		if self.use_norcal:
-			assert self.instance_per_class is not None
-			self.instance_per_class = torch.tensor(self.instance_per_class)
 		if add_mean:
 			self.total_dim += 1
 		self.avg_samples_to_int = avg_samples_to_int
@@ -373,8 +366,7 @@ class GFLHead(AnchorHead):
 		(anchor_list, labels_list, label_weights_list, bbox_targets_list,
 		 bbox_weights_list, num_total_pos, num_total_neg) = cls_reg_targets
 
-		num_total_samples = reduce_mean(torch.tensor(num_total_pos, dtype=torch.float,
-						 device=device)).item()
+		num_total_samples = reduce_mean(torch.tensor(num_total_pos, dtype=torch.float, device=device)).item()
 		if self.avg_samples_to_int:
 			num_total_samples = int(num_total_samples)
 		num_total_samples = max(num_total_samples, 1.0)

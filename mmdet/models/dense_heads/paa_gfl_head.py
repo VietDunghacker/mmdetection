@@ -3,10 +3,11 @@ import numpy as np
 import torch
 from mmcv.runner import force_fp32
 
-from mmdet.core import anchor_inside_flags, bbox2distance, distance2bbox, multi_apply, multiclass_nms, reduce_mean, unmap
+from mmdet.core import bbox2distance, distance2bbox, multi_apply, multiclass_nms, reduce_mean
 from mmdet.core.bbox.iou_calculators import bbox_overlaps
 from mmdet.models import HEADS
 from mmdet.models.dense_heads import GFLHead
+from mmdet.models.dense_heads.gfl_head import Integral
 
 EPS = 1e-12
 try:
@@ -81,9 +82,9 @@ class PAAGFLHead(GFLHead):
 		self.topk = topk
 		self.with_score_voting = score_voting
 		self.covariance_type = covariance_type
-		super(PAAGFLHead, self).__init__(*args, **kwargs)
+		super(PAAHead, self).__init__(*args, **kwargs)
 
-	@force_fp32(apply_to=('cls_scores', 'bbox_preds'))
+	@force_fp32(apply_to=('cls_scores', 'bbox_preds', 'iou_preds'))
 	def loss(self,
 			 cls_scores,
 			 bbox_preds,
@@ -115,8 +116,7 @@ class PAAGFLHead(GFLHead):
 
 		device = cls_scores[0].device
 		anchor_list, valid_flag_list = self.get_anchors(featmap_sizes, img_metas, device=device)
-		stride_list = [[torch.full((len(anchor), 1), stride[0], device = anchor.device) for anchor, stride in zip(anchor_list[0], self.anchor_generator.strides)] for _ in range(len(anchor_list))]
-
+		stride_list = [[torch.full((len(anchor), ), stride, device = device) for anchor, stride in zip(anchor_list[0], self.anchor_generator.strides)] for _ in range(len(anchor_list))]
 		label_channels = self.cls_out_channels if self.use_sigmoid_cls else 1
 		cls_reg_targets = self.get_targets(
 			anchor_list,
@@ -127,17 +127,15 @@ class PAAGFLHead(GFLHead):
 			gt_labels_list=gt_labels,
 			label_channels=label_channels,
 		)
-
 		(labels, labels_weight, bboxes_target, bboxes_weight, pos_inds, pos_gt_index) = cls_reg_targets
 		cls_scores = levels_to_images(cls_scores)
 		cls_scores = [item.reshape(-1, self.cls_out_channels) for item in cls_scores]
 		bbox_preds = levels_to_images(bbox_preds)
 		bbox_preds = [item.reshape(-1, 4 * (self.reg_max + 1)) for item in bbox_preds]
-		pos_losses_list, = multi_apply(self.get_pos_loss, anchor_list, cls_scores, bbox_preds, labels, labels_weight, bboxes_target, bboxes_weight, pos_inds)
+		pos_losses_list, = multi_apply(self.get_pos_loss, anchor_list, stride_list, cls_scores, bbox_preds, labels, labels_weight, bboxes_target, bboxes_weight, pos_inds)
 
 		with torch.no_grad():
-			reassign_labels, reassign_label_weight, \
-				reassign_bbox_weights, num_pos = multi_apply(
+			reassign_labels, reassign_label_weight, reassign_bbox_weights, num_pos = multi_apply(
 					self.paa_reassign,
 					pos_losses_list,
 					labels,
@@ -157,11 +155,11 @@ class PAAGFLHead(GFLHead):
 		bboxes_target = torch.cat(bboxes_target, 0).view(-1, bboxes_target[0].size(-1))
 
 		pos_inds_flatten = ((labels >= 0) & (labels < self.num_classes)).nonzero().reshape(-1)
-		score = labels_weight.new_zeros(labels.shape)
+		scores = label_weights.new_zeros(labels.shape)
 
 		if num_pos:
-			pos_bbox_pred = bbox_preds[pos_inds_flatten]
 			pos_bbox_targets = bboxes_target[pos_inds_flatten]
+			pos_bbox_pred = bbox_preds[pos_inds_flatten]
 			pos_anchors = flatten_anchors[pos_inds_flatten]
 			pos_strides = flatten_strides[pos_inds_flatten]
 			pos_anchor_centers = self.anchor_center(pos_anchors) / pos_strides
@@ -173,39 +171,36 @@ class PAAGFLHead(GFLHead):
 			pos_bbox_pred_corners = self.integral(pos_bbox_pred)
 			pos_decode_bbox_pred = distance2bbox(pos_anchor_centers, pos_bbox_pred_corners)
 			pos_decode_bbox_targets = pos_bbox_targets / pos_strides
-			score[pos_inds_flatten] = bbox_overlaps(pos_decode_bbox_pred.detach(), pos_decode_bbox_targets, is_aligned=True)
+			scores[pos_inds_flatten] = bbox_overlaps(pos_decode_bbox_pred.detach(), pos_decode_bbox_targets, is_aligned=True)
 			pred_corners = pos_bbox_pred.reshape(-1, self.reg_max + 1)
 			target_corners = bbox2distance(pos_anchor_centers, pos_decode_bbox_targets, self.reg_max).reshape(-1)
 
-			avg_factor = weight_targets.sum()
-			avg_factor = reduce_mean(avg_factor).clamp_(min=1).item()
-	
 			# regression loss
-			loss_bbox = self.loss_bbox(
+			avg_factor = reduce_mean(weight_targets.sum()).clamp_(min = 1).item()
+			losses_bbox = self.loss_bbox(
 				pos_decode_bbox_pred,
 				pos_decode_bbox_targets,
 				weight=weight_targets,
 				avg_factor=avg_factor)
 
 			# dfl loss
-			loss_dfl = self.loss_dfl(
+			losses_dfl = self.loss_dfl(
 				pred_corners,
 				target_corners,
 				weight=weight_targets[:, None].expand(-1, 4).reshape(-1),
 				avg_factor=4.0 * avg_factor)
-
 		else:
-			loss_bbox = bbox_preds.sum() * 0
-			loss_dfl = bbox_preds.sum() * 0
-			avg_factor = bbox_preds.new_tensor(0)
+			losses_bbox = bbox_preds.sum() * 0
+			losses_dfl = bbox_preds.sum() * 0
+		losses_cls = self.loss_cls(
+			cls_scores,
+			(labels, scores),
+			labels_weight,
+			avg_factor=max(num_pos, 1))  # avoid num_pos=0
 
-		loss_cls = self.loss_cls(
-			cls_scores, (labels, score),
-			weight=labels_weight,
-			avg_factor=max(num_pos, 1.0))
-		return dict(loss_cls=loss_cls, loss_bbox=loss_bbox, loss_dfl=loss_dfl)
+		return dict(loss_cls=losses_cls, loss_bbox=losses_bbox, loss_dfl=losses_dfl)
 
-	def get_pos_loss(self, anchors, cls_score, bbox_pred, label, label_weight,
+	def get_pos_loss(self, anchors, strides cls_score, bbox_pred, label, label_weight,
 					 bbox_target, bbox_weight, pos_inds):
 		"""Calculate loss of all potential positive samples obtained from first
 		match process.
@@ -232,7 +227,6 @@ class PAAGFLHead(GFLHead):
 		"""
 		if not len(pos_inds):
 			return cls_score.new([]),
-		strides = [torch.full((len(anchor), 1), stride[0], device = anchor.device) for anchor, stride in zip(anchors, self.anchor_generator.strides)]
 		anchors_all_level = torch.cat(anchors, 0)
 		strides_all_level = torch.cat(strides, 0)
 		pos_scores = cls_score[pos_inds]
@@ -247,20 +241,20 @@ class PAAGFLHead(GFLHead):
 
 		pos_bbox_pred_corners = self.integral(pos_bbox_pred)
 		pos_decode_bbox_pred = distance2bbox(pos_anchor_centers, pos_bbox_pred_corners)
-		pos_decode_bbox_targets = pos_bbox_target / pos_strides
-		score = bbox_overlaps(pos_decode_bbox_pred.detach(), pos_decode_bbox_targets, is_aligned=True)
+		pos_decode_bbox_targets = pos_bbox_targets / pos_strides
+		scores = bbox_overlaps(pos_decode_bbox_pred.detach(), pos_decode_bbox_targets, is_aligned=True)
 
 		# to keep loss dimension
 		loss_cls = self.loss_cls(
 			pos_scores,
-			(pos_label, score),
+			(pos_label, scores),
 			pos_label_weight,
 			avg_factor=self.loss_cls.loss_weight,
 			reduction_override='none')
 
 		loss_bbox = self.loss_bbox(
-			pos_decode_bbox_pred,
-			pos_decode_bbox_targets,
+			pos_bbox_pred,
+			pos_bbox_target,
 			pos_bbox_weight,
 			avg_factor=self.loss_cls.loss_weight,
 			reduction_override='none')
@@ -363,8 +357,7 @@ class PAAGFLHead(GFLHead):
 			gmm_assignment = torch.from_numpy(gmm_assignment).to(device)
 			scores = torch.from_numpy(scores).to(device)
 
-			pos_inds_temp, ignore_inds_temp = self.gmm_separation_scheme(
-				gmm_assignment, scores, pos_inds_gmm)
+			pos_inds_temp, ignore_inds_temp = self.gmm_separation_scheme(gmm_assignment, scores, pos_inds_gmm)
 			pos_inds_after_paa.append(pos_inds_temp)
 			ignore_inds_after_paa.append(ignore_inds_temp)
 
@@ -490,7 +483,8 @@ class PAAGFLHead(GFLHead):
 			label_channels=label_channels,
 			unmap_outputs=unmap_outputs)
 
-		(labels, label_weights, bbox_targets, bbox_weights, valid_pos_inds, valid_neg_inds, sampling_result) = results
+		(labels, label_weights, bbox_targets, bbox_weights, valid_pos_inds,
+		 valid_neg_inds, sampling_result) = results
 
 		# Due to valid flag of anchors, we have to calculate the real pos_inds
 		# in origin anchor set.
@@ -514,84 +508,16 @@ class PAAGFLHead(GFLHead):
 		"""Compute regression and classification targets for anchors in a
 		single image.
 
-		Args:
-			flat_anchors (Tensor): Multi-level anchors of the image, which are
-				concatenated into a single tensor of shape (num_anchors ,4)
-			valid_flags (Tensor): Multi level valid flags of the image,
-				which are concatenated into a single tensor of
-					shape (num_anchors,).
-			gt_bboxes (Tensor): Ground truth bboxes of the image,
-				shape (num_gts, 4).
-			gt_bboxes_ignore (Tensor): Ground truth bboxes to be
-				ignored, shape (num_ignored_gts, 4).
-			img_meta (dict): Meta info of the image.
-			gt_labels (Tensor): Ground truth labels of each box,
-				shape (num_gts,).
-			label_channels (int): Channel of label.
-			unmap_outputs (bool): Whether to map outputs back to the original
-				set of anchors.
-
-		Returns:
-			tuple:
-				labels_list (list[Tensor]): Labels of each level
-				label_weights_list (list[Tensor]): Label weights of each level
-				bbox_targets_list (list[Tensor]): BBox targets of each level
-				bbox_weights_list (list[Tensor]): BBox weights of each level
-				num_total_pos (int): Number of positive samples in all images
-				num_total_neg (int): Number of negative samples in all images
+		This method is same as `AnchorHead._get_targets_single()`.
 		"""
-		assert unmap_outputs, 'We must map outputs back to the original set of anchors in PAAhead'
-		inside_flags = anchor_inside_flags(flat_anchors, valid_flags, img_meta['img_shape'][:2], self.train_cfg.allowed_border)
-		if not inside_flags.any():
-			return (None, ) * 7
-		# assign gt and sample anchors
-		anchors = flat_anchors[inside_flags, :]
-
-		assign_result = self.assigner.assign(anchors, gt_bboxes, gt_bboxes_ignore, None if self.sampling else gt_labels)
-		sampling_result = self.sampler.sample(assign_result, anchors, gt_bboxes)
-
-		num_valid_anchors = anchors.shape[0]
-		bbox_targets = torch.zeros_like(anchors)
-		bbox_weights = torch.zeros_like(anchors)
-		labels = anchors.new_full((num_valid_anchors, ),
-								  self.num_classes,
-								  dtype=torch.long)
-		label_weights = anchors.new_zeros(num_valid_anchors, dtype=torch.float)
-
-		pos_inds = sampling_result.pos_inds
-		neg_inds = sampling_result.neg_inds
-		if len(pos_inds) > 0:
-			if not self.reg_decoded_bbox:
-				pos_bbox_targets = self.bbox_coder.encode(sampling_result.pos_bboxes, sampling_result.pos_gt_bboxes)
-			else:
-				pos_bbox_targets = sampling_result.pos_gt_bboxes
-			bbox_targets[pos_inds, :] = pos_bbox_targets
-			bbox_weights[pos_inds, :] = 1.0
-			if gt_labels is None:
-				# Only rpn gives gt_labels as None
-				# Foreground is the first class since v2.5.0
-				labels[pos_inds] = 0
-			else:
-				labels[pos_inds] = gt_labels[
-					sampling_result.pos_assigned_gt_inds]
-			if self.train_cfg.pos_weight <= 0:
-				label_weights[pos_inds] = 1.0
-			else:
-				label_weights[pos_inds] = self.train_cfg.pos_weight
-		if len(neg_inds) > 0:
-			label_weights[neg_inds] = 1.0
-
-		# map up to original set of anchors
-		if unmap_outputs:
-			num_total_anchors = flat_anchors.size(0)
-			labels = unmap(
-				labels, num_total_anchors, inside_flags,
-				fill=self.num_classes)  # fill bg label
-			label_weights = unmap(label_weights, num_total_anchors,
-								  inside_flags)
-			bbox_targets = unmap(bbox_targets, num_total_anchors, inside_flags)
-			bbox_weights = unmap(bbox_weights, num_total_anchors, inside_flags)
-
-		return (labels, label_weights, bbox_targets, bbox_weights, pos_inds,
-				neg_inds, sampling_result)
-
+		assert unmap_outputs, 'We must map outputs back to the original' \
+			'set of anchors in PAAhead'
+		return super(ATSSHead, self)._get_targets_single(
+			flat_anchors,
+			valid_flags,
+			gt_bboxes,
+			gt_bboxes_ignore,
+			gt_labels,
+			img_meta,
+			label_channels=1,
+			unmap_outputs=True)
