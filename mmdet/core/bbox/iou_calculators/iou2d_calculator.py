@@ -241,7 +241,6 @@ def bbox_overlaps(bboxes1, bboxes2, mode='iou', is_aligned=False, eps=1e-6):
 			bboxes2_cy = (bboxes2[..., 1] + bboxes2[..., 3]) / 2
 
 			center_distance = fp16_clamp((bboxes2_cx - bboxes1_cx) ** 2 + (bboxes2_cy - bboxes1_cy) ** 2, min=0)
-			print(center_distance)
 
 			if mode == 'ciou':
 				bboxes1_w = bboxes1[..., 2] - bboxes1[..., 0]
