@@ -1,6 +1,9 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import numpy as np
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from mmcv.cnn import ConvModule, Scale, bias_init_with_prob, normal_init
 from mmcv.runner import force_fp32
 
 from mmdet.core import multi_apply, multiclass_nms
@@ -9,6 +12,7 @@ from mmdet.models import HEADS
 from mmdet.models.dense_heads import ATSSHead
 from mmdet.models.dense_heads.gfl_head import Integral
 
+from .tood_head import TaskDecomposition
 EPS = 1e-12
 try:
 	import sklearn.mixture as skm
@@ -634,3 +638,135 @@ class PAAHead(ATSSHead):
 		det_bboxes_voted = torch.cat(det_bboxes_voted, dim=0)
 		det_labels_voted = det_labels.new_tensor(det_labels_voted)
 		return det_bboxes_voted, det_labels_voted
+
+class PAATALHead(PAAHead):
+	def __init__(self,
+				 num_dcn_on_head=0,
+				 init_cfg=None,
+				 **kwargs):
+		self.num_dcn_on_head = num_dcn_on_head
+		super(PAATALHead, self).__init__(init_cfg = init_cfg, **kwargs)
+
+	def _init_layers(self):
+		"""Initialize layers of the head."""
+		self.relu = nn.ReLU(inplace=True)
+		self.inter_convs = nn.ModuleList()
+		for i in range(self.stacked_convs):
+			if i < self.num_dcn_on_head:
+				conv_cfg = dict(type='DCNv2', deform_groups=4)
+			else:
+				conv_cfg = self.conv_cfg
+			chn = self.in_channels if i == 0 else self.feat_channels
+			self.inter_convs.append(
+				ConvModule(
+					chn,
+					self.feat_channels,
+					3,
+					stride=1,
+					padding=1,
+					conv_cfg=conv_cfg,
+					norm_cfg=self.norm_cfg))
+
+		self.cls_decomp = TaskDecomposition(self.feat_channels, self.stacked_convs, self.stacked_convs * 8, self.conv_cfg, self.norm_cfg)
+		self.reg_decomp = TaskDecomposition(self.feat_channels, self.stacked_convs, self.stacked_convs * 8, self.conv_cfg, self.norm_cfg)
+
+		self.tood_cls = nn.Conv2d(self.feat_channels, self.num_anchors * self.cls_out_channels, 3, padding=1)
+		self.tood_reg = nn.Conv2d(self.feat_channels, self.num_anchors * 4, 3, padding=1)
+
+		self.cls_prob_conv1 = nn.Conv2d(self.feat_channels * self.stacked_convs, self.feat_channels // 4, 1)
+		self.cls_prob_conv2 = nn.Conv2d(self.feat_channels // 4, 1, 3, padding=1)
+		self.reg_offset_conv1 = nn.Conv2d(self.feat_channels * self.stacked_convs, self.feat_channels // 4, 1)
+		self.reg_offset_conv2 = nn.Conv2d(self.feat_channels // 4, 4 * 2, 3, padding=1)
+
+		self.atss_centerness = nn.Conv2d(self.feat_channels, self.num_anchors * 1, 3, padding=1)
+		self.scales = nn.ModuleList([Scale(1.0) for _ in self.anchor_generator.strides])
+
+	def init_weights(self):
+		"""Initialize weights of the head."""
+		for m in self.inter_convs:
+			normal_init(m.conv, std=0.01)
+
+		self.cls_decomp.init_weights()
+		self.reg_decomp.init_weights()
+
+		bias_cls = bias_init_with_prob(0.01)
+		normal_init(self.tood_cls, std=0.01, bias=bias_cls)
+		normal_init(self.tood_reg, std=0.01)
+		normal_init(self.atss_centerness, std=0.01)
+
+		normal_init(self.cls_prob_conv1, std=0.01)
+		bias_cls = bias_init_with_prob(0.01)
+		normal_init(self.cls_prob_conv2, std=0.01, bias=bias_cls)
+		normal_init(self.reg_offset_conv1, std=0.001)
+		normal_init(self.reg_offset_conv2, std=0.001)
+		self.reg_offset_conv2.bias.data.zero_()
+
+	def forward(self, feats):
+		"""Forward features from the upstream network.
+		Args:
+			feats (tuple[Tensor]): Features from the upstream network, each is
+				a 4D-tensor.
+		Returns:
+			tuple: Usually a tuple of classification scores and bbox prediction
+				cls_scores (list[Tensor]): Classification scores for all scale
+					levels, each is a 4D-tensor, the channels number is
+					num_anchors * num_classes.
+				bbox_preds (list[Tensor]): Box energies / deltas for all scale
+					levels, each is a 4D-tensor, the channels number is
+					num_anchors * 4.
+		"""
+		num_imgs = len(feats[0])
+		featmap_sizes = [featmap.size()[-2:] for featmap in feats]
+		device = feats[0].device
+		anchor_list = self.get_anchor_list(featmap_sizes, num_imgs, device=device)
+		level_anchor_list = [torch.cat([anchor_list[i][j] for i in range(len(anchor_list))]) for j in range(len(anchor_list[0]))]
+
+		return multi_apply(self.forward_single, feats, self.scales, level_anchor_list, self.anchor_generator.strides)
+
+	@force_fp32(apply_to=('x'))
+	def forward_single(self, x, scale, anchor, stride):
+		"""Forward feature of a single scale level.
+		Args:
+			x (Tensor): Features of a single scale level.
+			scale (:obj: `mmcv.cnn.Scale`): Learnable scale module to resize
+				the bbox prediction.
+			anchor (Tensor): Anchors of a single scale level.
+			stride (tuple[Tensor]): Stride of the current scale level.
+		Returns:
+			tuple:
+				cls_score (Tensor): Cls scores for a single scale level
+					the channels number is num_anchors * num_classes.
+				bbox_pred (Tensor): Box energies / deltas for a single scale
+					level, the channels number is num_anchors * 4.
+		"""
+		b, c, h, w = x.shape
+
+		# extract task interactive features
+		inter_feats = []
+		for i, inter_conv in enumerate(self.inter_convs):
+			x = inter_conv(x)
+			inter_feats.append(x)
+		feat = torch.cat(inter_feats, 1)
+
+		# task decomposition
+		avg_feat = F.adaptive_avg_pool2d(feat, (1, 1))
+		cls_feat = self.cls_decomp(feat, avg_feat)
+		reg_feat = self.reg_decomp(feat, avg_feat)
+
+		# cls prediction and alignment
+		cls_logits = self.tood_cls(cls_feat)
+		cls_prob = F.relu(self.cls_prob_conv1(feat), inplace = True)
+		cls_prob = self.cls_prob_conv2(cls_prob)
+		cls_score = (cls_logits.sigmoid() * cls_prob.sigmoid()).sqrt()
+
+		# reg prediction and alignment
+		reg_dist = scale(self.tood_reg(reg_feat)).float()
+		reg_dist = reg_dist.permute(0, 2, 3, 1).reshape(-1, 4)
+		reg_bbox = self.bbox_coder.decode(anchor, reg_dist).reshape(b, h, w, 4).permute(0, 3, 1, 2) / stride[0]
+		reg_offset = F.relu(self.reg_offset_conv1(feat), inplace = True)
+		reg_offset = self.reg_offset_conv2(reg_offset)
+		bbox_pred = self.deform_sampling(reg_bbox.contiguous(), reg_offset.contiguous())
+
+		centerness = self.atss_centerness(reg_feat)
+		return cls_score, bbox_pred, centerness
+

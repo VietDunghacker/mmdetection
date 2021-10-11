@@ -34,13 +34,13 @@ model = dict(
 	),
 	bbox_head=dict(
 		type='PAAHead',
-		covariance_type='full',
 		reg_decoded_bbox=True,
 		score_voting=False,
 		topk=9,
 		num_classes=80,
 		in_channels=256,
-		stacked_convs=4,
+		stacked_convs=6,
+		num_dcn_on_head=2,
 		feat_channels=256,
 		anchor_generator=dict(
 			type='AnchorGenerator',
