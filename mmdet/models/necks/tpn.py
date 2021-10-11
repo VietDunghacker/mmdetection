@@ -52,7 +52,6 @@ class TPN(BaseModule):
 			assert num_outs == end_level - start_level
 		self.start_level = start_level
 		self.end_level = end_level
-		self.add_extra_convs = add_extra_convs
 
 		# add lateral connections
 		self.lateral_convs = nn.ModuleList()
@@ -91,7 +90,11 @@ class TPN(BaseModule):
 				)
 
 			for i in range(self.num_ins):
-				parallel_convs.append(BottleneckBlock(out_channels, hidden_channels, norm_cfg=norm_cfg, act_cfg=act_cfg))
+				parallel_convs.append(
+					nn.Sequential(
+						BottleneckBlock(out_channels, hidden_channels, norm_cfg=norm_cfg, act_cfg=act_cfg) for _ in range(num_bottleneck_blocks)
+					)
+				)
 
 			self.down_conv_stages.append(down_convs)
 			self.up_conv_stages.append(up_convs)

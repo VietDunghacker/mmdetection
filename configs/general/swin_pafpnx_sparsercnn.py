@@ -27,8 +27,8 @@ model = dict(
 		out_channels=256,
 		hidden_channels=64,
 		num_outs=4,
-		stack_times=5,
-		num_bottleneck_blocks=1,
+		stack_times=3,
+		num_bottleneck_blocks=2,
 		norm_cfg=dict(type='GN', num_groups=32, requires_grad=True),
 		act_cfg=dict(type='ReLU')),
 	rpn_head=dict(
