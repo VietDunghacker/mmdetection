@@ -71,29 +71,27 @@ class TPN(BaseModule):
 			extra_conv = ConvModule(out_channels, out_channels, 1, norm_cfg=norm_cfg, act_cfg=None)
 			self.extra_downsamples.append(nn.Sequential(extra_conv, nn.MaxPool2d(2, 2)))
 
-		self.down_conv_stages = nn.ModuleList()
-		self.up_conv_stages = nn.ModuleList()
-		self.parallel_conv_stages = nn.ModuleList()
+		self.down_conv_stages = ModuleList()
+		self.up_conv_stages = ModuleList()
+		self.parallel_conv_stages = ModuleList()
 		for _ in range(self.stack_times):
-			down_convs = nn.ModuleList()
-			up_convs = nn.ModuleList()
-			parallel_convs = nn.ModuleList()
+			down_convs = ModuleList()
+			up_convs = ModuleList()
+			parallel_convs = ModuleList()
 
 			for i in range(self.num_ins - 1):
 				down_convs.append(ConvModule(out_channels, out_channels, 1, norm_cfg=norm_cfg, act_cfg=act_cfg))
 				up_convs.append(
-					nn.Sequential(
+					nn.Sequential([
 						ConvModule(out_channels, out_channels, 1, norm_cfg=norm_cfg, act_cfg=act_cfg),
 						ConvModule(out_channels, out_channels, 3, stride=2, padding=1, norm_cfg=norm_cfg, act_cfg=act_cfg),
 						ConvModule(out_channels, out_channels, 1, norm_cfg=norm_cfg, act_cfg=act_cfg),
-					)
+					])
 				)
 
 			for i in range(self.num_ins):
 				parallel_convs.append(
-					nn.Sequential(
-						BottleneckBlock(out_channels, hidden_channels, norm_cfg=norm_cfg, act_cfg=act_cfg) for _ in range(num_bottleneck_blocks)
-					)
+					nn.Sequential([BottleneckBlock(out_channels, hidden_channels, norm_cfg=norm_cfg, act_cfg=act_cfg) for _ in range(num_bottleneck_blocks)])
 				)
 
 			self.down_conv_stages.append(down_convs)
