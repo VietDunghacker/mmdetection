@@ -268,7 +268,8 @@ class DIIHead(BBoxHead):
 		if cls_score is not None:
 			if cls_score.numel() > 0:
 				loss_cls = self.loss_cls(cls_score, cls_iou_targets, label_weights, avg_factor=avg_factor, reduction_override=reduction_override)
-		return dict(loss_cls = loss_cls, loss_bbox = loss_bbox, loss_iou = loss_iou)
+				pos_acc = accuracy(cls_score[pos_inds], labels[pos_inds])
+		return dict(loss_cls = loss_cls, pos_acc = pos_acc, loss_bbox = loss_bbox, loss_iou = loss_iou)
 
 	def _get_target_single(self, pos_inds, neg_inds, pos_bboxes, neg_bboxes,
 						   pos_gt_bboxes, pos_gt_labels, cfg):
