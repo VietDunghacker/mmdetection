@@ -71,13 +71,13 @@ class TPN(BaseModule):
 			extra_conv = ConvModule(out_channels, out_channels, 1, norm_cfg=norm_cfg, act_cfg=None)
 			self.extra_downsamples.append(nn.Sequential(extra_conv, nn.MaxPool2d(2, 2)))
 
-		self.down_conv_stages = ModuleList()
-		self.up_conv_stages = ModuleList()
-		self.parallel_conv_stages = ModuleList()
+		self.down_conv_stages = nn.ModuleList()
+		self.up_conv_stages = nn.ModuleList()
+		self.parallel_conv_stages = nn.ModuleList()
 		for _ in range(self.stack_times):
-			down_convs = ModuleList()
-			up_convs = ModuleList()
-			parallel_convs = ModuleList()
+			down_convs = nn.ModuleList()
+			up_convs = nn.ModuleList()
+			parallel_convs = nn.ModuleList()
 
 			for i in range(self.num_ins - 1):
 				down_convs.append(ConvModule(out_channels, out_channels, 1, norm_cfg=norm_cfg, act_cfg=act_cfg))
