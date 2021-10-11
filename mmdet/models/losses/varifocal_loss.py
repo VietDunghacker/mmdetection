@@ -47,7 +47,6 @@ def varifocal_loss(pred,
 	else:
 		focal_weight = (target > 0.0).float() + alpha * (pred_sigmoid - target).abs().pow(gamma) * (target <= 0.0).float()
 	loss = F.binary_cross_entropy_with_logits(pred, target, reduction='none') * focal_weight
-	print(loss.shape, weight.shape)
 	loss = weight_reduce_loss(loss, weight, reduction, avg_factor)
 	return loss
 
@@ -113,8 +112,7 @@ class VarifocalLoss(nn.Module):
 			torch.Tensor: The calculated loss
 		"""
 		assert reduction_override in (None, 'none', 'mean', 'sum')
-		reduction = (
-			reduction_override if reduction_override else self.reduction)
+		reduction = (reduction_override if reduction_override else self.reduction)
 		if self.use_sigmoid:
 			loss_cls = self.loss_weight * varifocal_loss(
 				pred,
