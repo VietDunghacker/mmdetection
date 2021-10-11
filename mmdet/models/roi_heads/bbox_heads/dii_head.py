@@ -267,7 +267,7 @@ class DIIHead(BBoxHead):
 				cls_iou_targets = torch.zeros_like(cls_score)
 		if cls_score is not None:
 			if cls_score.numel() > 0:
-				losses['loss_cls'] = self.loss_cls(cls_score, cls_iou_targets, label_weights, avg_factor=avg_factor)
+				losses['loss_cls'] = self.loss_cls(cls_score, cls_iou_targets, label_weights, avg_factor=avg_factor, reduction_override=reduction_override)
 		return losses
 
 	def _get_target_single(self, pos_inds, neg_inds, pos_bboxes, neg_bboxes,
