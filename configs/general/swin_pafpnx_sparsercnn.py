@@ -67,7 +67,7 @@ model = dict(
 					norm_cfg=dict(type='LN')),
 				loss_bbox=dict(type='SmoothL1Loss', beta=0.01, loss_weight=5.0),
 				loss_iou=dict(type='CIoULoss', loss_weight=2.0),
-				loss_cls=dict(type='FocalLoss', use_sigmoid=True, gamma=2.0, alpha=0.25, loss_weight=2.0),
+				loss_cls=dict(type='VarifocalLoss', use_sigmoid=True, alpha=0.75, gamma=2.0, iou_weighted=True, loss_weight=2.0),
 				bbox_coder=dict(
 					type='DeltaXYWHBBoxCoder',
 					clip_border=False,
