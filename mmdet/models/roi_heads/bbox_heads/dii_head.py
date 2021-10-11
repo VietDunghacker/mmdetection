@@ -250,7 +250,7 @@ class DIIHead(BBoxHead):
 				losses['loss_bbox'] = self.loss_bbox(
 					pos_bbox_pred / imgs_whwh,
 					pos_bbox_targets / imgs_whwh,
-					iou_targets,
+					iou_targets[:, None].repeat(1,4),
 					avg_factor=avg_factor)
 				losses['loss_iou'] = self.loss_iou(
 					pos_bbox_pred,
