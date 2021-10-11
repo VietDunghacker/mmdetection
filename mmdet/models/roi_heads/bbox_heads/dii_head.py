@@ -231,7 +231,6 @@ class DIIHead(BBoxHead):
 			Returns:
 				dict[str, Tensor]: Dictionary of loss components
 		"""
-		losses = dict()
 		bg_class_ind = self.num_classes
 		# note in spare rcnn num_gt == num_pos
 		pos_inds = (labels >= 0) & (labels < bg_class_ind)
@@ -247,12 +246,12 @@ class DIIHead(BBoxHead):
 				iou_targets = bbox_overlaps(pos_bbox_pred.detach(), pos_bbox_targets, is_aligned=True).clamp(min=1e-6)
 
 				imgs_whwh = imgs_whwh.reshape(bbox_pred.size(0), 4)[pos_inds]
-				losses['loss_bbox'] = self.loss_bbox(
+				loss_bbox = self.loss_bbox(
 					pos_bbox_pred / imgs_whwh,
 					pos_bbox_targets / imgs_whwh,
 					iou_targets[:, None].repeat(1,4),
 					avg_factor=avg_factor)
-				losses['loss_iou'] = self.loss_iou(
+				loss_iou = self.loss_iou(
 					pos_bbox_pred,
 					pos_bbox_targets,
 					iou_targets,
@@ -262,13 +261,13 @@ class DIIHead(BBoxHead):
 				cls_iou_targets = torch.zeros_like(cls_score)
 				cls_iou_targets[pos_inds, labels[pos_inds]] = pos_ious				
 			else:
-				losses['loss_bbox'] = bbox_pred.sum() * 0
-				losses['loss_iou'] = bbox_pred.sum() * 0
+				loss_bbox = bbox_pred.sum() * 0
+				loss_iou = bbox_pred.sum() * 0
 				cls_iou_targets = torch.zeros_like(cls_score)
 		if cls_score is not None:
 			if cls_score.numel() > 0:
-				losses['loss_cls'] = self.loss_cls(cls_score, cls_iou_targets, label_weights, avg_factor=avg_factor, reduction_override=reduction_override)
-		return losses
+				loss_cls = self.loss_cls(cls_score, cls_iou_targets, label_weights, avg_factor=avg_factor, reduction_override=reduction_override)
+		return dict(loss_cls = loss_cls, loss_bbox = loss_bbox, loss_iou = loss_iou)
 
 	def _get_target_single(self, pos_inds, neg_inds, pos_bboxes, neg_bboxes,
 						   pos_gt_bboxes, pos_gt_labels, cfg):
