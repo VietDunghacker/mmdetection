@@ -2,7 +2,6 @@
 import torch.nn as nn
 import torch.utils.checkpoint as cp
 from mmcv.cnn import ConvModule
-from mmcv.ops.merge_cells import GlobalPoolingCell, SumCell
 from mmcv.runner import BaseModule, ModuleList
 
 from ..builder import NECKS
@@ -33,7 +32,7 @@ class TPN(BaseModule):
 				 norm_cfg=dict(type='GN', num_groups=32, requires_grad=True),
 				 act_cfg=dict(type='ReLU'),
 				 init_cfg=dict(type='Caffe2Xavier', layer='Conv2d')):
-		super(NASFPN, self).__init__(init_cfg)
+		super(TPN, self).__init__(init_cfg)
 		assert isinstance(in_channels, list)
 		self.in_channels = in_channels
 		self.out_channels = out_channels
