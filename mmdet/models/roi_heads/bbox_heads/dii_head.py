@@ -248,14 +248,14 @@ class DIIHead(BBoxHead):
 				loss_bbox = self.loss_bbox(
 					pos_bbox_pred / imgs_whwh,
 					pos_bbox_targets / imgs_whwh,
-					bbox_weights,
+					bbox_weights[pos_inds],
 					avg_factor=avg_factor)
 				loss_iou = self.loss_iou(
 					pos_bbox_pred,
 					pos_bbox_targets,
-					bbox_weights,
+					bbox_weights[pos_inds],
 					avg_factor=avg_factor)
-				
+
 				iou_targets = bbox_overlaps(pos_bbox_pred.detach(), pos_bbox_targets, is_aligned=True).clamp(min=1e-6)
 				pos_ious = iou_targets.clone().detach()
 				cls_iou_targets = torch.zeros_like(cls_score)
