@@ -114,7 +114,6 @@ class HungarianAssigner(BaseAssigner):
 		normalize_gt_bboxes = gt_bboxes / factor
 		reg_cost = self.reg_cost(bbox_pred, normalize_gt_bboxes)
 		# regression iou cost, defaultly giou is used in official DETR.
-		print(bbox_pred.shape, factor.shape)
 		bboxes = bbox_cxcywh_to_xyxy(bbox_pred) * factor
 		iou_cost = self.iou_cost(bboxes, gt_bboxes)
 		# weighted sum of above three costs
