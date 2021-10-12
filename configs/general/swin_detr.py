@@ -22,7 +22,7 @@ model = dict(
 		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
 	bbox_head=dict(
 		type='DETRHead',
-		num_classes=1,
+		num_classes=37,
 		num_query = max_per_img,
 		in_channels=1024,
 		transformer=dict(
