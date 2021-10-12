@@ -1,7 +1,7 @@
 _base_ = [
 	'../_base_/default_runtime.py'
 ]
-max_per_img = 256
+max_per_img = 64
 model = dict(
 	type='DETR',
 	backbone=dict(
@@ -59,15 +59,15 @@ model = dict(
 			)),
 		positional_encoding=dict(type='SinePositionalEncoding', num_feats=128, normalize=True),
  	 	loss_cls=dict(type='CrossEntropyLoss', bg_cls_weight=0.1, use_sigmoid=False, loss_weight=1.0, class_weight=1.0),
-		loss_bbox=dict(type='L1Loss', loss_weight=5.0),
-		loss_iou=dict(type='GIoULoss', loss_weight=2.0)),
+		loss_bbox=dict(type='SmoothL1Loss', beta=0.01, loss_weight=5.0),
+		loss_iou=dict(type='CIoULoss', loss_weight=2.0)),
 	# training and testing settings
 	train_cfg=dict(
 		assigner=dict(
 			type='HungarianAssigner',
 			cls_cost=dict(type='ClassificationCost', weight=1.),
-			reg_cost=dict(type='BBoxL1Cost', weight=5.0, box_format='xywh'),
-			iou_cost=dict(type='IoUCost', iou_mode='giou', weight=2.0))),
+			reg_cost=dict(type='BBoxL1Cost', smooth=True, beta=0.01, weight=5.0, box_format='xywh'),
+			iou_cost=dict(type='IoUCost', iou_mode='ciou', weight=2.0))),
 	test_cfg=dict(
 		max_per_img=max_per_img,
 		score_threshold = 0.05,
