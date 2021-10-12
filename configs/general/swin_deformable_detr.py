@@ -1,7 +1,7 @@
 _base_ = [
 	'../_base_/default_runtime.py'
 ]
-max_per_img = 256
+max_per_img = 64
 model = dict(
 	type='DeformableDETR',
 	backbone=dict(
@@ -31,9 +31,9 @@ model = dict(
 	bbox_head=dict(
 		type='DeformableDETRHead',
 		num_query=max_per_img,
-		num_classes=1,
+		num_classes=37,
 		in_channels=256,
-		as_two_stage=False,
+		as_two_stage=True,
 		with_box_refine=True,
 		transformer=dict(
 			type='DeformableDetrTransformer',
@@ -113,7 +113,9 @@ train_pipeline = [
 			[
 				dict(
 					type='Albu',
-					transforms=[dict(type = "Crop", x_min = 0, y_min = 400, x_max = 800, y_max = 800)],
+					transforms=[
+						dict(type = "Crop", x_min = 0, y_min = 400, x_max = 800, y_max = 800),
+						dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.1, rotate_limit=45, interpolation=1, p=0.5, border_mode = 0)],
 					bbox_params=dict(
 						type='BboxParams',
 						format='pascal_voc',
@@ -134,8 +136,11 @@ train_pipeline = [
 					transforms=[
 						dict(
 							type = "OneOf",
-							transforms=[dict(type = "Crop", x_min = 0, y_min = i, x_max = 800, y_max = 800) for i in range(400, 700, 10)],
-							p=1.0),							
+							transforms=[
+								dict(type = "Crop", x_min = 0, y_min = i, x_max = 800, y_max = 800) for i in range(400, 700, 10)
+								],
+							p=1.0),
+						dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.1, rotate_limit=45, interpolation=1, p=0.5, border_mode = 0),					
 						],
 					bbox_params=dict(
 						type='BboxParams',
