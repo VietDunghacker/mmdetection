@@ -25,7 +25,7 @@ model = dict(
 		in_channels=[256, 512, 1024],
 		kernel_size=1,
 		out_channels=256,
-		act_cfg=None,
+		act_cfg=dict(type='ReLU'),
 		norm_cfg=dict(type='GN', num_groups=32),
 		num_outs=4),
 	bbox_head=dict(
@@ -66,15 +66,15 @@ model = dict(
  	 	 	gamma=2.0,
  	 	 	alpha=0.25,
  	 	 	loss_weight=2.0),
-		loss_bbox=dict(type='L1Loss', loss_weight=5.0),
-		loss_iou=dict(type='GIoULoss', loss_weight=2.0)),
+		loss_bbox=dict(type='SmoothL1Loss', beta = 0.01, loss_weight=5.0),
+		loss_iou=dict(type='CIoULoss', loss_weight=2.0)),
 	# training and testing settings
 	train_cfg=dict(
 		assigner=dict(
 			type='HungarianAssigner',
 			cls_cost=dict(type='FocalLossCost', weight=2.),
-			reg_cost=dict(type='BBoxL1Cost', weight=5.0, box_format='xywh'),
-			iou_cost=dict(type='IoUCost', iou_mode='giou', weight=2.0))),
+			reg_cost=dict(type='BBoxL1Cost', smooth = True, beta = 0.01, weight=5.0, box_format='xywh'),
+			iou_cost=dict(type='IoUCost', iou_mode='ciou', weight=2.0))),
 	test_cfg=dict(
 		max_per_img=max_per_img,
 		score_threshold = 0.05,
