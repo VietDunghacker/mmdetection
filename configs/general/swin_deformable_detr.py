@@ -25,7 +25,7 @@ model = dict(
 		in_channels=[256, 512, 1024],
 		kernel_size=1,
 		out_channels=256,
-		act_cfg=dict(type='ReLU', inplace='True'),
+		act_cfg=dict(type='ReLU', inplace=True),
 		norm_cfg=dict(type='GN', num_groups=32),
 		num_outs=4),
 	bbox_head=dict(
