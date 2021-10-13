@@ -5,6 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from mmcv.cnn import ConvModule, Scale, bias_init_with_prob, normal_init
 from mmcv.runner import force_fp32
+from mmcv.ops import deform_conv2d
 
 from mmdet.core import multi_apply, multiclass_nms
 from mmdet.core.bbox.iou_calculators import bbox_overlaps
