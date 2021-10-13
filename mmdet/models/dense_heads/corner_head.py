@@ -129,9 +129,11 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 					 push_weight=0.25),
 				 loss_offset=dict(
 					 type='SmoothL1Loss', beta=1.0, loss_weight=1),
-				 init_cfg=None):
-		assert init_cfg is None, 'To prevent abnormal initialization ' \
-								 'behavior, init_cfg is not allowed to be set'
+				 init_cfg=dict(
+					 type='Normal',
+					 layer='Conv2d',
+					 std=0.01,
+					 bias_prob=0.1)):
 		super(CornerHead, self).__init__(init_cfg)
 		self.num_classes = num_classes
 		self.in_channels = in_channels
@@ -209,24 +211,6 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 		if self.with_corner_emb:
 			self._init_corner_emb_layers()
 
-	def init_weights(self):
-		super(CornerHead, self).init_weights()
-		bias_init = bias_init_with_prob(0.1)
-		for i in range(self.num_feat_levels):
-			# The initialization of parameters are different between
-			# nn.Conv2d and ConvModule. Our experiments show that
-			# using the original initialization of nn.Conv2d increases
-			# the final mAP by about 0.2%
-			self.tl_heat[i][-1].conv.reset_parameters()
-			self.tl_heat[i][-1].conv.bias.data.fill_(bias_init)
-			self.br_heat[i][-1].conv.reset_parameters()
-			self.br_heat[i][-1].conv.bias.data.fill_(bias_init)
-			self.tl_off[i][-1].conv.reset_parameters()
-			self.br_off[i][-1].conv.reset_parameters()
-			if self.with_corner_emb:
-				self.tl_emb[i][-1].conv.reset_parameters()
-				self.br_emb[i][-1].conv.reset_parameters()
-
 	def forward(self, feats):
 		"""Forward features from the upstream network.
 
@@ -259,7 +243,6 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 		lvl_ind = list(range(self.num_feat_levels))
 		return multi_apply(self.forward_single, feats, lvl_ind)
 
-	@force_fp32(apply_to=('x'))
 	def forward_single(self, x, lvl_ind, return_pool=False):
 		"""Forward feature of a single level.
 

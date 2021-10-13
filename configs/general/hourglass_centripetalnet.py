@@ -3,7 +3,7 @@ _base_ = [
 ]
 
 # model settings
-max_per_img = 64
+max_per_img = 100
 model = dict(
 	type='CornerNet',
 	backbone=dict(
@@ -17,7 +17,7 @@ model = dict(
 	neck=None,
 	bbox_head=dict(
 		type='CentripetalHead',
-		num_classes=34,
+		num_classes=37,
 		in_channels=256,
 		num_feat_levels=2,
 		corner_emb_channels=0,
@@ -65,7 +65,9 @@ train_pipeline = [
 			[
 				dict(
 					type='Albu',
-					transforms=[dict(type = "Crop", x_min = 0, y_min = 384, x_max = 768, y_max = 768)],
+					transforms=[
+						dict(type = "Crop", x_min = 0, y_min = 384, x_max = 768, y_max = 768),
+						dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.1, rotate_limit=45, interpolation=1, p=0.5, border_mode = 0)],
 					bbox_params=dict(
 						type='BboxParams',
 						format='pascal_voc',
@@ -86,8 +88,10 @@ train_pipeline = [
 					transforms=[
 						dict(
 							type = "OneOf",
-							transforms=[dict(type = "Crop", x_min = 0, y_min = i, x_max = 768, y_max = 768) for i in range(384, 704, 16)],
-							p=1.0),							
+							transforms=[
+								dict(type = "Crop", x_min = 0, y_min = i, x_max = 768, y_max = 768) for i in range(384, 704, 16)],
+							p=1.0),
+						dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.1, rotate_limit=45, interpolation=1, p=0.5, border_mode = 0),
 						],
 					bbox_params=dict(
 						type='BboxParams',
