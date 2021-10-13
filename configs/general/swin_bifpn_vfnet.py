@@ -22,7 +22,7 @@ model = dict(
 	neck=dict(
 		type='BiFPN',
 		in_channels=[256, 512, 1024],
-		out_channels=384,
+		out_channels=256,
 		input_indices=(1, 2, 3),
 		num_outs=5,
 		strides=[8, 16, 32],
@@ -34,10 +34,10 @@ model = dict(
 	),
 	bbox_head=dict(
 		type='VFNetHead',
-		num_classes=80,
-		in_channels=384,
+		num_classes=37,
+		in_channels=256,
 		stacked_convs=4,
-		feat_channels=384,
+		feat_channels=256,
 		strides=[8, 16, 32, 64, 128],
 		regress_ranges=((-1, 64), (64, 128), (128, 256), (256, 512), (512, 1e8)),
 		anchor_generator=dict(
@@ -51,13 +51,7 @@ model = dict(
 		dcn_on_last_conv=True,
 		use_atss=True,
 		use_vfl=True,
-		loss_cls=dict(
-			type='VarifocalLoss',
-			use_sigmoid=True,
-			alpha=0.75,
-			gamma=2.0,
-			iou_weighted=True,
-			loss_weight=1.0),
+		loss_cls=dict(type='VarifocalLoss', use_sigmoid=True, alpha=0.75, gamma=2.0, iou_weighted=True, loss_weight=1.0),
 		loss_bbox=dict(type='CIoULoss', loss_weight=1.5),
 		loss_bbox_refine=dict(type='CIoULoss', loss_weight=2.0)),
 	train_cfg=dict(
@@ -69,7 +63,7 @@ model = dict(
 		nms_pre=1000,
 		min_bbox_size=0,
 		score_thr=0.05,
-		nms=dict(type='nms', iou_threshold=0.6),
+		nms=dict(type='nms', iou_threshold=0.45),
 		max_per_img=100)
 	)
 
@@ -106,7 +100,9 @@ train_pipeline = [
 			[
 				dict(
 					type='Albu',
-					transforms=[dict(type = "Crop", x_min = 0, y_min = 400, x_max = 800, y_max = 800)],
+					transforms=[
+						dict(type = "Crop", x_min = 0, y_min = 400, x_max = 800, y_max = 800),
+						dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.1, rotate_limit=45, interpolation=1, p=0.5, border_mode = 0)],
 					bbox_params=dict(
 						type='BboxParams',
 						format='pascal_voc',
@@ -127,8 +123,11 @@ train_pipeline = [
 					transforms=[
 						dict(
 							type = "OneOf",
-							transforms=[dict(type = "Crop", x_min = 0, y_min = i, x_max = 800, y_max = 800) for i in range(400, 700, 10)],
-							p=1.0),							
+							transforms=[
+								dict(type = "Crop", x_min = 0, y_min = i, x_max = 800, y_max = 800) for i in range(400, 700, 10)
+								],
+							p=1.0),
+						dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.1, rotate_limit=45, interpolation=1, p=0.5, border_mode = 0),					
 						],
 					bbox_params=dict(
 						type='BboxParams',
