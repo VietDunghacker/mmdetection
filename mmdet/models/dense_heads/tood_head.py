@@ -527,8 +527,7 @@ class TOODHead(AnchorHead):
 			assert cls_score.size()[-2:] == bbox_pred.size()[-2:]
 			assert stride[0] == stride[1]
 
-			scores = cls_score.permute(1, 2, 0).reshape(
-				-1, self.cls_out_channels)
+			scores = cls_score.permute(1, 2, 0).reshape(-1, self.cls_out_channels)
 			bbox_pred = bbox_pred.permute(1, 2, 0).reshape(-1, 4) * stride[0]
 
 			nms_pre = cfg.get('nms_pre', -1)

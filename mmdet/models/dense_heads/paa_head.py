@@ -766,8 +766,24 @@ class PAATALHead(PAAHead):
 		reg_bbox = self.bbox_coder.decode(anchor, reg_dist).reshape(b, h, w, 4).permute(0, 3, 1, 2) / stride[0]
 		reg_offset = F.relu(self.reg_offset_conv1(feat), inplace = True)
 		reg_offset = self.reg_offset_conv2(reg_offset)
-		bbox_pred = self.deform_sampling(reg_bbox.contiguous(), reg_offset.contiguous())
+		bbox_pred = self.bbox_coder.encode(anchor, self.deform_sampling(reg_bbox.contiguous(), reg_offset.contiguous()).permute(0, 2, 3, 1).reshape(-1, 4) * stride[0])
+		bbox_pred = bbox_pred.reshape(b, h, w, 4).permute(0, 3, 1, 2)
 
 		centerness = self.atss_centerness(reg_feat)
 		return cls_score, bbox_pred, centerness
 
+	def get_anchor_list(self, featmap_sizes, num_imgs, device='cuda'):
+		"""Get anchors according to feature map sizes.
+		Args:
+			featmap_sizes (list[tuple]): Multi-level feature map sizes.
+			num_imgs (int): the number of images in a batch
+			device (torch.device | str): Device for returned tensors
+		Returns:
+			anchor_list (list[Tensor]): Anchors of each image.
+		"""
+		# since feature map sizes of all images are the same, we only compute
+		# anchors for one time
+		multi_level_anchors = self.anchor_generator.grid_priors(featmap_sizes, device)
+		anchor_list = [multi_level_anchors for _ in range(num_imgs)]
+
+		return anchor_list
