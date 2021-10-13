@@ -787,3 +787,14 @@ class PAATALHead(PAAHead):
 		anchor_list = [multi_level_anchors for _ in range(num_imgs)]
 
 		return anchor_list
+
+	def deform_sampling(self, feat, offset):
+		""" Sampling the feature x according to offset.
+		Args:
+			feat (Tensor): Feature
+			offset (Tensor): Spatial offset for for feature sampliing
+		"""
+		b, c, h, w = feat.shape
+		weight = feat.new_ones(c, 1, 1, 1)
+		y = deform_conv2d(feat, offset, weight, 1, 0, 1, c, c)
+		return y
