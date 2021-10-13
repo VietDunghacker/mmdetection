@@ -639,6 +639,7 @@ class PAAHead(ATSSHead):
 		det_labels_voted = det_labels.new_tensor(det_labels_voted)
 		return det_bboxes_voted, det_labels_voted
 
+@HEADS.register_module()
 class PAATALHead(PAAHead):
 	def __init__(self,
 				 num_dcn_on_head=0,
