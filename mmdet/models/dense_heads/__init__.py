@@ -25,7 +25,7 @@ from .keypoint_head import KeypointHead
 from .ld_head import LDHead
 from .nasfcos_head import NASFCOSHead
 from .oat_head import OATHead
-from .paa_head import PAAHead, PAATALHead
+from .paa_head import PAAHead
 from .pisa_retinanet_head import PISARetinaHead
 from .pisa_ssd_head import PISASSDHead
 from .qfl_head import QFLHead
@@ -56,5 +56,5 @@ __all__ = [
 	'AutoAssignHead', 'DETRHead', 'YOLOFHead', 'DeformableDETRHead',
 	'CenterNetHead', 'YOLOXHead', 'RepPointsV2Head',
 	'BVRHead', 'KeypointHead', 'TOODHead', "OATHead", 'QFLHead', 'RankBasedPAAHead',
-	'DDODHead', 'CustomCenterNetHead', 'PAATALHead'
+	'DDODHead', 'CustomCenterNetHead'
 ]
