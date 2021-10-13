@@ -644,7 +644,15 @@ class PAAHead(ATSSHead):
 class PAATALHead(PAAHead):
 	def __init__(self,
 				 num_dcn_on_head=0,
-				 init_cfg=None,
+				 init_cfg=dict(
+					 type='Normal',
+					 layer='Conv2d',
+					 std=0.01,
+					 override=dict(
+						 type='Normal',
+						 name='tood_cls',
+						 std=0.01,
+						 bias_prob=0.01)),
 				 **kwargs):
 		self.num_dcn_on_head = num_dcn_on_head
 		super(PAATALHead, self).__init__(init_cfg = init_cfg, **kwargs)
