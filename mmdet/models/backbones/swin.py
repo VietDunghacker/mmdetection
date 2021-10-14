@@ -685,22 +685,22 @@ class SwinTransformer(BaseModule):
 												  f'specify `Pretrained` in ' \
 												  f'`init_cfg` in ' \
 												  f'{self.__class__.__name__} '
-			ckpt = _load_checkpoint(
-				self.init_cfg.checkpoint, logger=logger, map_location='cpu')
+			ckpt = _load_checkpoint(self.init_cfg.checkpoint, logger=logger, map_location='cpu')
 			if 'state_dict' in ckpt:
 				_state_dict = ckpt['state_dict']
 			elif 'model' in ckpt:
 				_state_dict = ckpt['model']
 			else:
 				_state_dict = ckpt
-			if self.convert_weights:
-				# supported loading weight from original repo,
-				_state_dict = swin_converter(_state_dict)
 
 			state_dict = OrderedDict()
 			for k, v in _state_dict.items():
 				if k.startswith('backbone.'):
 					state_dict[k[9:]] = v
+
+			if self.convert_weights:
+				# supported loading weight from original repo,
+				state_dict = swin_converter(state_dict)
 
 			# strip prefix of state_dict
 			if list(state_dict.keys())[0].startswith('module.'):
