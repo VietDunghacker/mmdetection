@@ -364,7 +364,7 @@ class CocoDataset(CustomDataset):
 				metric='bbox',
 				logger=None,
 				jsonfile_prefix=None,
-				classwise=False,
+				classwise=True,
 				proposal_nums=(1, 10, 100),
 				iou_thrs=None,
 				area_range_type='absolute_scale_ap'):
@@ -478,6 +478,7 @@ class CocoDataset(CustomDataset):
 					# Compute per-category AP
 					# from https://github.com/facebookresearch/detectron2/
 					precisions = cocoEval.eval['precision']
+					aps = []
 					# precision: (iou, recall, cls, area range, max dets)
 					assert len(self.cat_ids) == precisions.shape[2]
 
@@ -492,8 +493,10 @@ class CocoDataset(CustomDataset):
 							ap = np.mean(precision)
 						else:
 							ap = float('nan')
+						aps.append(ap)
 						results_per_category.append(
 							(f'{nm["name"]}', f'{float(ap):0.3f}'))
+					eval_results['AP_per_class'] = aps
 
 					num_columns = min(6, len(results_per_category) * 2)
 					results_flatten = list(
