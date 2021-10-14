@@ -19,7 +19,7 @@ def calc_area_range_info(area_range_type):
 		area_labels = ['all']
 		inv_scale_thrs = np.power(2, np.arange(0, 5))[::-1]
 		for inv_min, inv_max in zip(inv_scale_thrs[:-1], inv_scale_thrs[1:]):
-			if inv_max == 256:
+			if inv_max == 16:
 				area_ranges.append([0**2, 1 / inv_max**2])
 				area_labels.append(f'0_1/{inv_max}')
 			else:
