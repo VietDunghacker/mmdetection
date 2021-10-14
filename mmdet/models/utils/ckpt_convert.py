@@ -86,8 +86,7 @@ def swin_converter(ckpt):
 	def correct_unfold_reduction_order(x):
 		out_channel, in_channel = x.shape
 		x = x.reshape(out_channel, 4, in_channel // 4)
-		x = x[:, [0, 2, 1, 3], :].transpose(1,
-											2).reshape(out_channel, in_channel)
+		x = x[:, [0, 2, 1, 3], :].transpose(1, 2).reshape(out_channel, in_channel)
 		return x
 
 	def correct_unfold_norm_order(x):

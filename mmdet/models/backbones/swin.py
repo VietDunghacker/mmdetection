@@ -697,6 +697,8 @@ class SwinTransformer(BaseModule):
 			for k, v in _state_dict.items():
 				if k.startswith('backbone.'):
 					state_dict[k[9:]] = v
+				else:
+					state_dict[k] = v
 
 			if self.convert_weights:
 				# supported loading weight from original repo,
