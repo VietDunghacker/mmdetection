@@ -34,7 +34,7 @@ model = dict(
 	),
 	bbox_head=dict(
 		type='TOODHead',
-		num_classes=80,
+		num_classes=37,
 		in_channels=256,
 		stacked_convs=6,
 		num_dcn_on_head=2,
@@ -64,7 +64,7 @@ model = dict(
 		loss_bbox=dict(type='CIoULoss', loss_weight=2.0),
 	),
 	train_cfg = dict(
-		initial_epoch=1,
+		initial_iter=250,
 		initial_assigner=dict(type='ATSSAssigner', topk=9),
 		assigner=dict(type='TaskAlignedAssigner', topk=13),
 		alpha=1,
