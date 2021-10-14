@@ -17,7 +17,7 @@ def calc_area_range_info(area_range_type):
 		relative_area = True
 		area_ranges = [[0**2, 1**2]]
 		area_labels = ['all']
-		inv_scale_thrs = np.power(2, np.arange(0, 10))[::-1]
+		inv_scale_thrs = np.power(2, np.arange(0, 5))[::-1]
 		for inv_min, inv_max in zip(inv_scale_thrs[:-1], inv_scale_thrs[1:]):
 			if inv_max == 256:
 				area_ranges.append([0**2, 1 / inv_max**2])
@@ -187,7 +187,10 @@ class USBeval(COCOeval):
 			s = self.eval['precision']
 			# IoU
 			if iouThr is not None:
-				t = np.where(iouThr == p.iouThrs)[0]
+				if iouThr == 0.9:
+					t = [8]
+				else:
+					t = np.where(iouThr == p.iouThrs)[0]
 				s = s[t]
 			s = s[:, :, :, aind, mind]
 		else:
