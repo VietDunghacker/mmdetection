@@ -26,7 +26,7 @@ def calc_area_range_info(area_range_type):
 				area_ranges.append([1 / inv_min**2, 1 / inv_max**2])
 				area_labels.append(f'1/{inv_min}_1/{inv_max}')
 	elif area_range_type == 'absolute_scale_ap':
-		scale_thrs = np.power(2, np.arange(2, 12))
+		scale_thrs = np.power(2, np.arange(5, 12))
 		scale_thrs[0] = 0
 		scale_thrs[-1] = 1e5
 		for min_scale, max_scale in zip(scale_thrs[:-1], scale_thrs[1:]):
