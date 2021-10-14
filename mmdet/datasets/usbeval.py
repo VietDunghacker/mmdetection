@@ -172,12 +172,10 @@ class USBeval(COCOeval):
 	def _summarize(self, ap=1, iouThr=None, areaRng='all', maxDets=100):
 		"""Compute and display a specific metric."""
 		p = self.params
-		iStr = (' {:<18} {} @[ IoU={:<9} | area={:>11s} | maxDets={:>4d} ]'
-				' = {:0.3f}')
+		iStr = (' {:<18} {} @[IoU={:<9} | area={:>11s} | maxDets={:>4d}] = {:0.4f}')
 		titleStr = 'Average Precision' if ap == 1 else 'Average Recall'
 		typeStr = '(AP)' if ap == 1 else '(AR)'
-		iouStr = '{:0.2f}:{:0.2f}'.format(p.iouThrs[0], p.iouThrs[-1]) \
-			if iouThr is None else '{:0.2f}'.format(iouThr)
+		iouStr = '{:0.2f}:{:0.2f}'.format(p.iouThrs[0], p.iouThrs[-1]) if iouThr is None else '{:0.2f}'.format(iouThr)
 
 		aind = [i for i, aRng in enumerate(p.areaRngLbl) if aRng == areaRng]
 		mind = [i for i, mDet in enumerate(p.maxDets) if mDet == maxDets]
