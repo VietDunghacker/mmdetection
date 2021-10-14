@@ -30,7 +30,7 @@ model = dict(
 		num_layers=1,
 		weight_method='fast_attn',
 		act_cfg='silu',
-		separable_conv=False,
+		separable_conv=True,
 		epsilon=0.0001
 	),
 	bbox_head=dict(
