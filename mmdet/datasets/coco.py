@@ -367,7 +367,7 @@ class CocoDataset(CustomDataset):
 				classwise=False,
 				proposal_nums=(1, 10, 100),
 				iou_thrs=None,
-				area_range_type='COCO'):
+				area_range_type='relative_scale_ap'):
 		"""Evaluation in COCO protocol.
 		Args:
 			results (list[list | tuple]): Testing results of the dataset.
@@ -522,4 +522,3 @@ class CocoDataset(CustomDataset):
 		if tmp_dir is not None:
 			tmp_dir.cleanup()
 		return eval_results
-

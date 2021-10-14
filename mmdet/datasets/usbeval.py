@@ -222,8 +222,8 @@ class USBeval(COCOeval):
 			area_label_short = self._shorten_area_label(area_label)
 			if area_label == 'all':
 				stats['mAP'] = self._summarize(1)
-				stats['mAP_50'] = self._summarize(1, iouThr=.5, maxDets=max_dets[2])
-				stats['mAP_75'] = self._summarize(1, iouThr=.75, maxDets=max_dets[2])
+				for i in range(50, 100, 5):
+					stats['mAP_' + i] = self._summarize(1, iouThr=i/100, maxDets=max_dets[2])
 			else:
 				stats[f'mAP_{area_label_short}'] = self._summarize(
 					1, areaRng=area_label, maxDets=max_dets[2])
