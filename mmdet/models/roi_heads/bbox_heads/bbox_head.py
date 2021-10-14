@@ -344,8 +344,7 @@ class BBoxHead(BaseModule):
 		if self.custom_cls_channels:
 			scores = self.loss_cls.get_activation(cls_score)
 		else:
-			scores = F.softmax(
-				cls_score, dim=-1) if cls_score is not None else None
+			scores = F.softmax(cls_score, dim=-1) if cls_score is not None else None
 		# bbox_pred would be None in some detector when with_reg is False,
 		# e.g. Grid R-CNN.
 		if bbox_pred is not None:
@@ -358,17 +357,13 @@ class BBoxHead(BaseModule):
 				bboxes[:, [1, 3]].clamp_(min=0, max=img_shape[0])
 
 		if rescale and bboxes.size(0) > 0:
-
 			scale_factor = bboxes.new_tensor(scale_factor)
-			bboxes = (bboxes.view(bboxes.size(0), -1, 4) / scale_factor).view(
-				bboxes.size()[0], -1)
+			bboxes = (bboxes.view(bboxes.size(0), -1, 4) / scale_factor).view(bboxes.size()[0], -1)
 
 		if cfg is None:
 			return bboxes, scores
 		else:
-			det_bboxes, det_labels = multiclass_nms(bboxes, scores,
-													cfg.score_thr, cfg.nms,
-													cfg.max_per_img)
+			det_bboxes, det_labels = multiclass_nms(bboxes, scores, cfg.score_thr, cfg.nms, cfg.max_per_img)
 
 			return det_bboxes, det_labels
 

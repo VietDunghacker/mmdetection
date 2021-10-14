@@ -1,18 +1,17 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import math
+
+from mmcv.cnn import Scale
 from mmcv.ops import batched_nms
 from mmcv.runner import force_fp32
 
 from mmdet.core import multi_apply, distance2bbox, reduce_mean
 from mmdet.models import HEADS, build_loss
 
-from mmcv.cnn import Scale
 from .base_dense_head import BaseDenseHead
 from .dense_test_mixins import BBoxTestMixin
-
-from torch.nn import functional as F
-
 
 INF = 100000000
 
@@ -125,10 +124,7 @@ class CustomCenterNetHead(BaseDenseHead, BBoxTestMixin):
 
 	def _build_head(self, in_channel, out_channel):
 		"""Build head for each branch."""
-		layer = nn.Conv2d(
-			in_channel, out_channel, kernel_size=self.out_kernel,
-			stride=1, padding=self.out_kernel // 2
-		)
+		layer = nn.Conv2d(in_channel, out_channel, kernel_size=self.out_kernel, stride=1, padding=self.out_kernel // 2)
 		return layer
 
 	def _build_tower(self, head_configs, channels):
@@ -157,21 +153,17 @@ class CustomCenterNetHead(BaseDenseHead, BBoxTestMixin):
 
 	def init_weights(self):
 		"""Initialize weights of the head."""
-		for modules in [
-			self.cls_tower, self.bbox_tower,
-			self.share_tower,
-			self.bbox_pred,
-		]:
+		for modules in [self.cls_tower, self.bbox_tower, self.share_tower, self.bbox_pred]:
 			for layer in modules.modules():
 				if isinstance(layer, nn.Conv2d):
-					torch.nn.init.normal_(layer.weight, std=0.01)
-					torch.nn.init.constant_(layer.bias, 0)
+					nn.init.normal_(layer.weight, std=0.01)
+					nn.init.constant_(layer.bias, 0)
 
-		torch.nn.init.constant_(self.bbox_pred.bias, 8.)
+		nn.init.constant_(self.bbox_pred.bias, 8.)
 		prior_prob = 0.01
 		bias_value = -math.log((1 - prior_prob) / prior_prob)
-		torch.nn.init.constant_(self.agn_hm.bias, bias_value)
-		torch.nn.init.normal_(self.agn_hm.weight, std=0.01)
+		nn.init.constant_(self.agn_hm.bias, bias_value)
+		nn.init.normal_(self.agn_hm.weight, std=0.01)
 
 	def forward(self, feats):
 		"""Forward features. Notice CenterNet head does not use FPN.
@@ -186,10 +178,9 @@ class CustomCenterNetHead(BaseDenseHead, BBoxTestMixin):
 			agn_hms (List[Tensor]): agn_hms predicts for all levels,
 				the channels number is 1.
 		"""
-		return multi_apply(self.forward_single, feats,
-						   [i for i in range(len(feats))])
+		return multi_apply(self.forward_single, feats, self.scales)
 
-	def forward_single(self, feat, i):
+	def forward_single(self, feat, scale):
 		"""Forward feature of a single level.
 		Args:
 			feat (Tensor): Feature of a single level.
@@ -199,8 +190,8 @@ class CustomCenterNetHead(BaseDenseHead, BBoxTestMixin):
 			agn_hms (Tensor): center predict heatmaps, the channels number is 1
 		"""
 
-		feat = self.share_tower(feat)	   # not used
-		cls_tower = self.cls_tower(feat)	# not used
+		feat = self.share_tower(feat)
+		cls_tower = self.cls_tower(feat)
 		bbox_tower = self.bbox_tower(feat)
 
 		if not self.only_proposal:
@@ -209,8 +200,8 @@ class CustomCenterNetHead(BaseDenseHead, BBoxTestMixin):
 			clss = None
 		agn_hms = self.agn_hm(bbox_tower)
 		reg = self.bbox_pred(bbox_tower)
-		reg = self.scales[i](reg)
-		bbox_reg = F.relu(reg)
+		reg = scale(reg)
+		bbox_reg = F.relu(reg, inplace=True)
 		return clss, bbox_reg, agn_hms
 
 	def loss(self,
@@ -243,11 +234,8 @@ class CustomCenterNetHead(BaseDenseHead, BBoxTestMixin):
 		grids = self.compute_grids(agn_hm_pred_per_level)
 		shapes_per_level = grids[0].new_tensor(
 			[(x.shape[2], x.shape[3]) for x in reg_pred_per_level])
-		pos_inds, reg_targets, flattened_hms = \
-			self.get_targets(
-				grids, shapes_per_level, gt_bboxes)
-		reg_pred, agn_hm_pred = self._flatten_outputs(
-			reg_pred_per_level, agn_hm_pred_per_level)
+		pos_inds, reg_targets, flattened_hms = self.get_targets(grids, shapes_per_level, gt_bboxes)
+		reg_pred, agn_hm_pred = self._flatten_outputs(reg_pred_per_level, agn_hm_pred_per_level)
 
 		flatten_points = torch.cat(
 			[points.repeat(len(img_metas), 1) for points in grids])
@@ -273,8 +261,7 @@ class CustomCenterNetHead(BaseDenseHead, BBoxTestMixin):
 			C: number of classes
 		'''
 		assert (torch.isfinite(reg_pred).all().item())
-		num_pos_local = torch.tensor(
-			len(pos_inds), dtype=torch.float, device=reg_pred[0].device)
+		num_pos_local = torch.tensor(len(pos_inds), dtype=torch.float, device=reg_pred[0].device)
 		num_pos_avg = max(reduce_mean(num_pos_local), 1.0)
 
 		losses = {}
@@ -284,8 +271,7 @@ class CustomCenterNetHead(BaseDenseHead, BBoxTestMixin):
 		flatten_points_pos = flatten_points[reg_inds]  # added by mmz
 		reg_weight_map = flattened_hms.max(dim=1)[0]
 		reg_weight_map = reg_weight_map[reg_inds]
-		reg_weight_map = reg_weight_map * 0 + 1 \
-			if self.not_norm_reg else reg_weight_map
+		reg_weight_map = reg_weight_map * 0 + 1 if self.not_norm_reg else reg_weight_map
 		reg_norm = max(reduce_mean(reg_weight_map.sum()).item(), 1.0)
 
 		# added by mmz
@@ -551,8 +537,7 @@ class CustomCenterNetHead(BaseDenseHead, BBoxTestMixin):
 		'''
 		heatmaps = dist.new_zeros((dist.shape[0], 1))
 		heatmaps[:, 0] = torch.exp(-dist.min(dim=1)[0])
-		zeros = heatmaps < 1e-4
-		heatmaps[zeros] = 0
+		heatmaps[heatmaps < 1e-4] = 0
 		return heatmaps
 
 	def _flatten_outputs(self, reg_pred, agn_hm_pred):
