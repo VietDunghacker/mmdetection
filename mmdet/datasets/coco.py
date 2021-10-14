@@ -465,7 +465,7 @@ class CocoDataset(CustomDataset):
 				for key, val in cocoEval.stats.items():
 					if key.startswith('mAP'):
 						key = f'{metric}_{key}'
-					eval_results[key] = float(f'{val:.3f}')
+					eval_results[key] = float(f'{val:.4f}')
 			else:
 				cocoEval.evaluate()
 				cocoEval.accumulate()
@@ -473,7 +473,7 @@ class CocoDataset(CustomDataset):
 				for key, val in cocoEval.stats.items():
 					if key.startswith('mAP'):
 						key = f'{metric}_{key}'
-					eval_results[key] = float(f'{val:.3f}')
+					eval_results[key] = float(f'{val:.4f}')
 				if classwise:  # Compute per-category AP
 					# Compute per-category AP
 					# from https://github.com/facebookresearch/detectron2/
@@ -514,7 +514,7 @@ class CocoDataset(CustomDataset):
 					copypastes = []
 					coco_metrics = ['mAP', 'mAP_50', 'mAP_75', 'mAP_s', 'mAP_m', 'mAP_l']
 					for coco_metric in coco_metrics:
-						copypastes.append(f'{cocoEval.stats[coco_metric]:.3f}')
+						copypastes.append(f'{cocoEval.stats[coco_metric]:.4f}')
 					mAP_copypaste = ' '.join(copypastes)
 					eval_results[f'{metric}_mAP_copypaste'] = mAP_copypaste
 				except KeyError:
