@@ -494,8 +494,7 @@ class CocoDataset(CustomDataset):
 						else:
 							ap = float('nan')
 						aps.append(ap)
-						results_per_category.append(
-							(f'{nm["name"]}', f'{float(ap):0.3f}'))
+						results_per_category.append((f'{nm["name"]}', f'{float(ap):0.4f}'))
 					eval_results['AP_per_class'] = aps
 
 					num_columns = min(6, len(results_per_category) * 2)
@@ -513,9 +512,7 @@ class CocoDataset(CustomDataset):
 
 				try:
 					copypastes = []
-					coco_metrics = [
-						'mAP', 'mAP_50', 'mAP_75', 'mAP_s', 'mAP_m', 'mAP_l'
-					]
+					coco_metrics = ['mAP', 'mAP_50', 'mAP_75', 'mAP_s', 'mAP_m', 'mAP_l']
 					for coco_metric in coco_metrics:
 						copypastes.append(f'{cocoEval.stats[coco_metric]:.3f}')
 					mAP_copypaste = ' '.join(copypastes)
