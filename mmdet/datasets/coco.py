@@ -15,7 +15,7 @@ from mmdet.core import eval_recalls
 from .api_wrappers import COCO, COCOeval
 from .builder import DATASETS
 from .custom import CustomDataset
-
+from .usbeval import USBeval
 
 @DATASETS.register_module()
 class CocoDataset(CustomDataset):
