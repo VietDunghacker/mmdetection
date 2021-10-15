@@ -172,7 +172,7 @@ train_pipeline = [
 			'gt_bboxes': 'bboxes'
 		},
 		update_pad_shape=False,
-		skip_img_without_anno=True),	
+		skip_img_without_anno=False),	
 	dict(type='Pad', size_divisor=32),
 	dict(type='Normalize', **img_norm_cfg),
 	dict(type='DefaultFormatBundle'),
