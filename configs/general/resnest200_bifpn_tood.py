@@ -22,7 +22,7 @@ model = dict(
 		init_cfg=dict(type='Pretrained', checkpoint='open-mmlab://resnest200')),
 	neck=dict(
 		type='BiFPN',
-		in_channels=[128, 320, 512],
+		in_channels=[512, 1024, 2048],
 		out_channels=256,
 		input_indices=(1, 2, 3),
 		num_outs=5,
