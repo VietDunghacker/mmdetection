@@ -30,7 +30,7 @@ def gaussian_focal_loss(pred, gaussian_target, alpha=2.0, gamma=4.0):
 
 @mmcv.jit(derivate=True, coderize=True)
 @weighted_loss
-def custom_gaussian_focal_loss(pred, gaussian_target, pos_inds = None, alpha: float = -1, beta: float = 4, gamma: float = 2, sigmoid_clamp: float = 1e-4, ignore_high_fp: float = -1.,
+def custom_gaussian_focal_loss(pred, gaussian_target, pos_inds = None, alpha: float = -1, beta: float = 4, gamma: float = 2, ignore_high_fp: float = -1.,
 	):
 	"""`Focal Loss <https://arxiv.org/abs/1708.02002>`_ for targets in gaussian
 	distribution.
@@ -43,11 +43,12 @@ def custom_gaussian_focal_loss(pred, gaussian_target, pos_inds = None, alpha: fl
 		gamma (float, optional): The gamma for calculating the modulating
 			factor. Defaults to 4.0.
 	"""
-	pred = torch.clamp(pred.sigmoid_(), min=sigmoid_clamp, max=1-sigmoid_clamp)
+	eps = 1e-12
+	pred = torch.clamp(pred.sigmoid_(), min=1e-4, max=1-1e-4)
 	neg_weights = torch.pow(1 - gaussian_target, beta)
 	pos_pred = pred[pos_inds] # N
-	pos_loss = torch.log(pos_pred) * torch.pow(1 - pos_pred, gamma)
-	neg_loss = torch.log(1 - pred) * torch.pow(pred, gamma) * neg_weights
+	pos_loss = torch.log(pos_pred + epss) * torch.pow(1 - pos_pred, gamma)
+	neg_loss = torch.log(1 - pred + eps) * torch.pow(pred, gamma) * neg_weights
 	if ignore_high_fp > 0:
 		not_high_fp = (pred < ignore_high_fp).float()
 		neg_loss = not_high_fp * neg_loss

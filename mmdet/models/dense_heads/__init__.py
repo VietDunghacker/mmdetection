@@ -5,10 +5,10 @@ from .atss_head import ATSSHead
 from .autoassign_head import AutoAssignHead
 from .bvr_head import BVRHead
 from .cascade_rpn_head import CascadeRPNHead, StageCascadeRPNHead
+from .center_rpn_head import CenterRPNHead
 from .centernet_head import CenterNetHead
 from .centripetal_head import CentripetalHead
 from .corner_head import CornerHead
-from .custom_centernet_head import CustomCenterNetHead
 from .ddod_head import DDODHead
 from .deformable_detr_head import DeformableDETRHead
 from .detr_head import DETRHead
@@ -56,5 +56,5 @@ __all__ = [
 	'AutoAssignHead', 'DETRHead', 'YOLOFHead', 'DeformableDETRHead',
 	'CenterNetHead', 'YOLOXHead', 'RepPointsV2Head',
 	'BVRHead', 'KeypointHead', 'TOODHead', "OATHead", 'QFLHead', 'RankBasedPAAHead',
-	'DDODHead', 'CustomCenterNetHead'
+	'DDODHead', 'CenterRPNHead'
 ]

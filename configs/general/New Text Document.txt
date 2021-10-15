@@ -1,3 +1,4 @@
+- SwinL - BiFPN - TOODHead: mAP 0.9292, AP50 0.9735
 - SwinB - BiFPN - TOODHead: mAP 0.9191, AP50 0.9675
 - SwinB - BiFPN - VFNetHead: mAP 0.9100, AP50 0.9626
 - SwinB - BiFPN - PAAHead: mAP 0.9100, AP50 0.9609

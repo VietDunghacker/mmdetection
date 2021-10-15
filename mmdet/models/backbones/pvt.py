@@ -378,7 +378,7 @@ class PyramidVisionTransformer(BaseModule):
 				 act_cfg=dict(type='GELU'),
 				 norm_cfg=dict(type='LN', eps=1e-6),
 				 pretrained=None,
-				 with_cp = False,
+				 with_cp=False,
 				 convert_weights=True,
 				 init_cfg=None):
 		super().__init__(init_cfg=init_cfg)
