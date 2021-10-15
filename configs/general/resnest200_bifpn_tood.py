@@ -11,7 +11,7 @@ model = dict(
 		reduction_factor=4,
 		avg_down_stride=True,
 		num_stages=4,
-		out_indices=(0, 1, 2, 3),
+		out_indices=(1, 2, 3),
 		frozen_stages=-1,
 		norm_cfg=dict(type='GN', num_groups=32, requires_grad=True),
 		norm_eval=False,
