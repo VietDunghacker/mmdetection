@@ -28,13 +28,14 @@ model = dict(
 		strides=[8, 16, 32],
 		num_layers=1,
 		weight_method='fast_attn',
+		norm_cfg=dict(type='GN', num_groups=32, requires_grad=True),
 		act_cfg='silu',
 		separable_conv=True,
 		epsilon=0.0001
 	),
 	bbox_head=dict(
 		type='GFLHead',
-		num_classes=34,
+		num_classes=37,
 		in_channels=256,
 		stacked_convs=4,
 		feat_channels=256,
@@ -92,7 +93,9 @@ train_pipeline = [
 			[
 				dict(
 					type='Albu',
-					transforms=[dict(type = "Crop", x_min = 0, y_min = 400, x_max = 800, y_max = 800)],
+					transforms=[
+						dict(type = "Crop", x_min = 0, y_min = 400, x_max = 800, y_max = 800),
+						dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.1, rotate_limit=45, interpolation=1, p=0.5, border_mode = 0)],
 					bbox_params=dict(
 						type='BboxParams',
 						format='pascal_voc',
@@ -105,7 +108,7 @@ train_pipeline = [
 					},
 					update_pad_shape=False,
 					skip_img_without_anno=False),
-				dict(type = 'Pad', size_divisor = 800),
+				dict(type='Pad', size_divisor=800),
 			],
 			[
 				dict(
@@ -113,8 +116,11 @@ train_pipeline = [
 					transforms=[
 						dict(
 							type = "OneOf",
-							transforms=[dict(type = "Crop", x_min = 0, y_min = i, x_max = 800, y_max = 800) for i in range(400, 700, 10)],
-							p=1.0),							
+							transforms=[
+								dict(type = "Crop", x_min = 0, y_min = i, x_max = 800, y_max = 800) for i in range(400, 700, 10)
+								],
+							p=1.0),
+						dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.1, rotate_limit=45, interpolation=1, p=0.5, border_mode = 0),					
 						],
 					bbox_params=dict(
 						type='BboxParams',
