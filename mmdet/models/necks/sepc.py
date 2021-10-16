@@ -174,7 +174,7 @@ class PConvModule(BaseModule):
 				part_deform=part_deform))
 
 		if self.ibn:
-			self.pnorm_name, pnorm = build_norm_layer(self.norm_cfg, 256)
+			self.pnorm_name, pnorm = build_norm_layer(self.norm_cfg, out_channels)
 			self.add_module(self.pnorm_name, pnorm)
 
 		self.relu = nn.ReLU()
