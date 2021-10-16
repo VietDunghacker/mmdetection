@@ -291,7 +291,7 @@ class CenterRPNHead(BaseDenseHead, BBoxTestMixin):
 			avg_factor=reg_norm)
 		if self.with_agn_hm:
 			agn_heatmap_loss = self.loss_center_heatmap(
-				flatten_center_heatmap_pred,
+				flatten_center_heatmap_pred.sigmoid(),
 				heatmap_targets.max(dim=1)[0],
 				pos_inds,
 				avg_factor=num_pos_avg
