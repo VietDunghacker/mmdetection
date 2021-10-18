@@ -3,7 +3,7 @@ _base_ = [
 ]
 model = dict(
     type='KnowledgeDistillationSingleStageDetector',
-    teacher_config='./swin_bifpn_sepc_gflv2.py',
+    teacher_config='/content/mmdetection/configs/general/swin_bifpn_sepc_gflv2.py',
     teacher_ckpt='/gdrive/My Drive/checkpoints/swin_bifpn_sepc_gflv2.pth',
 	backbone=dict(
 		type='SwinTransformer',
