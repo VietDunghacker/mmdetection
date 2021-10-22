@@ -38,8 +38,7 @@ class KnowledgeDistillationSingleStageDetector(SingleStageDetector):
 			teacher_config = mmcv.Config.fromfile(teacher_config)
 		self.teacher_model = build_detector(teacher_config['model'])
 		if teacher_ckpt is not None:
-			load_checkpoint(
-				self.teacher_model, teacher_ckpt, map_location='cpu')
+			load_checkpoint(self.teacher_model, teacher_ckpt, map_location='cpu')
 
 	def forward_train(self,
 					  img,

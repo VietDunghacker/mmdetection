@@ -1,10 +1,10 @@
 _base_ = [
 	'../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py'
 ]
-num_stages = 6
-num_proposals = 128
 model = dict(
-	type='SparseRCNN',
+    type='KnowledgeDistillationSingleStageDetector',
+    teacher_config='/content/mmdetection/configs/general/swin_bifpn_sepc_gflv2.py',
+    teacher_ckpt='/gdrive/My Drive/checkpoints/swin_bifpn_sepc_gflv2.pth',
 	backbone=dict(
 		type='SwinTransformer',
 		embed_dims=128,
@@ -18,83 +18,73 @@ model = dict(
 		attn_drop_rate=0.,
 		drop_path_rate=0.3,
 		patch_norm=True,
-		out_indices=(0, 1, 2, 3),
+		out_indices=(1, 2, 3),
 		with_cp=True,
 		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
-	neck=dict(
-		type='PAFPNX',
-		in_channels=[128, 256, 512, 1024],
-		out_channels=256,
-		start_level=0,
-		add_extra_convs='on_output',
-		num_outs=4,
-		relu_before_extra_convs=True,
-		pafpn_conv_cfg=dict(type='DCNv2'),
-		norm_cfg=dict(type='GN', num_groups=32, requires_grad=True)),
-	rpn_head=dict(
-		type='EmbeddingRPNHead',
-		num_proposals=num_proposals,
-		proposal_feature_channel=256),
-	roi_head=dict(
-		type='SparseRoIHead',
-		num_stages=num_stages,
-		stage_loss_weights=[1] * num_stages,
-		proposal_feature_channel=256,
-		bbox_roi_extractor=dict(
-			type='SingleRoIExtractor',
-			roi_layer=dict(type='RoIAlign', output_size=7, sampling_ratio=0),
+	neck=[
+		dict(
+			type='BiFPN',
+			in_channels=[256, 512, 1024],
 			out_channels=256,
-			featmap_strides=[4, 8, 16, 32]),
-		bbox_head=[
-			dict(
-				type='DIIHead',
-				num_classes=37,
-				num_ffn_fcs=2,
-				num_heads=8,
-				num_cls_fcs=1,
-				num_reg_fcs=3,
-				feedforward_channels=2048,
-				in_channels=256,
-				dropout=0.0,
-				ffn_act_cfg=dict(type='ReLU', inplace=True),
-				dynamic_conv_cfg=dict(
-					type='DynamicConv',
-					in_channels=256,
-					feat_channels=64,
-					out_channels=256,
-					input_feat_shape=7,
-					act_cfg=dict(type='ReLU', inplace=True),
-					norm_cfg=dict(type='LN')),
-				loss_bbox=dict(type='SmoothL1Loss', beta=0.01, loss_weight=5.0),
-				loss_iou=dict(type='CIoULoss', loss_weight=2.0),
-				loss_cls=dict(type='FocalLoss', use_sigmoid=True, gamma=2.0, alpha=0.25, loss_weight=2.0),
-				bbox_coder=dict(
-					type='DeltaXYWHBBoxCoder',
-					clip_border=False,
-					target_means=[0., 0., 0., 0.],
-					target_stds=[0.5, 0.5, 1., 1.])) for _ in range(num_stages)
-		]),
-	# training and testing settings
-	train_cfg=dict(
-		rpn=None,
-		rcnn=[
-			dict(
-				assigner=dict(
-					type='HungarianAssigner',
-					cls_cost=dict(type='FocalLossCost', weight=2.0),
-					reg_cost=dict(type='BBoxL1Cost', smooth=True, beta=0.01, weight=5.0),
-					iou_cost=dict(type='IoUCost', iou_mode='ciou', weight=2.0)),
-				sampler=dict(type='PseudoSampler'),
-				pos_weight=1) for _ in range(num_stages)
-		]),
-	test_cfg=dict(rpn=None, rcnn=dict(max_per_img=num_proposals, score_threshold = 0.05, nms = dict(type='nms', iou_threshold=0.6))))
+			input_indices=(1, 2, 3),
+			num_outs=5,
+			strides=[8, 16, 32],
+			num_layers=1,
+			weight_method='fast_attn',
+			norm_cfg=dict(type='GN', num_groups=32, requires_grad=True),
+			act_cfg='silu',
+			separable_conv=True,
+			epsilon=0.0001,
+		),
+		dict(
+			type='SEPC',
+			in_channels=[256] * 5,
+			out_channels=256,
+			stacked_convs=4,
+			num_outs=5,
+			pconv_deform=True,
+			lcconv_deform=True,
+			ibn=True,  # please set imgs/gpu >= 4
+			pnorm_eval=False,
+			lcnorm_eval=False,
+			lcconv_padding=1,
+			pnorm_cfg=dict(type='GN', num_groups=32, requires_grad=True),
+			lcnorm_cfg=dict(type='GN', num_groups=32, requires_grad=True))
+	],
+	bbox_head=dict(
+		type='LDHead',
+		num_classes=37,
+		in_channels=256,
+		stacked_convs=0,
+		feat_channels=256,
+		anchor_generator=dict(
+			type='AnchorGenerator',
+			ratios=[1.0],
+			octave_base_scale=8,
+			scales_per_octave=1,
+			strides=[8, 16, 32, 64, 128]),
+		loss_cls=dict(type='QualityFocalLoss', use_sigmoid=False, beta=2.0, loss_weight=1.0),
+		loss_dfl=dict(type='DistributionFocalLoss', loss_weight=0.25),
+		loss_ld=dict(type='KnowledgeDistillationKLDivLoss', loss_weight=0.25, T=10),
+		use_dgqp = True,
+		loss_bbox=dict(type='CIoULoss', loss_weight=2.0)),
+	train_cfg = dict(
+		assigner=dict(type='ATSSAssigner', topk=9),
+		allowed_border=-1,
+		pos_weight=-1,
+		debug=False),
+	test_cfg = dict(
+		nms_pre=1000,
+		min_bbox_size=0,
+		score_thr=0.05,
+		nms=dict(type='nms', iou_threshold=0.6),
+		max_per_img=100)
+	)
 
 # data setting
-dataset_type = 'CocoDataset'
-data_root = '/content/data/'
 img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 albu_train_transforms = [
-	dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0, rotate_limit=0, interpolation=1, p=0.5, border_mode = 0),
+	dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.0625, rotate_limit=2, interpolation=1, p=0.5, border_mode = 0),
 	dict(type='RandomBrightnessContrast', brightness_limit=0.1, contrast_limit=0.1),
 	dict(type='RGBShift', r_shift_limit=10, g_shift_limit=10, b_shift_limit=10),
 	dict(type='HueSaturationValue', hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20),
@@ -137,7 +127,7 @@ train_pipeline = [
 					},
 					update_pad_shape=False,
 					skip_img_without_anno=False),
-				dict(type = 'Pad', size_divisor = 800),
+				dict(type='Pad', size_divisor=800),
 			],
 			[
 				dict(
@@ -194,7 +184,7 @@ train_pipeline = [
 			type='BboxParams',
 			format='pascal_voc',
 			label_fields=['gt_labels'],
-			min_visibility=0.0,
+			min_visibility=0.1,
 			filter_lost_elements=True),
 		keymap={
 			'img': 'image',
@@ -202,6 +192,7 @@ train_pipeline = [
 		},
 		update_pad_shape=False,
 		skip_img_without_anno=False),	
+	dict(type='Pad', size_divisor=32),
 	dict(type='Normalize', **img_norm_cfg),
 	dict(type='DefaultFormatBundle'),
 	dict(type='Collect', keys=['img', 'gt_bboxes', 'gt_labels']),
@@ -232,9 +223,9 @@ data = dict(
 optimizer = dict(
 	_delete_ = True,
 	type='AdamW',
-	lr=0.000025,
+	lr=0.0001,
 	betas=(0.9, 0.999),
-	weight_decay=0.0001,
+	weight_decay=0.05,
 	paramwise_cfg=dict(
 		custom_keys={
 			'absolute_pos_embed': dict(decay_mult=0.),
@@ -261,3 +252,4 @@ fp16 = dict(loss_scale = 512.)
 load_from = None
 resume_from = None
 workflow = [('train', 1)]
+

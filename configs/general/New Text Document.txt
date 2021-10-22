@@ -1,6 +1,7 @@
+- SwinB - BiFPNx1 - SEPC - GFLHead: mAP 0.9346, AP50 0.9736
 - SwinL - BiFPNx1 - TOODHead: mAP 0.9290, AP50 0.9733
+- SwinB - BiFPNx1 - SEPC - GFLHead - LD: mAP 0.9272, AP50 0.9637
 - SwinB - BiFPNx1 - TOODHead: mAP 0.9191, AP50 0.9675
 - SwinB - BiFPNx1 - VFNetHead: mAP 0.9100, AP50 0.9626
 - SwinB - BiFPNx1 - PAAHead: mAP 0.9100, AP50 0.9609
-- SwinB - BiFPNx1 - SEPC - GFLHead: mAP 0.9039, AP50 0.9582
 - SwinB - BiFPNx1 - GFLHead: mAP 0.8995, AP50 0.9539
