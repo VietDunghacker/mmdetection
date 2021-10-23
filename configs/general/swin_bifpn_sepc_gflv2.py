@@ -23,7 +23,7 @@ model = dict(
 		dict(
 			type='BiFPN',
 			in_channels=[256, 512, 1024],
-			out_channels=256,
+			out_channels=384,
 			input_indices=(1, 2, 3),
 			num_outs=5,
 			strides=[8, 16, 32],
@@ -36,8 +36,8 @@ model = dict(
 		),
 		dict(
 			type='SEPC',
-			in_channels=[256] * 5,
-			out_channels=256,
+			in_channels=[384] * 5,
+			out_channels=384,
 			stacked_convs=4,
 			num_outs=5,
 			pconv_deform=True,
@@ -52,9 +52,9 @@ model = dict(
 	bbox_head=dict(
 		type='GFLHead',
 		num_classes=37,
-		in_channels=256,
+		in_channels=384,
 		stacked_convs=0,
-		feat_channels=256,
+		feat_channels=384,
 		anchor_generator=dict(
 			type='AnchorGenerator',
 			ratios=[1.0],
@@ -63,10 +63,10 @@ model = dict(
 			strides=[8, 16, 32, 64, 128]),
 		loss_cls=dict(type='QualityFocalLoss', use_sigmoid=False, beta=2.0, loss_weight=1.0),
 		loss_dfl=dict(type='DistributionFocalLoss', loss_weight=0.25),
-		use_dgqp = True,
+		use_dgqp=True,
 		loss_bbox=dict(type='CIoULoss', loss_weight=2.0)),
 	train_cfg = dict(
-		assigner=dict(type='ATSSAssigner', topk=9),
+		assigner=dict(type='ATSSAssigner', topk=13),
 		allowed_border=-1,
 		pos_weight=-1,
 		debug=False),
