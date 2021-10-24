@@ -108,6 +108,7 @@ train_pipeline = [
 			],
 			[
 				dict(type='Resize', img_scale=(960, 960), keep_ratio=True),
+				dict(type='Pad', size_divisor=960),
 				dict(
 					type='Albu',
 					transforms=[
@@ -129,6 +130,7 @@ train_pipeline = [
 			],
 			[
 				dict(type='Resize', img_scale=(960, 960), keep_ratio=True),
+				dict(type='Pad', size_divisor=960),
 				dict(
 					type='Albu',
 					transforms=[
