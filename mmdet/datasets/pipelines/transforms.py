@@ -2068,6 +2068,7 @@ class Mosaic:
 
 			mosaic_bboxes, mosaic_labels = self._filter_box_candidates(mosaic_bboxes, mosaic_labels)
 		cv2.imwrite("test.jpg", mosaic_img)
+		assert False
 
 		results['img'] = mosaic_img
 		results['img_shape'] = mosaic_img.shape
