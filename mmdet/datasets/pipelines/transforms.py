@@ -686,7 +686,6 @@ class Normalize:
 			dict: Normalized results, 'img_norm_cfg' key is added into
 				result dict.
 		"""
-		cv2.imwrite("test.jpg", results['img'])
 		for key in results.get('img_fields', ['img']):
 			results[key] = mmcv.imnormalize(results[key], self.mean, self.std, self.to_rgb)
 		results['img_norm_cfg'] = dict(
@@ -2068,6 +2067,7 @@ class Mosaic:
 			mosaic_labels = np.concatenate(mosaic_labels, 0)
 
 			mosaic_bboxes, mosaic_labels = self._filter_box_candidates(mosaic_bboxes, mosaic_labels)
+		cv2.imwrite("test.jpg", mosaic_img)
 
 		results['img'] = mosaic_img
 		results['img_shape'] = mosaic_img.shape
