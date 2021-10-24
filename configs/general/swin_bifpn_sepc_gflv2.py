@@ -23,7 +23,7 @@ model = dict(
 		dict(
 			type='BiFPN',
 			in_channels=[256, 512, 1024],
-			out_channels=384,
+			out_channels=256,
 			input_indices=(1, 2, 3),
 			num_outs=5,
 			strides=[8, 16, 32],
@@ -36,8 +36,8 @@ model = dict(
 		),
 		dict(
 			type='SEPC',
-			in_channels=[384] * 5,
-			out_channels=384,
+			in_channels=[256] * 5,
+			out_channels=256,
 			stacked_convs=4,
 			num_outs=5,
 			pconv_deform=True,
@@ -52,9 +52,9 @@ model = dict(
 	bbox_head=dict(
 		type='GFLHead',
 		num_classes=37,
-		in_channels=384,
+		in_channels=256,
 		stacked_convs=0,
-		feat_channels=384,
+		feat_channels=256,
 		anchor_generator=dict(
 			type='AnchorGenerator',
 			ratios=[1.0],
@@ -99,18 +99,19 @@ train_pipeline = [
 		type = 'AutoAugment',
 		policies = [
 			[
-				dict(type='Mosaic', center_ratio_range=(0.9, 1.1), img_scale=(720, 720), pad_val=0.0),
-				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
+				dict(type='Mosaic', center_ratio_range=(0.9, 1.1), img_scale=(960, 960), pad_val=0.0),
+				dict(type='Resize', img_scale=(960, 960), keep_ratio=True),
 			],
 			[
-				dict(type='Mosaic', center_ratio_range=(0.95, 1.05), img_scale=(720, 720), pad_val=0.0),
-				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
+				dict(type='Mosaic', center_ratio_range=(0.95, 1.05), img_scale=(960, 960), pad_val=0.0),
+				dict(type='Resize', img_scale=(960, 960), keep_ratio=True),
 			],
 			[
+				dict(type='Resize', img_scale=(960, 960), keep_ratio=True),
 				dict(
 					type='Albu',
 					transforms=[
-						dict(type = "Crop", x_min = 0, y_min = 400, x_max = 800, y_max = 800),
+						dict(type = "Crop", x_min = 0, y_min = 480, x_max = 960, y_max = 960),
 						dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.1, rotate_limit=45, interpolation=1, p=0.5, border_mode = 0)],
 					bbox_params=dict(
 						type='BboxParams',
@@ -124,7 +125,7 @@ train_pipeline = [
 					},
 					update_pad_shape=False,
 					skip_img_without_anno=False),
-				dict(type='Pad', size_divisor=800),
+				dict(type='Resize', img_scale=[(640, 640), (960, 960)], multiscale_mode='range', keep_ratio=True),
 			],
 			[
 				dict(
@@ -133,7 +134,7 @@ train_pipeline = [
 						dict(
 							type = "OneOf",
 							transforms=[
-								dict(type = "Crop", x_min = 0, y_min = i, x_max = 800, y_max = 800) for i in range(400, 700, 10)
+								dict(type = "Crop", x_min = 0, y_min = i, x_max = 960, y_max = 960) for i in range(480, 720, 10)
 								],
 							p=1.0),
 						dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.1, rotate_limit=45, interpolation=1, p=0.5, border_mode = 0),					
@@ -150,20 +151,20 @@ train_pipeline = [
 					},
 					update_pad_shape=False,
 					skip_img_without_anno=False),
-				dict(type = 'Pad', size_divisor = 800),
+				dict(type = 'Pad', size_divisor = 960),
 				dict(
 					type='MixUp',
-					img_scale=(800, 800),
+					img_scale=(960, 960),
 					ratio_range=(1.0, 1.0),
 					pad_val=0.0),
 			],
 			[
 				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
-				dict(type='Resize', img_scale=[(640, 640), (800, 800)], multiscale_mode='range', keep_ratio=True),
+				dict(type='Resize', img_scale=[(640, 640), (960, 960)], multiscale_mode='range', keep_ratio=True),
 			],
 			[
 				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
-				dict(type='Resize', img_scale=[(640, 640), (800, 800)], multiscale_mode='range', keep_ratio=True),
+				dict(type='Resize', img_scale=[(640, 640), (960, 960)], multiscale_mode='range', keep_ratio=True),
 			]
 		]
 	),
@@ -199,7 +200,7 @@ test_pipeline = [
 	dict(type='LoadImageFromFile'),
 	dict(
 		type='MultiScaleFlipAug',
-		img_scale=(800, 800),
+		img_scale=(960, 960),
 		flip=False,
 		transforms=[
 			dict(type='Resize', keep_ratio=True),
