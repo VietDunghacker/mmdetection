@@ -84,6 +84,9 @@ class EvalHook(BaseEvalHook):
 			self.best_ckpt_path = None
 			self._init_rule(rule, self.save_best)
 
+        self.out_dir = out_dir
+        self.file_client_args = file_client_args
+
 	def _do_evaluate(self, runner):
 		"""perform evaluation and save ckpt."""
 		if not self._should_evaluate(runner):
