@@ -30,6 +30,8 @@ class EvalHook(BaseEvalHook):
 				 test_fn=None,
 				 greater_keys=None,
 				 less_keys=None,
+				 out_dir=None,
+				 file_client_args=None,
 				 **eval_kwargs):
 		if not isinstance(val_dataloader, DataLoader):
 			raise TypeError('dataloader must be a pytorch DataLoader, but got'
