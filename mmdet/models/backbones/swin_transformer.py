@@ -405,7 +405,6 @@ class BasicLayer(nn.Module):
 		self.shift_size = window_size // 2
 		self.depth = depth
 		self.use_checkpoint = use_checkpoint
-		print(self.use_checkpoint)
 
 		# build blocks
 		self.blocks = nn.ModuleList([
@@ -464,7 +463,7 @@ class BasicLayer(nn.Module):
 
 		for blk in self.blocks:
 			blk.H, blk.W = H, W
-			if self.use_checkpoint:
+			if self.use_checkpoint and x.requires_grad:
 				x = checkpoint.checkpoint(blk, x.type_as(attn_mask), attn_mask)
 			else:
 				x = blk(x, attn_mask)
