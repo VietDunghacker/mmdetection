@@ -9,7 +9,7 @@ from mmcv.runner import BaseModule, force_fp32
 from mmdet.core import build_bbox_coder, multi_apply, multiclass_nms
 from mmdet.models.builder import HEADS, build_loss
 from mmdet.models.losses import accuracy
-
+from mmdet.models.utils import build_linear_layer
 
 @HEADS.register_module()
 class SABLHead(BaseModule):
