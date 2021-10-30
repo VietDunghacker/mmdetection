@@ -230,7 +230,6 @@ model = dict(
 	test_cfg=dict(
 		rpn=dict(
 			nms_pre=1000,
-			nms_post=1000,
 			max_per_img=300,
 			nms=dict(type='nms', iou_threshold=0.7),
 			min_bbox_size=0),
