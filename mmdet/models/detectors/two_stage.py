@@ -220,8 +220,6 @@ class TwoStageDetector(BaseDetector):
 				new_k = k
 			else:
 				new_k = f'aux{idx}_{k}'
-			if weight != 1 and 'loss' in k:
-				new_k += f'_w{weight}'
 			if 'loss' in k:
 				if isinstance(v, (list, tuple)):
 					new_losses[new_k] = [each_v * weight for each_v in v]
