@@ -274,7 +274,7 @@ train_pipeline = [
 				dict(
 					type='Albu',
 					transforms=[
-						dict(type = "Crop", x_min = 0, y_min = 437, x_max = 960, y_max = 960),
+						dict(type = "Crop", x_min = 0, y_min = 480, x_max = 960, y_max = 960),
 						dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.1, rotate_limit=45, interpolation=1, p=0.5, border_mode = 0)],
 					bbox_params=dict(
 						type='BboxParams',
