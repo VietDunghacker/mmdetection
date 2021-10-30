@@ -405,6 +405,7 @@ class BasicLayer(nn.Module):
 		self.shift_size = window_size // 2
 		self.depth = depth
 		self.use_checkpoint = use_checkpoint
+		print(self.use_checkpoint)
 
 		# build blocks
 		self.blocks = nn.ModuleList([
