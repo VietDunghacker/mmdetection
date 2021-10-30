@@ -216,13 +216,19 @@ class TwoStageDetector(BaseDetector):
 		"""update loss for CBNetV2 by replacing keys and weighting values."""
 		new_losses = dict()
 		for k, v in losses.items():
-			new_k = f'{k}{idx}'
+			if idx == 0:
+				new_k = k
+			else:
+				new_k = f'{k}_auxiliary{idx}'
 			if weight != 1 and 'loss' in k:
 				new_k += f'_w{weight}'
-			if isinstance(v, (list, tuple)):
-				new_losses[new_k] = [each_v * weight for each_v in v]
+			if 'loss' in k:
+				if isinstance(v, (list, tuple)):
+					new_losses[new_k] = [each_v * weight for each_v in v]
+				else:
+					new_losses[new_k] = v * weight
 			else:
-				new_losses[new_k] = v * weight
+				new_losses[new_k] = v
 		return new_losses
 
 	def forward_train_cbnet(self,
