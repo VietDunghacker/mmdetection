@@ -91,7 +91,8 @@ model = dict(
 				reg_class_agnostic=True,
 				norm_cfg=None,
 				bbox_coder=dict(type='BucketingBBoxCoder', num_buckets=14, scale_factor=1.7),
-				loss_cls=dict(type='CrossEntropyLoss', use_sigmoid=False, loss_weight=1.0),
+				cls_predictor_cfg=dict(type='NormedLinear', tempearture=20),
+				loss_cls=dict(type='SeesawLoss', p=0.8, q=2.0, num_classes=37, loss_weight=1.0),
 				loss_bbox_cls=dict(type='CrossEntropyLoss', use_sigmoid=True, loss_weight=1.0),
 				loss_bbox_reg=dict(type='SmoothL1Loss', beta=0.1, loss_weight=1.0)),
 			dict(
@@ -113,7 +114,8 @@ model = dict(
 				reg_class_agnostic=True,
 				norm_cfg=None,
 				bbox_coder=dict(type='BucketingBBoxCoder', num_buckets=14, scale_factor=1.5),
-				loss_cls=dict(type='CrossEntropyLoss', use_sigmoid=False, loss_weight=1.0),
+				cls_predictor_cfg=dict(type='NormedLinear', tempearture=20),
+				loss_cls=dict(type='SeesawLoss', p=0.8, q=2.0, num_classes=37, loss_weight=1.0),
 				loss_bbox_cls=dict(type='CrossEntropyLoss', use_sigmoid=True, loss_weight=1.0),
 				loss_bbox_reg=dict(type='SmoothL1Loss', beta=0.1, loss_weight=1.0)),
 			dict(
@@ -135,7 +137,8 @@ model = dict(
 				reg_class_agnostic=True,
 				norm_cfg=None,
 				bbox_coder=dict(type='BucketingBBoxCoder', num_buckets=14, scale_factor=1.3),
-				loss_cls=dict(type='CrossEntropyLoss', use_sigmoid=False, loss_weight=1.0),
+				cls_predictor_cfg=dict(type='NormedLinear', tempearture=20),
+				loss_cls=dict(type='SeesawLoss', p=0.8, q=2.0, num_classes=37, loss_weight=1.0),
 				loss_bbox_cls=dict(type='CrossEntropyLoss', use_sigmoid=True, loss_weight=1.0),
 				loss_bbox_reg=dict(type='SmoothL1Loss', beta=0.1, loss_weight=1.0))
 		]),
@@ -173,7 +176,7 @@ model = dict(
 			pos_weight=-1,
 			debug=False),
 		rpn_proposal=dict(
-			nms_pre=1000,
+			nms_pre=2000,
 			nms_post=1000,
 			max_per_img=300,
 			nms=dict(type='nms', iou_threshold=0.7),
@@ -230,7 +233,7 @@ model = dict(
 		]),
 	test_cfg=dict(
 		rpn=dict(
-			nms_pre=1000,
+			nms_pre=2000,
 			nms_post=1000,
 			max_per_img=300,
 			nms=dict(type='nms', iou_threshold=0.7),
