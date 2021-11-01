@@ -18,7 +18,7 @@ def _make_divisible(v, divisor, min_value=None):
 
 class DyConvBlock(nn.Module):
 	def __init__(self, in_channels, out_channels, stride):
-		super(Conv3x3Norm, self).__init__()
+		super(DyConvBlock, self).__init__()
 		self.conv = ModulatedDeformConv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1)
 		self.bn = nn.GroupNorm(num_groups=16, num_channels=out_channels)
 
@@ -27,9 +27,9 @@ class DyConvBlock(nn.Module):
 		x = self.bn(x)
 		return x
 
-class DYReLU(nn.Module):
+class DynamicReLU(nn.Module):
 	def __init__(self, in_channels, out_channels, reduction=4, lambda_a=1.0, K2=True, use_bias=True, use_spatial=False, init_a=[1.0, 0.0], init_b=[0.0, 0.0]):
-		super(DYReLU, self).__init__()
+		super(DynamicReLU, self).__init__()
 		self.out_channels = out_channels
 		self.lambda_a = lambda_a * 2
 		self.K2 = K2
@@ -122,7 +122,7 @@ class DyConv(nn.Module):
 			nn.Conv2d(in_channels, 1, kernel_size=1),
 			nn.ReLU(inplace=True))
 
-		self.relu = DYReLU(in_channels, out_channels)
+		self.relu = DynamicReLU(in_channels, out_channels)
 		self.offset = nn.Conv2d(in_channels, 27, kernel_size=3, stride=1, padding=1)
 
 	def forward(self, x):
