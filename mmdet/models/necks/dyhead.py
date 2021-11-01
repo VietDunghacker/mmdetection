@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import torch.utils.checkpoint as cp
 
 from mmcv.ops import ModulatedDeformConv2d
-from mmcv.runner import BaseModule, auto_fp16
+from mmcv.runner import BaseModule, ModuleList, auto_fp16
 
 from ..builder import NECKS
 
@@ -164,7 +164,7 @@ class DyHead(BaseModule):
 		self.in_channels = in_channels
 		self.out_channels = out_channels
 
-		self.dyhead_tower = []
+		self.dyhead_tower = ModuleList()
 		for i in range(num_convs):
 			self.dyhead_tower.append(
 				DyConv(
