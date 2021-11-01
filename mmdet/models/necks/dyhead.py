@@ -113,9 +113,9 @@ class DyConv(nn.Module):
 		super(DyConv, self).__init__()
 
 		self.DyConv = nn.ModuleList()
-        self.DyConv.append(DyConvBlock(in_channels, out_channels, 1))
-        self.DyConv.append(DyConvBlock(in_channels, out_channels, 1))
-        self.DyConv.append(DyConvBlock(in_channels, out_channels, 2))
+		self.DyConv.append(DyConvBlock(in_channels, out_channels, 1))
+		self.DyConv.append(DyConvBlock(in_channels, out_channels, 1))
+		self.DyConv.append(DyConvBlock(in_channels, out_channels, 2))
 
 		self.AttnConv = nn.Sequential(
 			nn.AdaptiveAvgPool2d(1),
