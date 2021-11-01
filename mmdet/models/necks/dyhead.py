@@ -16,6 +16,17 @@ def _make_divisible(v, divisor, min_value=None):
 		new_v += divisor
 	return new_v
 
+class DyConvBlock(nn.Module):
+	def __init__(self, in_channels, out_channels, stride):
+		super(Conv3x3Norm, self).__init__()
+		self.conv = ModulatedDeformConv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1)
+		self.bn = nn.GroupNorm(num_groups=16, num_channels=out_channels)
+
+	def forward(self, input, **kwargs):
+		x = self.conv(input.contiguous(), **kwargs)
+		x = self.bn(x)
+		return x
+
 class DYReLU(nn.Module):
 	def __init__(self, in_channels, out_channels, reduction=4, lambda_a=1.0, K2=True, use_bias=True, use_spatial=False, init_a=[1.0, 0.0], init_b=[0.0, 0.0]):
 		super(DYReLU, self).__init__()
@@ -102,24 +113,9 @@ class DyConv(nn.Module):
 		super(DyConv, self).__init__()
 
 		self.DyConv = nn.ModuleList()
-		self.DyConv.append(
-			nn.Sequential(
-				ModulatedDeformConv2d(in_channels, out_channels, kernel_size=3, stride=1),
-				nn.GroupNorm(out_channels, num_channels=16)
-			)
-		)
-		self.DyConv.append(
-			nn.Sequential(
-				ModulatedDeformConv2d(in_channels, out_channels, kernel_size=3, stride=1),
-				nn.GroupNorm(out_channels, num_channels=16)
-			)
-		)
-		self.DyConv.append(
-			nn.Sequential(
-				ModulatedDeformConv2d(in_channels, out_channels, kernel_size=3, stride=2),
-				nn.GroupNorm(out_channels, num_channels=16)
-			)
-		)
+        self.DyConv.append(DyConvBlock(in_channels, out_channels, 1))
+        self.DyConv.append(DyConvBlock(in_channels, out_channels, 1))
+        self.DyConv.append(DyConvBlock(in_channels, out_channels, 2))
 
 		self.AttnConv = nn.Sequential(
 			nn.AdaptiveAvgPool2d(1),
@@ -136,11 +132,11 @@ class DyConv(nn.Module):
 			offset = offset_mask[:, :18, :, :]
 			mask = offset_mask[:, 18:, :, :].sigmoid()
 
-			temp_fea = [self.DyConv[1](feature, offset=offset, mask=mask)]
+			temp_fea = [self.DyConv[1](feature, offset, mask)]
 			if level > 0:
-				temp_fea.append(self.DyConv[2](x[feature_names[level - 1]], offset=offset, mask=mask))
+				temp_fea.append(self.DyConv[2](x[feature_names[level - 1]], offset, mask))
 			if level < len(x) - 1:
-				temp_fea.append(F.upsample_bilinear(self.DyConv[0](x[feature_names[level + 1]], offset=offset, mask=mask), size=[feature.size(2), feature.size(3)]))
+				temp_fea.append(F.upsample_bilinear(self.DyConv[0](x[feature_names[level + 1]], offset, maskmask), size=[feature.size(2), feature.size(3)]))
 			attn_fea = []
 			res_fea = []
 			for fea in temp_fea:
