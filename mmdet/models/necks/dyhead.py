@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import torch.utils.checkpoint as cp
 
 from mmcv.ops import ModulatedDeformConv2d
-from mmcv.runner import BaseModule
+from mmcv.runner import BaseModule, auto_fp16
 
 from ..builder import NECKS
 
@@ -173,6 +173,7 @@ class DyHead(BaseModule):
 				)
 			)
 
+	@auto_fp16()
 	def forward(self, x):
 		assert isinstance(x, (list, tuple))
 		out = x
