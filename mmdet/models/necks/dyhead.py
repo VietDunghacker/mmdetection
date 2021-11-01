@@ -173,6 +173,7 @@ class DyHead(BaseModule):
 					out_channels,
 				)
 			)
+		self.dyhead_tower = nn.Sequential(*self.dyhead_tower)
 
 	def forward(self, x):
 		dyhead_tower = self.dyhead_tower(x)
