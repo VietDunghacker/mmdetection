@@ -130,8 +130,6 @@ class DyConv(BaseModule):
 
 	def forward(self, *x):
 		next_x = []
-		print(len(x))
-		assert False
 		for level, feature in enumerate(x):
 			offset_mask = self.offset(feature)
 			offset = offset_mask[:, :18, :, :].contiguous()
