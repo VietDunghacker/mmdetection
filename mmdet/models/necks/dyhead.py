@@ -17,9 +17,10 @@ def _make_divisible(v, divisor, min_value=None):
 		new_v += divisor
 	return new_v
 
-class DyConvBlock(nn.Module):
-	def __init__(self, in_channels, out_channels, stride):
-		super(DyConvBlock, self).__init__()
+class DyConvBlock(BaseModule):
+	def __init__(self, in_channels, out_channels, stride, init_cfg=None):
+		assert init_cfg is None, 'To prevent abnormal initialization behavior, init_cfg is not allowed to be set'
+		super(DyConvBlock, self).__init__(init_cfg=init_cfg)
 		self.conv = ModulatedDeformConv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1)
 		self.bn = nn.GroupNorm(num_groups=16, num_channels=out_channels)
 
@@ -28,9 +29,10 @@ class DyConvBlock(nn.Module):
 		x = self.bn(x)
 		return x
 
-class DynamicReLU(nn.Module):
-	def __init__(self, in_channels, out_channels, reduction=4, lambda_a=1.0, K2=True, use_bias=True, use_spatial=False, init_a=[1.0, 0.0], init_b=[0.0, 0.0]):
-		super(DynamicReLU, self).__init__()
+class DynamicReLU(BaseModule):
+	def __init__(self, in_channels, out_channels, reduction=4, lambda_a=1.0, K2=True, use_bias=True, use_spatial=False, init_a=[1.0, 0.0], init_b=[0.0, 0.0], init_cfg=None):
+		assert init_cfg is None, 'To prevent abnormal initialization behavior, init_cfg is not allowed to be set'
+		super(DynamicReLU, self).__init__(init_cfg=init_cfg)
 		self.out_channels = out_channels
 		self.lambda_a = lambda_a * 2
 		self.K2 = K2
@@ -109,9 +111,9 @@ class DynamicReLU(nn.Module):
 
 		return out
 
-class DyConv(nn.Module):
-	def __init__(self, in_channels=256, out_channels=256):
-		super(DyConv, self).__init__()
+class DyConv(BaseModule):
+	def __init__(self, in_channels=256, out_channels=256, init_cfg=dict(type='Normal', layer=['Conv2d', 'ModulatedDeformConv2d'], mean=0, std=0.01)):
+		super(DyConv, self).__init__(init_cfg=init_cfg)
 
 		self.DyConv = nn.ModuleList()
 		self.DyConv.append(DyConvBlock(in_channels, out_channels, 1))
