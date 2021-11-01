@@ -42,7 +42,7 @@ class DYReLU(nn.Module):
 			nn.Linear(in_channels, squeeze),
 			nn.ReLU(inplace=True),
 			nn.Linear(squeeze, out_channels * self.exp),
-			nn.Hardsigmoid(in_place=True)
+			nn.Hardsigmoid(inplace=True)
 		)
 		if use_spatial:
 			self.spa = nn.Sequential(
