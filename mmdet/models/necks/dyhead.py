@@ -157,12 +157,10 @@ class DyHead(BaseModule):
 				 in_channels,
 				 out_channels,
 				 num_convs,
-				 with_cp=False,
 				 init_cfg=dict(type='Normal', layer=['Conv2d', 'ModulatedDeformConv2d'], mean=0, std=0.01)):
 		super(DyHead, self).__init__(init_cfg=init_cfg)
 		self.in_channels = in_channels
 		self.out_channels = out_channels
-		self.with_cp = with_cp
 
 		self.dyhead_tower = []
 		for i in range(num_convs):
@@ -178,8 +176,5 @@ class DyHead(BaseModule):
 		assert isinstance(x, (list, tuple))
 		out = x
 		for block in self.dyhead_tower:
-			if out[0].requires_grad and self.with_cp:
-				out = cp.checkpoint(block, out)
-			else:
-				out = block(out)
+			out = block(out)
 		return out

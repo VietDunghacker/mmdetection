@@ -38,8 +38,7 @@ model = dict(
 			type='DyHead',
 			in_channels=256,
 			out_channels=256,
-			num_convs=6,
-			with_cp=True)
+			num_convs=6)
 	],
 	bbox_head=dict(
 		type='GFLHead',
