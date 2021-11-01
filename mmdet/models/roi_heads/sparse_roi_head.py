@@ -261,8 +261,7 @@ class SparseRoIHead(CascadeRoIHead):
 
 		for stage in range(self.num_stages):
 			rois = bbox2roi(proposal_list)
-			bbox_results = self._bbox_forward(stage, x, rois, object_feats,
-											  img_metas)
+			bbox_results = self._bbox_forward(stage, x, rois, object_feats, img_metas)
 			object_feats = bbox_results['object_feats']
 			cls_score = bbox_results['cls_score']
 			proposal_list = bbox_results['detach_proposal_list']

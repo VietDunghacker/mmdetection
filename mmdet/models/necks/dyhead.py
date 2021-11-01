@@ -160,9 +160,6 @@ class DyHead(BaseModule):
 				 in_channels,
 				 out_channels,
 				 num_convs,
-				 conv_cfg=None,
-				 norm_cfg=None,
-				 act_cfg=None,
 				 init_cfg=dict(type='Normal', layer=['Conv2d', 'ModulatedDeformConv2d'], mean=0, std=0.01)):
 		super(DyHead, self).__init__(init_cfg=init_cfg)
 		self.in_channels = in_channels

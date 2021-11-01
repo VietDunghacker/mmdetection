@@ -434,8 +434,7 @@ class BBoxHead(BaseModule):
 			img_meta_ = img_metas[i]
 			pos_is_gts_ = pos_is_gts[i]
 
-			bboxes = self.regress_by_class(bboxes_, label_, bbox_pred_,
-										   img_meta_)
+			bboxes = self.regress_by_class(bboxes_, label_, bbox_pred_, img_meta_)
 
 			# filter gt bboxes
 			pos_keep = 1 - pos_is_gts_
