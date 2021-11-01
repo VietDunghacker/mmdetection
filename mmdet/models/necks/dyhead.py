@@ -129,8 +129,8 @@ class DyConv(nn.Module):
 		next_x = []
 		for level, feature in enumerate(x):
 			offset_mask = self.offset(feature)
-			offset = offset_mask[:, :18, :, :]
-			mask = offset_mask[:, 18:, :, :].sigmoid()
+			offset = offset_mask[:, :18, :, :].contiguous()
+			mask = offset_mask[:, 18:, :, :].sigmoid().contiguous()
 
 			temp_fea = [self.DyConv[1](feature, offset, mask)]
 			if level > 0:
