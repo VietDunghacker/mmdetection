@@ -128,7 +128,8 @@ class DyConv(BaseModule):
 		self.relu = DynamicReLU(in_channels, out_channels)
 		self.offset = nn.Conv2d(in_channels, 27, kernel_size=3, stride=1, padding=1)
 
-	def forward(self, *x):
+	def forward(self, p3, p4, p5, p6, p7):
+		x = [p3, p4, p5, p6, p7]
 		next_x = []
 		for level, feature in enumerate(x):
 			offset_mask = self.offset(feature)
@@ -178,10 +179,10 @@ class DyHead(BaseModule):
 	@auto_fp16()
 	def forward(self, x):
 		assert isinstance(x, (list, tuple))
-		out = x
+		p3, p4, p5, p6, p7 = x
 		for block in self.dyhead_tower:
 			if out[0].requires_grad and self.with_cp:
-				out = cp.checkpoint(block, *out)
+				p3, p4, p5, p6, p7 = cp.checkpoint(block, p3, p4, p5, p6, p7)
 			else:
-				out = block(*out)
-		return out
+				p3, p4, p5, p6, p7 = block(p3, p4, p5, p6, p7)
+		return p3, p4, p5, p6, p7
