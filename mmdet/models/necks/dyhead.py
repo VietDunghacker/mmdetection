@@ -151,8 +151,8 @@ class DyConv(BaseModule):
 			spa_pyr_attn = F.hardsigmoid(torch.stack(attn_fea), inplace=True)
 			mean_fea = torch.mean(res_fea * spa_pyr_attn, dim=0, keepdim=False)
 			next_x.append(self.relu(mean_fea))
-
-		return next_x
+		p3, p4, p5, p6, p7 = next_x
+		return p3, p4, p5, p6, p7
 
 @NECKS.register_module()
 class DyHead(BaseModule):
