@@ -181,7 +181,7 @@ class DyHead(BaseModule):
 		assert isinstance(x, (list, tuple))
 		p3, p4, p5, p6, p7 = x
 		for block in self.dyhead_tower:
-			if out[0].requires_grad and self.with_cp:
+			if p3.requires_grad and self.with_cp:
 				p3, p4, p5, p6, p7 = cp.checkpoint(block, p3, p4, p5, p6, p7)
 			else:
 				p3, p4, p5, p6, p7 = block(p3, p4, p5, p6, p7)
