@@ -128,8 +128,8 @@ class DyConv(BaseModule):
 		self.relu = DynamicReLU(in_channels, out_channels)
 		self.offset = nn.Conv2d(in_channels, 27, kernel_size=3, stride=1, padding=1)
 
-	def forward(self, p3, p4, p5, p6, p7):
-		x = [p3, p4, p5, p6, p7]
+	def forward(self, p2, p3, p4, p5):
+		x = [p2, p3, p4, p5]
 		next_x = []
 		for level, feature in enumerate(x):
 			offset_mask = self.offset(feature)
@@ -151,8 +151,8 @@ class DyConv(BaseModule):
 			spa_pyr_attn = F.hardsigmoid(torch.stack(attn_fea), inplace=True)
 			mean_fea = torch.mean(res_fea * spa_pyr_attn, dim=0, keepdim=False)
 			next_x.append(self.relu(mean_fea))
-		p3, p4, p5, p6, p7 = next_x
-		return p3, p4, p5, p6, p7
+		p2, p3, p4, p5 = next_x
+		return p2, p3, p4, p5
 
 @NECKS.register_module()
 class DyHead(BaseModule):
@@ -179,10 +179,10 @@ class DyHead(BaseModule):
 	@auto_fp16()
 	def forward(self, x):
 		assert isinstance(x, (list, tuple))
-		p3, p4, p5, p6, p7 = x
+		p2, p3, p4, p5 = x
 		for block in self.dyhead_tower:
 			if p3.requires_grad and self.with_cp:
-				p3, p4, p5, p6, p7 = cp.checkpoint(block, p3, p4, p5, p6, p7)
+				p2, p3, p4, p5 = cp.checkpoint(block, p2, p3, p4, p5)
 			else:
-				p3, p4, p5, p6, p7 = block(p3, p4, p5, p6, p7)
-		return p3, p4, p5, p6, p7
+				p2, p3, p4, p5 = block(p2, p3, p4, p5)
+		return p2, p3, p4, p5
