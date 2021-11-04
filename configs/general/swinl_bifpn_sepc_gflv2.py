@@ -2,60 +2,72 @@ _base_ = [
 	'../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py'
 ]
 model = dict(
-	type='TOOD',
+	type='GFL',
 	backbone=dict(
-		type='PyramidVisionTransformerV2',
-		embed_dims=64,
-		num_layers=[3, 8, 27, 3],
+		type='SwinTransformer',
+		embed_dims=192,
+		depths=[2, 2, 18, 2],
+		num_heads=[6, 12, 24, 48],
+		window_size=12,
+		mlp_ratio=4,
+		qkv_bias=True,
+		qk_scale=None,
+		drop_rate=0.,
+		attn_drop_rate=0.,
+		drop_path_rate=0.3,
+		patch_norm=True,
 		out_indices=(1, 2, 3),
+		convert_weights=True,
 		with_cp=True,
-		init_cfg=dict(type='Pretrained', checkpoint='https://github.com/whai362/PVT/releases/download/v2/pvt_v2_b4.pth')),
-	neck=dict(
-		type='BiFPN',
-		in_channels=[128, 320, 512],
-		out_channels=256,
-		input_indices=(1, 2, 3),
-		num_outs=5,
-		strides=[8, 16, 32],
-		num_layers=1,
-		weight_method='fast_attn',
-		act_cfg='silu',
-		separable_conv=True,
-		epsilon=0.0001
-	),
+		init_cfg=dict(type='Pretrained', checkpoint='https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_large_patch4_window12_384_22k.pth')),
+	neck=[
+		dict(
+			type='BiFPN',
+			in_channels=[384, 768, 1536],
+			out_channels=256,
+			input_indices=(1, 2, 3),
+			num_outs=5,
+			strides=[8, 16, 32],
+			num_layers=1,
+			weight_method='fast_attn',
+			norm_cfg=dict(type='GN', num_groups=32, requires_grad=True),
+			act_cfg='silu',
+			separable_conv=True,
+			epsilon=0.0001,
+		),
+		dict(
+			type='SEPC',
+			in_channels=[256] * 5,
+			out_channels=256,
+			stacked_convs=4,
+			num_outs=5,
+			pconv_deform=True,
+			lcconv_deform=True,
+			ibn=True,  # please set imgs/gpu >= 4
+			pnorm_eval=False,
+			lcnorm_eval=False,
+			lcconv_padding=1,
+			pnorm_cfg=dict(type='GN', num_groups=32, requires_grad=True),
+			lcnorm_cfg=dict(type='GN', num_groups=32, requires_grad=True))
+	],
 	bbox_head=dict(
-		type='TOODHead',
+		type='GFLHead',
 		num_classes=37,
 		in_channels=256,
-		stacked_convs=6,
-		num_dcn_on_head=2,
+		stacked_convs=0,
 		feat_channels=256,
-		anchor_type='anchor_free',
 		anchor_generator=dict(
 			type='AnchorGenerator',
 			ratios=[1.0],
 			octave_base_scale=8,
 			scales_per_octave=1,
 			strides=[8, 16, 32, 64, 128]),
-		bbox_coder=dict(
-			type='DeltaXYWHBBoxCoder',
-			target_means=[.0, .0, .0, .0],
-			target_stds=[0.1, 0.1, 0.2, 0.2]),
-		initial_loss_cls=dict(
-			type='FocalLossWithProb',
-			use_sigmoid=True,
-			gamma=2.0,
-			alpha=0.25,
-			loss_weight=1.0),
-		loss_cls=dict(type='TaskAlignedFocalLoss', use_sigmoid=True, gamma=2.0, loss_weight=1.0),
-		loss_bbox=dict(type='CIoULoss', loss_weight=2.0),
-	),
+		loss_cls=dict(type='QualityFocalLoss', use_sigmoid=False, beta=2.0, loss_weight=1.0),
+		loss_dfl=dict(type='DistributionFocalLoss', loss_weight=0.25),
+		use_dgqp=True,
+		loss_bbox=dict(type='CIoULoss', loss_weight=2.0)),
 	train_cfg = dict(
-		initial_epoch=0,
-		initial_assigner=dict(type='ATSSAssigner', topk=9),
-		assigner=dict(type='TaskAlignedAssigner', topk=13),
-		alpha=1,
-		beta=6,
+		assigner=dict(type='ATSSAssigner', topk=13),
 		allowed_border=-1,
 		pos_weight=-1,
 		debug=False),
@@ -68,11 +80,9 @@ model = dict(
 	)
 
 # data setting
-dataset_type = 'CocoDataset'
-data_root = 'data/coco/'
 img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 albu_train_transforms = [
-	dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0, rotate_limit=0, interpolation=1, p=0.5, border_mode = 0),
+	dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.0625, rotate_limit=1, interpolation=1, p=0.5, border_mode = 0),
 	dict(type='RandomBrightnessContrast', brightness_limit=0.1, contrast_limit=0.1),
 	dict(type='RGBShift', r_shift_limit=10, g_shift_limit=10, b_shift_limit=10),
 	dict(type='HueSaturationValue', hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20),
@@ -90,18 +100,20 @@ train_pipeline = [
 		type = 'AutoAugment',
 		policies = [
 			[
-				dict(type='Mosaic', center_ratio_range=(0.9, 1.1), img_scale=(720, 720), pad_val=0.0),
-				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
+				dict(type='Mosaic', center_ratio_range=(0.9, 1.1), img_scale=(960, 960), pad_val=0.0),
+				dict(type='Resize', img_scale=[(800, 800), (960, 960)], multiscale_mode='range', keep_ratio=True),
 			],
 			[
-				dict(type='Mosaic', center_ratio_range=(0.95, 1.05), img_scale=(720, 720), pad_val=0.0),
-				dict(type='Resize', img_scale=(800, 800), keep_ratio=True),
+				dict(type='Mosaic', center_ratio_range=(0.8, 1.2), img_scale=(960, 960), pad_val=0.0),
+				dict(type='Resize', img_scale=[(800, 800), (960, 960)], multiscale_mode='range', keep_ratio=True),
 			],
 			[
+				dict(type='Resize', img_scale=(960, 960), keep_ratio=True),
+				dict(type='Pad', size_divisor=960),
 				dict(
 					type='Albu',
 					transforms=[
-						dict(type = "Crop", x_min = 0, y_min = 400, x_max = 800, y_max = 800),
+						dict(type = "Crop", x_min = 0, y_min = 480, x_max = 960, y_max = 960),
 						dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.1, rotate_limit=45, interpolation=1, p=0.5, border_mode = 0)],
 					bbox_params=dict(
 						type='BboxParams',
@@ -115,16 +127,18 @@ train_pipeline = [
 					},
 					update_pad_shape=False,
 					skip_img_without_anno=False),
-				dict(type='Pad', size_divisor=800),
+				dict(type='Resize', img_scale=[(640, 640), (960, 960)], multiscale_mode='range', keep_ratio=True, override=True),
 			],
 			[
+				dict(type='Resize', img_scale=(960, 960), keep_ratio=True),
+				dict(type='Pad', size_divisor=960),
 				dict(
 					type='Albu',
 					transforms=[
 						dict(
 							type = "OneOf",
 							transforms=[
-								dict(type = "Crop", x_min = 0, y_min = i, x_max = 800, y_max = 800) for i in range(400, 700, 10)
+								dict(type = "Crop", x_min = 0, y_min = i, x_max = 960, y_max = 960) for i in range(480, 720, 10)
 								],
 							p=1.0),
 						dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.1, rotate_limit=45, interpolation=1, p=0.5, border_mode = 0),					
@@ -141,20 +155,20 @@ train_pipeline = [
 					},
 					update_pad_shape=False,
 					skip_img_without_anno=False),
-				dict(type = 'Pad', size_divisor = 800),
+				dict(type = 'Pad', size_divisor = 960),
 				dict(
 					type='MixUp',
-					img_scale=(800, 800),
+					img_scale=(960, 960),
 					ratio_range=(1.0, 1.0),
 					pad_val=0.0),
 			],
 			[
 				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
-				dict(type='Resize', img_scale=[(640, 640), (800, 800)], multiscale_mode='range', keep_ratio=True),
+				dict(type='Resize', img_scale=[(640, 640), (960, 960)], multiscale_mode='range', keep_ratio=True),
 			],
 			[
 				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
-				dict(type='Resize', img_scale=[(640, 640), (800, 800)], multiscale_mode='range', keep_ratio=True),
+				dict(type='Resize', img_scale=[(640, 640), (960, 960)], multiscale_mode='range', keep_ratio=True),
 			]
 		]
 	),
@@ -172,7 +186,7 @@ train_pipeline = [
 			type='BboxParams',
 			format='pascal_voc',
 			label_fields=['gt_labels'],
-			min_visibility=0.0,
+			min_visibility=0.1,
 			filter_lost_elements=True),
 		keymap={
 			'img': 'image',
@@ -180,8 +194,8 @@ train_pipeline = [
 		},
 		update_pad_shape=False,
 		skip_img_without_anno=False),	
+	dict(type='Pad', size_divisor=32),
 	dict(type='Normalize', **img_norm_cfg),
-	dict(type='Pad', size_divisor=1),
 	dict(type='DefaultFormatBundle'),
 	dict(type='Collect', keys=['img', 'gt_bboxes', 'gt_labels']),
 ]
@@ -190,7 +204,7 @@ test_pipeline = [
 	dict(type='LoadImageFromFile'),
 	dict(
 		type='MultiScaleFlipAug',
-		img_scale=(800, 800),
+		img_scale=(960, 960),
 		flip=False,
 		transforms=[
 			dict(type='Resize', keep_ratio=True),
@@ -201,7 +215,6 @@ test_pipeline = [
 			dict(type='Collect', keys=['img']),
 		])
 ]
-
 data = dict(
 	workers_per_gpu=4,
 	train=dict(pipeline=train_pipeline),
@@ -213,7 +226,13 @@ optimizer = dict(
 	_delete_ = True,
 	type='AdamW',
 	lr=0.0001,
-	weight_decay=0.0001)
+	betas=(0.9, 0.999),
+	weight_decay=0.05,
+	paramwise_cfg=dict(
+		custom_keys={
+			'absolute_pos_embed': dict(decay_mult=0.),
+			'relative_position_bias_table': dict(decay_mult=0.),
+			'norm': dict(decay_mult=0.)}))
 optimizer_config = dict(grad_clip=None)
 log_config = dict(interval = 10)
 # learning policy
@@ -236,6 +255,3 @@ load_from = None
 resume_from = None
 workflow = [('train', 1)]
 
-custom_hooks = [
-	dict(type="HeadHook")
-]

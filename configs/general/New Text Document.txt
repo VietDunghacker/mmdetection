@@ -1,1 +1,2 @@
-- SwinB - BiFPNx1 - DyHead - GFLv2: 0.9226
+- SwinB - BiFPN - DyHead - GFLv2: 0.9281 mAP, 8.9 task/s
+- SwinB - BiFPN - SEPC - GFLv2: 0.9262 mAP, 10.1 task/s
