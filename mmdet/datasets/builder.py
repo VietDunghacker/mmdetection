@@ -88,7 +88,7 @@ def build_dataloader(dataset,
 					 dist=True,
 					 shuffle=True,
 					 seed=None,
-					 class_aware_sampler=False
+					 class_aware_sampler=False,
 					 **kwargs):
 	"""Build PyTorch DataLoader.
 
