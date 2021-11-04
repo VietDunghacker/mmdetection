@@ -88,6 +88,7 @@ def build_dataloader(dataset,
 					 dist=True,
 					 shuffle=True,
 					 seed=None,
+					 class_aware_sampler=False
 					 **kwargs):
 	"""Build PyTorch DataLoader.
 
@@ -130,7 +131,8 @@ def build_dataloader(dataset,
 		worker_init_fn, num_workers=num_workers, rank=rank,
 		seed=seed) if seed is not None else None
 
-	#sampler = ClassAwareSampler(dataset, samples_per_gpu) if shuffle else None
+	if class_aware_sampler:
+		sampler = ClassAwareSampler(dataset, samples_per_gpu) if shuffle else None
 
 	data_loader = DataLoader(
 		dataset,

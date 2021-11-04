@@ -41,6 +41,7 @@ def train_detector(model,
 				   distributed=False,
 				   validate=False,
 				   timestamp=None,
+				   class_aware_sampler=False,
 				   meta=dict()):
 	logger = get_root_logger(log_level=cfg.log_level)
 
@@ -68,6 +69,7 @@ def train_detector(model,
 			# cfg.gpus will be ignored if distributed
 			len(cfg.gpu_ids),
 			dist=distributed,
+			class_aware_sampler=class_aware_sampler,
 			seed=cfg.seed) for ds in dataset
 	]
 
