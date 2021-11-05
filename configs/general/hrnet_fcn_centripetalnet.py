@@ -54,7 +54,7 @@ model = dict(
 		in_channels=256,
 		num_feat_levels=1,
 		corner_emb_channels=0,
-		loss_heatmap=dict(type='GaussianFocalLoss', alpha=2.0, gamma=4.0, loss_weight=1),
+		loss_heatmap=dict(type='GaussianFocalLoss', alpha=4.0, gamma=4.0, loss_weight=1),
 		loss_offset=dict(type='SmoothL1Loss', beta=1.0, loss_weight=1),
 		loss_guiding_shift=dict(type='SmoothL1Loss', beta=1.0, loss_weight=0.05),
 		loss_centripetal_shift=dict(type='SmoothL1Loss', beta=1.0, loss_weight=1)),
