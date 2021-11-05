@@ -155,8 +155,8 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 	def _make_layers(self, out_channels, in_channels=256, feat_channels=256):
 		"""Initialize conv sequential for CornerHead."""
 		return nn.Sequential(
-			ConvModule(in_channels, feat_channels, 3, padding=1),
-			ConvModule(feat_channels, out_channels, 1, norm_cfg=None, act_cfg=None))
+			nn.Conv2d(in_channels, feat_channels, 3, padding=1),
+			nn.Conv2d(feat_channels, out_channels, 1))
 
 	def _init_corner_kpt_layers(self):
 		"""Initialize corner keypoint layers.
@@ -210,6 +210,24 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 		self._init_corner_kpt_layers()
 		if self.with_corner_emb:
 			self._init_corner_emb_layers()
+
+	def init_weights(self):
+		super(CornerHead, self).init_weights()
+		bias_init = bias_init_with_prob(0.1)
+		for i in range(self.num_feat_levels):
+			# The initialization of parameters are different between
+			# nn.Conv2d and ConvModule. Our experiments show that
+			# using the original initialization of nn.Conv2d increases
+			# the final mAP by about 0.2%
+			self.tl_heat[i][-1].conv.reset_parameters()
+			self.tl_heat[i][-1].conv.bias.data.fill_(bias_init)
+			self.br_heat[i][-1].conv.reset_parameters()
+			self.br_heat[i][-1].conv.bias.data.fill_(bias_init)
+			self.tl_off[i][-1].conv.reset_parameters()
+			self.br_off[i][-1].conv.reset_parameters()
+			if self.with_corner_emb:
+				self.tl_emb[i][-1].conv.reset_parameters()
+				self.br_emb[i][-1].conv.reset_parameters()
 
 	def forward(self, feats):
 		"""Forward features from the upstream network.
