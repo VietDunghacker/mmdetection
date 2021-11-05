@@ -37,7 +37,7 @@ class BiCornerPool(BaseModule):
 				 feat_channels=128,
 				 out_channels=128,
 				 norm_cfg=dict(type='BN', requires_grad=True),
-				 init_cfg=dict(type='Normal', layer='Conv2d', std=0.01)):
+				 init_cfg=None):
 		super(BiCornerPool, self).__init__(init_cfg)
 		self.direction1_conv = ConvModule(in_channels, feat_channels, 3, padding=1, norm_cfg=norm_cfg)
 		self.direction2_conv = ConvModule(in_channels, feat_channels, 3, padding=1, norm_cfg=norm_cfg)
@@ -55,7 +55,7 @@ class BiCornerPool(BaseModule):
 
 		self.direction1_pool = CornerPool(directions[0])
 		self.direction2_pool = CornerPool(directions[1])
-		self.relu = nn.ReLU(inplace=True)
+		self.relu = nn.SiLU(inplace=True)
 
 	def init_weights(self):
 		super(BiCornerPool, self).init_weights()
