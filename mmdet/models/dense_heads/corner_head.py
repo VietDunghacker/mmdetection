@@ -37,7 +37,7 @@ class BiCornerPool(BaseModule):
 				 feat_channels=128,
 				 out_channels=128,
 				 norm_cfg=dict(type='BN', requires_grad=True),
-				 init_cfg=None):
+				 init_cfg=dict(type='Normal', layer='Conv2d', std=0.01)):
 		super(BiCornerPool, self).__init__(init_cfg)
 		self.direction1_conv = ConvModule(in_channels, feat_channels, 3, padding=1, norm_cfg=norm_cfg)
 		self.direction2_conv = ConvModule(in_channels, feat_channels, 3, padding=1, norm_cfg=norm_cfg)
@@ -56,14 +56,6 @@ class BiCornerPool(BaseModule):
 		self.direction1_pool = CornerPool(directions[0])
 		self.direction2_pool = CornerPool(directions[1])
 		self.relu = nn.ReLU(inplace=True)
-
-	def init_weights(self):
-		super(BiCornerPool, self).init_weights()
-		normal_init(self.direction1_conv.conv, std=0.01)
-		normal_init(self.direction2_conv.conv, std=0.01)
-		normal_init(self.aftpool_conv.conv, std=0.01)
-		normal_init(self.conv1.conv, std=0.01)
-		normal_init(self.conv2.conv, std=0.01)
 
 	def forward(self, x):
 		"""Forward features from the upstream network.
@@ -227,8 +219,8 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 			# nn.Conv2d and ConvModule. Our experiments show that
 			# using the original initialization of nn.Conv2d increases
 			# the final mAP by about 0.2%
-			_ = [normal_init(x.conv, std=0.01) for x in self.tl_heat[i]]
-			_ = [normal_init(x.conv, std=0.01) for x in self.br_heat[i]]
+			_ = [normal_init(x.conv, std=0.01, bias = bias_init) for x in self.tl_heat[i]]
+			_ = [normal_init(x.conv, std=0.01, bias = bias_init) for x in self.br_heat[i]]
 			_ = [normal_init(x.conv, std=0.01) for x in self.tl_off[i]]
 			_ = [normal_init(x.conv, std=0.01) for x in self.br_off[i]]
 			if self.with_corner_emb:
