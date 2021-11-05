@@ -57,6 +57,14 @@ class BiCornerPool(BaseModule):
 		self.direction2_pool = CornerPool(directions[1])
 		self.relu = nn.ReLU(inplace=True)
 
+	def init_weights(self):
+		super(BiCornerPool, self).init_weights()
+		normal_init(self.direction1_conv.conv, std=0.01)
+		normal_init(self.direction2_conv.conv, std=0.01)
+		normal_init(self.aftpool_conv.conv, std=0.01)
+		normal_init(self.conv1.conv, std=0.01)
+		normal_init(self.conv2.conv, std=0.01)
+
 	def forward(self, x):
 		"""Forward features from the upstream network.
 
