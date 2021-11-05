@@ -227,15 +227,15 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 			# nn.Conv2d and ConvModule. Our experiments show that
 			# using the original initialization of nn.Conv2d increases
 			# the final mAP by about 0.2%
-			self.tl_pool[i].init_weights()
-			self.br_pool[i].init_weights()
-			_ = [normal_init(x.conv, std=0.01, bias = bias_init) for x in self.tl_heat[i]]
-			_ = [normal_init(x.conv, std=0.01, bias = bias_init) for x in self.br_heat[i]]
-			_ = [normal_init(x.conv, std=0.01) for x in self.tl_off[i]]
-			_ = [normal_init(x.conv, std=0.01) for x in self.br_off[i]]
+			self.tl_heat[i][-1].conv.reset_parameters()
+			self.tl_heat[i][-1].conv.bias.data.fill_(bias_init)
+			self.br_heat[i][-1].conv.reset_parameters()
+			self.br_heat[i][-1].conv.bias.data.fill_(bias_init)
+			self.tl_off[i][-1].conv.reset_parameters()
+			self.br_off[i][-1].conv.reset_parameters()
 			if self.with_corner_emb:
-				_ = [normal_init(x.conv, std=0.01) for x in self.tl_emb[i]]
-				_ = [normal_init(x.conv, std=0.01) for x in self.br_emb[i]]
+				self.tl_emb[i][-1].conv.reset_parameters()
+				self.br_emb[i][-1].conv.reset_parameters()
 
 	def forward(self, feats):
 		"""Forward features from the upstream network.
