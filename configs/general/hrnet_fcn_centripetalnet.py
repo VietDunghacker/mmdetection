@@ -115,7 +115,7 @@ train_pipeline = [
 					},
 					update_pad_shape=False,
 					skip_img_without_anno=False),
-				dict(type='Resize', img_scale=(960, 960), keep_ratio=True),
+				dict(type='Resize', img_scale=(960, 960), keep_ratio=True, override=True),
 			],
 			[
 				dict(type='Resize', img_scale=(960, 960), keep_ratio=True),
