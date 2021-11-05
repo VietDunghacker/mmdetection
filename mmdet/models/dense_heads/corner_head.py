@@ -228,7 +228,7 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 			# using the original initialization of nn.Conv2d increases
 			# the final mAP by about 0.2%
 			self.tl_pool[i].init_weights()
-			self.br_pool[i].init_weights(y)
+			self.br_pool[i].init_weights()
 			_ = [normal_init(x.conv, std=0.01, bias = bias_init) for x in self.tl_heat[i]]
 			_ = [normal_init(x.conv, std=0.01, bias = bias_init) for x in self.br_heat[i]]
 			_ = [normal_init(x.conv, std=0.01) for x in self.tl_off[i]]
