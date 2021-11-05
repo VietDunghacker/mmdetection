@@ -46,7 +46,7 @@ model = dict(
 		num_convs=1,
 		concat_input=False,
 		dropout_ratio=-1,
-		norm_cfg=dict(type='BN', requires_grad=True),
+		norm_cfg=dict(type='GN', num_groups=32, requires_grad=True),
 		align_corners=False),
 	bbox_head=dict(
 		type='CentripetalHead',
