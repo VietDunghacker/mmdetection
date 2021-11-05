@@ -155,8 +155,8 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 	def _make_layers(self, out_channels, in_channels=256, feat_channels=256):
 		"""Initialize conv sequential for CornerHead."""
 		return nn.Sequential(
-			nn.Conv2d(in_channels, feat_channels, 3, padding=1),
-			nn.Conv2d(feat_channels, out_channels, 1))
+			ConvModule(in_channels, feat_channels, 3, padding=1),
+			ConvModule(feat_channels, out_channels, 1, norm_cfg=None, act_cfg=None))
 
 	def _init_corner_kpt_layers(self):
 		"""Initialize corner keypoint layers.
