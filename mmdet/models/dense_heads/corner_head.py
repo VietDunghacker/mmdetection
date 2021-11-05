@@ -37,7 +37,7 @@ class BiCornerPool(BaseModule):
 				 feat_channels=128,
 				 out_channels=128,
 				 norm_cfg=dict(type='BN', requires_grad=True),
-				 init_cfg=dict(type='Normal', layer='Conv2d', std=0.01)):
+				 init_cfg=dict(type='Normal', layer='Conv2d', std=0.1)):
 		super(BiCornerPool, self).__init__(init_cfg)
 		self.direction1_conv = ConvModule(in_channels, feat_channels, 3, padding=1, norm_cfg=norm_cfg)
 		self.direction2_conv = ConvModule(in_channels, feat_channels, 3, padding=1, norm_cfg=norm_cfg)
@@ -229,13 +229,13 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 			# the final mAP by about 0.2%
 			self.tl_pool[i].init_weights()
 			self.br_pool[i].init_weights()
-			_ = [normal_init(x.conv, std=0.01, bias = bias_init) for x in self.tl_heat[i]]
-			_ = [normal_init(x.conv, std=0.01, bias = bias_init) for x in self.br_heat[i]]
-			_ = [normal_init(x.conv, std=0.01) for x in self.tl_off[i]]
-			_ = [normal_init(x.conv, std=0.01) for x in self.br_off[i]]
+			_ = [normal_init(x.conv, std=0.1, bias = bias_init) for x in self.tl_heat[i]]
+			_ = [normal_init(x.conv, std=0.1, bias = bias_init) for x in self.br_heat[i]]
+			_ = [normal_init(x.conv, std=0.1) for x in self.tl_off[i]]
+			_ = [normal_init(x.conv, std=0.1) for x in self.br_off[i]]
 			if self.with_corner_emb:
-				_ = [normal_init(x.conv, std=0.01) for x in self.tl_emb[i]]
-				_ = [normal_init(x.conv, std=0.01) for x in self.br_emb[i]]
+				_ = [normal_init(x.conv, std=0.1) for x in self.tl_emb[i]]
+				_ = [normal_init(x.conv, std=0.1) for x in self.br_emb[i]]
 
 	def forward(self, feats):
 		"""Forward features from the upstream network.
