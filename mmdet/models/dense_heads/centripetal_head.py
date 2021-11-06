@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 from mmcv.cnn import ConvModule, normal_init
 from mmcv.ops import DeformConv2d
+from mmcv.runner import force_fp32
 
 from mmdet.core import multi_apply
 from ..builder import HEADS, build_loss
@@ -179,8 +180,8 @@ class CentripetalHead(CornerHead):
 		tl_dcn_offset = self.tl_dcn_offset[lvl_ind](tl_guiding_shift.detach())
 		br_dcn_offset = self.br_dcn_offset[lvl_ind](br_guiding_shift.detach())
 
-		tl_feat_adaption = self.tl_feat_adaption[lvl_ind](tl_pool, tl_dcn_offset)
-		br_feat_adaption = self.br_feat_adaption[lvl_ind](br_pool, br_dcn_offset)
+		tl_feat_adaption = self.tl_feat_adaption[lvl_ind](tl_pool.float(), tl_dcn_offset.float()).to(x.dtype)
+		br_feat_adaption = self.br_feat_adaption[lvl_ind](br_pool.float(), br_dcn_offset.float()).to(x.dtype)
 
 		tl_centripetal_shift = self.tl_centripetal_shift[lvl_ind](tl_feat_adaption)
 		br_centripetal_shift = self.br_centripetal_shift[lvl_ind](br_feat_adaption)
