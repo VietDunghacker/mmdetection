@@ -52,8 +52,6 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 											 num_classes)
 		self.wh_head = self._build_head(in_channel, feat_channel, 2)
 		self.offset_head = self._build_head(in_channel, feat_channel, 2)
-		self.wh_scale = Scale(1.0)
-		self.offset_scale = Scale(1.0)
 
 		self.loss_center_heatmap = build_loss(loss_center_heatmap)
 		self.loss_wh = build_loss(loss_wh)
@@ -73,7 +71,7 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 
 	def init_weights(self):
 		"""Initialize weights of the head."""
-		bias_init = bias_init_with_prob(0.1)
+		bias_init = bias_init_with_prob(0.01)
 		self.heatmap_head[-1].bias.data.fill_(bias_init)
 		for head in [self.wh_head, self.offset_head]:
 			for m in head.modules():
@@ -111,9 +109,9 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 		"""
 
 		center_heatmap_pred = self.heatmap_head(feat).sigmoid()
-		wh_pred = self.wh_scale(self.wh_head(feat))
+		wh_pred = self.wh_head(feat)
 
-		offset_pred = self.offset_scale(self.offset_head(feat))
+		offset_pred = self.offset_head(feat)
 		return center_heatmap_pred, wh_pred, offset_pred
 
 	@force_fp32(apply_to=('center_heatmap_preds', 'wh_preds', 'offset_preds'))
