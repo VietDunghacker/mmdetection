@@ -101,7 +101,7 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 		self.cls_decomp = TaskDecomposition(self.feat_channel, self.stacked_convs, self.stacked_convs * 8, self.conv_cfg, self.norm_cfg)
 		self.reg_decomp = TaskDecomposition(self.feat_channel, self.stacked_convs, self.stacked_convs * 8, self.conv_cfg, self.norm_cfg)
 
-		self.heatmap_head = self._build_head(self.feat_channel, self.feat_channel, num_classes)
+		self.heatmap_head = self._build_head(self.feat_channel, self.feat_channel, self.num_classes)
 		self.wh_head = self._build_head(self.feat_channel, self.feat_channel, 2)
 		self.offset_head = self._build_head(self.feat_channel, self.feat_channel, 2)
 
