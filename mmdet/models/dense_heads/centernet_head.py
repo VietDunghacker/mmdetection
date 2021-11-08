@@ -43,9 +43,6 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 				 loss_center_heatmap=dict(type='GaussianFocalLoss', loss_weight=1.0),
 				 loss_wh=dict(type='L1Loss', loss_weight=0.1),
 				 loss_offset=dict(type='L1Loss', loss_weight=1.0),
-				 conv_cfg=None,
-				 norm_cfg=None,
-				 act_cfg=None,
 				 train_cfg=None,
 				 test_cfg=None,
 				 init_cfg=None):
@@ -59,9 +56,6 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 		self.loss_wh = build_loss(loss_wh)
 		self.loss_offset = build_loss(loss_offset)
 
-		self.conv_cfg = conv_cfg
-		self.norm_cfg = norm_cfg
-		self.act_cfg = act_cfg
 		self.train_cfg = train_cfg
 		self.test_cfg = test_cfg
 		self.fp16_enabled = False
