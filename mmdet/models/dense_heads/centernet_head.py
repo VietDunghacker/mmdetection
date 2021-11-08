@@ -2,7 +2,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from mmcv.cnn import bias_init_with_prob, normal_init, Scale
+from mmcv.cnn import ConvModule, bias_init_with_prob, normal_init
 from mmcv.ops import batched_nms
 from mmcv.runner import force_fp32
 
@@ -48,8 +48,7 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 				 init_cfg=None):
 		super(CenterNetHead, self).__init__(init_cfg)
 		self.num_classes = num_classes
-		self.heatmap_head = self._build_head(in_channel, feat_channel,
-											 num_classes)
+		self.heatmap_head = self._build_head(in_channel, feat_channel, num_classes)
 		self.wh_head = self._build_head(in_channel, feat_channel, 2)
 		self.offset_head = self._build_head(in_channel, feat_channel, 2)
 
@@ -65,7 +64,7 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 		"""Build head for each branch."""
 		layer = nn.Sequential(
 			nn.Conv2d(in_channel, feat_channel, kernel_size=3, padding=1),
-			nn.ReLU(inplace=True),
+			nn.SiLU(inplace=True),
 			nn.Conv2d(feat_channel, out_channel, kernel_size=1))
 		return layer
 
