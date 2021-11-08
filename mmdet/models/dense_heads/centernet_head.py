@@ -2,7 +2,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from mmcv.cnn import ConvModule, bias_init_with_prob, normal_init
+from mmcv.cnn import bias_init_with_prob, normal_init, Scale
 from mmcv.ops import batched_nms
 from mmcv.runner import force_fp32
 
@@ -297,6 +297,10 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 
 		batch_border = batch_det_bboxes.new_tensor(border_pixs)[:, [2, 0, 2, 0]].unsqueeze(1)
 		batch_det_bboxes[..., :4] -= batch_border
+		batch_det_bboxes[..., 0].clamp_(min = 0, max = width)
+		batch_det_bboxes[..., 1].clamp_(min = 0, max = height)
+		batch_det_bboxes[..., 2].clamp_(min = 0, max = width)
+		batch_det_bboxes[..., 3].clamp_(min = 0, max = height)
 
 		if rescale:
 			batch_det_bboxes[..., :4] /= batch_det_bboxes.new_tensor(scale_factors).unsqueeze(1)
