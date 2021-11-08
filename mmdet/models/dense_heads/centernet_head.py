@@ -131,7 +131,6 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 		"""
 		return multi_apply(self.forward_single, feats)
 
-	@force_fp32(apply_to=('x'))
 	def forward_single(self, x):
 		"""Forward feature of a single level.
 
@@ -145,8 +144,9 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 			offset_pred (Tensor): offset predicts, the channels number is 2.
 		"""
 		inter_feats = []
+		ori_dtype = x.dtype
 		for i, inter_conv in enumerate(self.inter_convs):
-			x = inter_conv(x)
+			x = inter_conv(x).astype(ori_dtype)
 			inter_feats.append(x)
 		feat = torch.cat(inter_feats, 1)
 
