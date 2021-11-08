@@ -84,7 +84,7 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 		self.inter_convs = nn.ModuleList()
 		for i in range(self.stacked_convs):
 			if i < self.num_dcn_on_head:
-				conv_cfg = dict(type='DCNv2', deform_groups=4)
+				conv_cfg = dict(type='DCNv2')
 			else:
 				conv_cfg = self.conv_cfg
 			chn = self.in_channel if i == 0 else self.feat_channel
