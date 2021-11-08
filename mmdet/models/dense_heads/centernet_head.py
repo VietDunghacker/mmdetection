@@ -114,6 +114,12 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 				if isinstance(m, nn.Conv2d):
 					normal_init(m, std=0.001)
 
+		for m in self.inter_convs:
+			normal_init(m.conv, std=0.01)
+
+		self.cls_decomp.init_weights()
+		self.reg_decomp.init_weights()
+
 	def forward(self, feats):
 		"""Forward features. Notice CenterNet head does not use FPN.
 
