@@ -374,12 +374,12 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 		return batch_bboxes, batch_topk_labels
 
 	def _bboxes_nms(self, bboxes, labels, cfg):
-		if labels.numel() == 0:
-			return bboxes, labels
-
 		keep = bboxes[:, -1] > cfg.threshold
 		bboxes = bboxes[keep]
 		labels = labels[keep]
+
+		if labels.numel() == 0:
+			return bboxes, labels
 
 		out_bboxes, keep = batched_nms(bboxes[:, :4].contiguous(), bboxes[:, -1].contiguous(), labels, cfg.nms_cfg)
 		out_labels = labels[keep]
