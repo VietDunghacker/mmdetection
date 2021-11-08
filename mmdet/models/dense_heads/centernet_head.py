@@ -298,10 +298,6 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 
 		batch_border = batch_det_bboxes.new_tensor(border_pixs)[:, [2, 0, 2, 0]].unsqueeze(1)
 		batch_det_bboxes[..., :4] -= batch_border
-		'''batch_det_bboxes[..., 0].clamp_(min = 0, max = width)
-		batch_det_bboxes[..., 1].clamp_(min = 0, max = height)
-		batch_det_bboxes[..., 2].clamp_(min = 0, max = width)
-		batch_det_bboxes[..., 3].clamp_(min = 0, max = height)'''
 
 		if rescale:
 			batch_det_bboxes[..., :4] /= batch_det_bboxes.new_tensor(scale_factors).unsqueeze(1)
@@ -381,6 +377,10 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 	def _bboxes_nms(self, bboxes, labels, cfg):
 		if labels.numel() == 0:
 			return bboxes, labels
+
+		keep = bboxes[:, -1] > cfg.threshold
+		bboxes = bboxes[keep]
+		labels = labels[keep]
 
 		out_bboxes, keep = batched_nms(bboxes[:, :4].contiguous(), bboxes[:, -1].contiguous(), labels, cfg.nms_cfg)
 		out_labels = labels[keep]
