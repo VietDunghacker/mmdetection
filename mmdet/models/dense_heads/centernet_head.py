@@ -46,7 +46,7 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 				 loss_wh=dict(type='L1Loss', loss_weight=0.1),
 				 loss_offset=dict(type='L1Loss', loss_weight=1.0),
 				 conv_cfg=None,
-				 norm_cfg=dict(type='GN', num_groups=32, requires_grad=True),
+				 norm_cfg=None,
 				 act_cfg=None,
 				 train_cfg=None,
 				 test_cfg=None,
