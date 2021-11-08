@@ -146,7 +146,7 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 		inter_feats = []
 		ori_dtype = x.dtype
 		for i, inter_conv in enumerate(self.inter_convs):
-			x = inter_conv(x).astype(ori_dtype)
+			x = inter_conv(x).to(ori_dtype)
 			inter_feats.append(x)
 		feat = torch.cat(inter_feats, 1)
 
@@ -198,9 +198,7 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 		wh_pred = wh_preds[0]
 		offset_pred = offset_preds[0]
 
-		target_result, avg_factor = self.get_targets(gt_bboxes, gt_labels,
-													 center_heatmap_pred.shape,
-													 img_metas[0]['pad_shape'])
+		target_result, avg_factor = self.get_targets(gt_bboxes, gt_labels, center_heatmap_pred.shape, img_metas[0]['pad_shape'])
 
 		center_heatmap_target = target_result['center_heatmap_target']
 		wh_target = target_result['wh_target']
