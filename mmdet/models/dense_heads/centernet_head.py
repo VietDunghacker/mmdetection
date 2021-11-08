@@ -41,7 +41,7 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 				 feat_channel,
 				 num_classes,
 				 stacked_convs=6,
-				 num_dcn_on_head=2,
+				 num_dcn_on_head=0,
 				 loss_center_heatmap=dict(type='GaussianFocalLoss', loss_weight=1.0),
 				 loss_wh=dict(type='L1Loss', loss_weight=0.1),
 				 loss_offset=dict(type='L1Loss', loss_weight=1.0),
@@ -146,7 +146,7 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 		inter_feats = []
 		ori_dtype = x.dtype
 		for i, inter_conv in enumerate(self.inter_convs):
-			x = inter_conv(x).to(ori_dtype)
+			x = inter_conv(x)
 			inter_feats.append(x)
 		feat = torch.cat(inter_feats, 1)
 
