@@ -57,7 +57,6 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 		self.feat_channel = feat_channel
 		self.stacked_convs = stacked_convs
 		self.num_dcn_on_head = num_dcn_on_head
-		self._init_layers()
 
 		self.loss_center_heatmap = build_loss(loss_center_heatmap)
 		self.loss_wh = build_loss(loss_wh)
@@ -69,6 +68,8 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 		self.train_cfg = train_cfg
 		self.test_cfg = test_cfg
 		self.fp16_enabled = False
+
+		self._init_layers()
 
 	def _build_head(self, in_channel, feat_channel, out_channel):
 		"""Build head for each branch."""

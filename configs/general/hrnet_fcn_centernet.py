@@ -55,7 +55,7 @@ model = dict(
 		loss_wh=dict(type='L1Loss', loss_weight=0.1),
 		loss_offset=dict(type='L1Loss', loss_weight=1.0)),
 	train_cfg=None,
-	test_cfg=dict(topk=100, local_maximum_kernel=3, max_per_img=100, threshold = 0.05, nms_cfg = dict(type='soft_nms', iou_threshold=0.6, method='gaussian')))
+	test_cfg=dict(topk=100, local_maximum_kernel=3, max_per_img=100, threshold = 0.05, nms_cfg = dict(type='nms', iou_threshold=0.6)))
 
 # data setting
 img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
