@@ -2,7 +2,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from mmcv.cnn import bias_init_with_prob, normal_init, Scale
+from mmcv.cnn import ConvModule, bias_init_with_prob, normal_init
 from mmcv.ops import batched_nms
 from mmcv.runner import force_fp32
 
@@ -13,7 +13,7 @@ from ..utils.gaussian_target import (get_local_maximum, get_topk_from_heatmap,
 									 transpose_and_gather_feat)
 from .base_dense_head import BaseDenseHead
 from .dense_test_mixins import BBoxTestMixin
-
+from .tood_head import TaskDecomposition
 
 @HEADS.register_module()
 class CenterNetHead(BaseDenseHead, BBoxTestMixin):
@@ -40,23 +40,32 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 				 in_channel,
 				 feat_channel,
 				 num_classes,
+				 stacked_convs=6,
+				 num_dcn_on_head=2,
 				 loss_center_heatmap=dict(type='GaussianFocalLoss', loss_weight=1.0),
 				 loss_wh=dict(type='L1Loss', loss_weight=0.1),
 				 loss_offset=dict(type='L1Loss', loss_weight=1.0),
+				 conv_cfg=None,
+				 norm_cfg=dict(type='GN', num_groups=32, requires_grad=True),
+				 act_cfg=None,
 				 train_cfg=None,
 				 test_cfg=None,
 				 init_cfg=None):
 		super(CenterNetHead, self).__init__(init_cfg)
 		self.num_classes = num_classes
-		self.heatmap_head = self._build_head(in_channel, feat_channel,
-											 num_classes)
-		self.wh_head = self._build_head(in_channel, feat_channel, 2)
-		self.offset_head = self._build_head(in_channel, feat_channel, 2)
+		self.in_channel = in_channel
+		self.feat_channel = feat_channel
+		self.stacked_convs = stacked_convs
+		self.num_dcn_on_head = num_dcn_on_head
+		self._init_layers()
 
 		self.loss_center_heatmap = build_loss(loss_center_heatmap)
 		self.loss_wh = build_loss(loss_wh)
 		self.loss_offset = build_loss(loss_offset)
 
+		self.conv_cfg = conv_cfg
+		self.norm_cfg = norm_cfg
+		self.act_cfg = act_cfg
 		self.train_cfg = train_cfg
 		self.test_cfg = test_cfg
 		self.fp16_enabled = False
@@ -65,9 +74,35 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 		"""Build head for each branch."""
 		layer = nn.Sequential(
 			nn.Conv2d(in_channel, feat_channel, kernel_size=3, padding=1),
-			nn.ReLU(inplace=True),
+			nn.SiLU(inplace=True),
 			nn.Conv2d(feat_channel, out_channel, kernel_size=1))
 		return layer
+
+	def _init_layers(self):
+		"""Initialize layers of the head."""
+		self.inter_convs = nn.ModuleList()
+		for i in range(self.stacked_convs):
+			if i < self.num_dcn_on_head:
+				conv_cfg = dict(type='DCNv2', deform_groups=4)
+			else:
+				conv_cfg = self.conv_cfg
+			chn = self.in_channel if i == 0 else self.feat_channel
+			self.inter_convs.append(
+				ConvModule(
+					chn,
+					self.feat_channel,
+					3,
+					stride=1,
+					padding=1,
+					conv_cfg=conv_cfg,
+					norm_cfg=self.norm_cfg))
+
+		self.cls_decomp = TaskDecomposition(self.feat_channel, self.stacked_convs, self.stacked_convs * 8, self.conv_cfg, self.norm_cfg)
+		self.reg_decomp = TaskDecomposition(self.feat_channel, self.stacked_convs, self.stacked_convs * 8, self.conv_cfg, self.norm_cfg)
+
+		self.heatmap_head = self._build_head(self.feat_channel, self.feat_channel, num_classes)
+		self.wh_head = self._build_head(self.feat_channel, self.feat_channel, 2)
+		self.offset_head = self._build_head(self.feat_channel, self.feat_channel, 2)
 
 	def init_weights(self):
 		"""Initialize weights of the head."""
@@ -95,7 +130,7 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 		"""
 		return multi_apply(self.forward_single, feats)
 
-	def forward_single(self, feat):
+	def forward_single(self, x):
 		"""Forward feature of a single level.
 
 		Args:
@@ -107,11 +142,20 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 			wh_pred (Tensor): wh predicts, the channels number is 2.
 			offset_pred (Tensor): offset predicts, the channels number is 2.
 		"""
+		inter_feats = []
+		for i, inter_conv in enumerate(self.inter_convs):
+			x = inter_conv(x)
+			inter_feats.append(x)
+		feat = torch.cat(inter_feats, 1)
 
-		center_heatmap_pred = self.heatmap_head(feat).sigmoid()
-		wh_pred = self.wh_head(feat)
+		# task decomposition
+		avg_feat = F.adaptive_avg_pool2d(feat, (1, 1))
+		cls_feat = self.cls_decomp(feat, avg_feat)
+		reg_feat = self.reg_decomp(feat, avg_feat)
 
-		offset_pred = self.offset_head(feat)
+		center_heatmap_pred = self.heatmap_head(cls_feat).sigmoid()
+		wh_pred = self.wh_head(reg_feat)
+		offset_pred = self.offset_head(reg_feat)
 		return center_heatmap_pred, wh_pred, offset_pred
 
 	@force_fp32(apply_to=('center_heatmap_preds', 'wh_preds', 'offset_preds'))
