@@ -33,6 +33,7 @@ model = dict(
 			act_cfg='silu',
 			separable_conv=True,
 			epsilon=0.0001,
+			with_cp=True
 		),
 		dict(
 			type='SEPC',
