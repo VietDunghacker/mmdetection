@@ -26,7 +26,7 @@ class FeatureAlign(BaseModule):
 					 override=dict(
 						 type='Normal', name='conv_adaption', std=0.01))):
 		super(FeatureAlign, self).__init__(init_cfg)
-		offset_channels = kernel_size * kernel_size * 3
+		offset_channels = kernel_size * kernel_size * 2
 		self.conv_offset = nn.Conv2d(4, deform_groups * offset_channels, 1, bias=False)
 		self.conv_adaption = DeformConv2d(
 			in_channels,
