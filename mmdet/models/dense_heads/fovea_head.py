@@ -6,7 +6,7 @@ from mmcv.ops import ModulatedDeformConv2d
 from mmcv.runner import BaseModule
 
 from mmdet.core import bbox_overlaps, multi_apply, multiclass_nms
-from ..builder import HEADS
+from ..builder import HEADS, build_loss
 from .anchor_free_head import AnchorFreeHead
 
 INF = 1e8
