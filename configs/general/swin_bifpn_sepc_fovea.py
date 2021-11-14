@@ -2,7 +2,7 @@ _base_ = [
 	'../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py'
 ]
 model = dict(
-	type='GFL',
+	type='FOVEA',
 	backbone=dict(
 		type='SwinTransformer',
 		embed_dims=128,
@@ -23,22 +23,21 @@ model = dict(
 		dict(
 			type='BiFPN',
 			in_channels=[256, 512, 1024],
-			out_channels=288,
+			out_channels=256,
 			input_indices=(1, 2, 3),
 			num_outs=5,
 			strides=[8, 16, 32],
-			num_layers=7,
+			num_layers=1,
 			weight_method='fast_attn',
 			norm_cfg=dict(type='GN', num_groups=32, requires_grad=True),
 			act_cfg='silu',
 			separable_conv=True,
 			epsilon=0.0001,
-			with_cp=True
 		),
 		dict(
 			type='SEPC',
-			in_channels=[288] * 5,
-			out_channels=288,
+			in_channels=[256] * 5,
+			out_channels=256,
 			stacked_convs=4,
 			num_outs=5,
 			pconv_deform=True,
@@ -51,26 +50,22 @@ model = dict(
 			lcnorm_cfg=dict(type='GN', num_groups=32, requires_grad=True))
 	],
 	bbox_head=dict(
-		type='GFLHead',
+		type='FoveaHead',
 		num_classes=40,
-		in_channels=288,
+		in_channels=256,
 		stacked_convs=0,
-		feat_channels=288,
-		anchor_generator=dict(
-			type='AnchorGenerator',
-			ratios=[1.0],
-			octave_base_scale=8,
-			scales_per_octave=1,
-			strides=[8, 16, 32, 64, 128]),
-		loss_cls=dict(type='QualityFocalLoss', use_sigmoid=False, beta=2.0, loss_weight=1.0),
-		loss_dfl=dict(type='DistributionFocalLoss', loss_weight=0.25),
-		use_dgqp=True,
-		loss_bbox=dict(type='CIoULoss', loss_weight=2.0)),
-	train_cfg = dict(
-		assigner=dict(type='ATSSAssigner', topk=13),
-		allowed_border=-1,
-		pos_weight=-1,
-		debug=False),
+		feat_channels=256,
+		strides=[8, 16, 32, 64, 128],
+		base_edge_list=[16, 32, 64, 128, 256],
+		scale_ranges=((1, 64), (32, 128), (64, 256), (128, 512), (256, 2048)),
+		sigma=0.4,
+		with_deform=True,
+		norm_cfg=dict(type='GN', num_groups=32, requires_grad=True),
+		loss_cls=dict(type='FocalLoss', use_sigmoid=True, gamma=1.50, alpha=0.4, loss_weight=1.0),
+		use_vfl=True,
+		loss_cls_vfl=dict(type='VarifocalLoss', use_sigmoid=True, alpha=0.75, gamma=2.0, iou_weighted=True, loss_weight=1.0),
+		loss_bbox=dict(type='SmoothL1Loss', beta=0.11, loss_weight=1.0)),
+	train_cfg = dict(),
 	test_cfg = dict(
 		nms_pre=1000,
 		min_bbox_size=0,
