@@ -210,6 +210,33 @@ class FoveaHead(AnchorFreeHead):
 				avg_factor=num_pos + num_imgs)
 		return dict(loss_cls=loss_cls, loss_bbox=loss_bbox)
 
+	def decode_bbox(self, bbox_preds, img_metas):
+		featmap_sizes = [featmap.size()[-2:] for featmap in bbox_preds]
+		point_list = self.get_points(
+			featmap_sizes,
+			bbox_preds[0].dtype,
+			bbox_preds[0].device,
+			flatten=True)
+		img_shape = img_metas[0]['img_shape']
+		num_imgs = len(img_metas)
+		decode_bboxes = []
+		for bbox_pred, featmap_size, stride, base_len, (y, x) \
+				in zip(bbox_preds, featmap_sizes, self.strides,
+					   self.base_edge_list, point_list):
+			bbox_pred = bbox_pred.clone().detach().permute(0, 2, 3, 1).\
+				reshape(-1, 4).exp()
+			x1 = (stride * x.repeat(num_imgs) - base_len * bbox_pred[:, 0]).\
+				clamp(min=0, max=img_shape[1] - 1)
+			y1 = (stride * y.repeat(num_imgs) - base_len * bbox_pred[:, 1]).\
+				clamp(min=0, max=img_shape[0] - 1)
+			x2 = (stride * x.repeat(num_imgs) + base_len * bbox_pred[:, 2]).\
+				clamp(min=0, max=img_shape[1] - 1)
+			y2 = (stride * y.repeat(num_imgs) + base_len * bbox_pred[:, 3]).\
+				clamp(min=0, max=img_shape[0] - 1)
+			bboxes = torch.stack([x1, y1, x2, y2], -1)
+			decode_bboxes.append(bboxes)
+		return decode_bboxes
+
 	def get_targets(self, gt_bbox_list, gt_label_list, featmap_sizes, points):
 		label_list, bbox_target_list = multi_apply(
 			self._get_target_single,
