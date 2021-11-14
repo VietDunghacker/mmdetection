@@ -187,10 +187,7 @@ class FoveaHead(AnchorFreeHead):
 
 			pos_bbox_preds_x1y1x2y2 = flatten_bbox_preds_x1y1x2y2[pos_inds]
 			pos_bbox_targets_x1y1x2y2 = flatten_bbox_targets_x1y1x2y2[pos_inds]
-			pos_ious = bbox_overlaps(
-				pos_bbox_preds_x1y1x2y2.detach(),
-				pos_bbox_targets_x1y1x2y2.detach(),
-				is_aligned=True).clamp(min=1e-6)
+			pos_ious = bbox_overlaps(pos_bbox_preds_x1y1x2y2.detach(), pos_bbox_targets_x1y1x2y2.detach(), is_aligned=True).clamp(min=1e-6).to(flatten_cls_scores.dtype)
 			pos_labels = flatten_labels[pos_inds]
 			cls_iou_targets = torch.zeros_like(flatten_cls_scores)
 			cls_iou_targets[pos_inds, pos_labels] = pos_ious
