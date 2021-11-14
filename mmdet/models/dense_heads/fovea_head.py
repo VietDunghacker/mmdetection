@@ -2,7 +2,7 @@
 import torch
 import torch.nn as nn
 from mmcv.cnn import ConvModule
-from mmcv.ops import ModulatedDeformConv2d
+from mmcv.ops import DeformConv2d
 from mmcv.runner import BaseModule
 
 from mmdet.core import bbox_overlaps, multi_apply, multiclass_nms
@@ -26,16 +26,15 @@ class FeatureAlign(BaseModule):
 					 override=dict(
 						 type='Normal', name='conv_adaption', std=0.01))):
 		super(FeatureAlign, self).__init__(init_cfg)
-		offset_channels = kernel_size * kernel_size * 2
-		self.conv_offset = nn.Conv2d(
-			4, deform_groups * offset_channels, 1, bias=False)
-		self.conv_adaption = ModulatedDeformConv2d(
+		offset_channels = kernel_size * kernel_size * 3
+		self.conv_offset = nn.Conv2d(4, deform_groups * offset_channels, 1, bias=False)
+		self.conv_adaption = DeformConv2d(
 			in_channels,
 			out_channels,
 			kernel_size=kernel_size,
 			padding=(kernel_size - 1) // 2,
 			deform_groups=deform_groups)
-		self.relu = nn.ReLU(inplace=True)
+		self.relu = nn.SiLU(inplace=True)
 
 	def forward(self, x, shape):
 		offset = self.conv_offset(shape)
