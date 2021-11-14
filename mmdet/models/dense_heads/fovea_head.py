@@ -329,7 +329,7 @@ class FoveaHead(AnchorFreeHead):
 			label_list.append(labels)
 			bbox_target_list.append(torch.log(bbox_targets))
 			bbox_targets_x1y1x2y2_list.append(bbox_targets_x1y1x2y2)
-		return label_list, bbox_target_list
+		return label_list, bbox_target_list, bbox_targets_x1y1x2y2_list
 
 	def get_bboxes(self,
 				   cls_scores,
