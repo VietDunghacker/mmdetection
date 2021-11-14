@@ -238,7 +238,7 @@ class FoveaHead(AnchorFreeHead):
 		return decode_bboxes
 
 	def get_targets(self, gt_bbox_list, gt_label_list, featmap_sizes, points):
-		label_list, bbox_target_list = multi_apply(
+		label_list, bbox_target_list, bbox_targets_x1y1x2y2_list = multi_apply(
 			self._get_target_single,
 			gt_bbox_list,
 			gt_label_list,
@@ -277,20 +277,21 @@ class FoveaHead(AnchorFreeHead):
 							  (gt_bboxes_raw[:, 3] - gt_bboxes_raw[:, 1]))
 		label_list = []
 		bbox_target_list = []
+		bbox_targets_x1y1x2y2_list = []
 		# for each pyramid, find the cls and box target
 		for base_len, (lower_bound, upper_bound), stride, featmap_size, \
 			(y, x) in zip(self.base_edge_list, self.scale_ranges,
 						  self.strides, featmap_size_list, point_list):
 			# FG cat_id: [0, num_classes -1], BG cat_id: num_classes
 			labels = gt_labels_raw.new_zeros(featmap_size) + self.num_classes
-			bbox_targets = gt_bboxes_raw.new(featmap_size[0], featmap_size[1],
-											 4) + 1
+			bbox_targets = gt_bboxes_raw.new(featmap_size[0], featmap_size[1], 4) + 1
+			bbox_targets_x1y1x2y2 = gt_bboxes_raw.new_zeros(featmap_size[0], featmap_size[1], 4) + 1.0
 			# scale assignment
-			hit_indices = ((gt_areas >= lower_bound) &
-						   (gt_areas <= upper_bound)).nonzero().flatten()
+			hit_indices = ((gt_areas >= lower_bound) & (gt_areas <= upper_bound)).nonzero().flatten()
 			if len(hit_indices) == 0:
 				label_list.append(labels)
 				bbox_target_list.append(torch.log(bbox_targets))
+				bbox_targets_x1y1x2y2_list.append(bbox_targets_x1y1x2y2)
 				continue
 			_, hit_index_order = torch.sort(-gt_areas[hit_indices])
 			hit_indices = hit_indices[hit_index_order]
@@ -315,17 +316,19 @@ class FoveaHead(AnchorFreeHead):
 					zip(pos_left, pos_top, pos_right, pos_down, gt_labels,
 						gt_bboxes_raw[hit_indices, :]):
 				labels[py1:py2 + 1, px1:px2 + 1] = label
-				bbox_targets[py1:py2 + 1, px1:px2 + 1, 0] = \
-					(stride * x[py1:py2 + 1, px1:px2 + 1] - gt_x1) / base_len
-				bbox_targets[py1:py2 + 1, px1:px2 + 1, 1] = \
-					(stride * y[py1:py2 + 1, px1:px2 + 1] - gt_y1) / base_len
-				bbox_targets[py1:py2 + 1, px1:px2 + 1, 2] = \
-					(gt_x2 - stride * x[py1:py2 + 1, px1:px2 + 1]) / base_len
-				bbox_targets[py1:py2 + 1, px1:px2 + 1, 3] = \
-					(gt_y2 - stride * y[py1:py2 + 1, px1:px2 + 1]) / base_len
+				bbox_targets[py1:py2 + 1, px1:px2 + 1, 0] = (stride * x[py1:py2 + 1, px1:px2 + 1] - gt_x1) / base_len
+				bbox_targets[py1:py2 + 1, px1:px2 + 1, 1] = (stride * y[py1:py2 + 1, px1:px2 + 1] - gt_y1) / base_len
+				bbox_targets[py1:py2 + 1, px1:px2 + 1, 2] = (gt_x2 - stride * x[py1:py2 + 1, px1:px2 + 1]) / base_len
+				bbox_targets[py1:py2 + 1, px1:px2 + 1, 3] = (gt_y2 - stride * y[py1:py2 + 1, px1:px2 + 1]) / base_len
+
+				bbox_targets_x1y1x2y2[py1:py2 + 1, px1:px2 + 1, 0] = gt_x1
+				bbox_targets_x1y1x2y2[py1:py2 + 1, px1:px2 + 1, 1] = gt_y1
+				bbox_targets_x1y1x2y2[py1:py2 + 1, px1:px2 + 1, 2] = gt_x2
+				bbox_targets_x1y1x2y2[py1:py2 + 1, px1:px2 + 1, 3] = gt_y2
 			bbox_targets = bbox_targets.clamp(min=1. / 16, max=16.)
 			label_list.append(labels)
 			bbox_target_list.append(torch.log(bbox_targets))
+			bbox_targets_x1y1x2y2_list.append(bbox_targets_x1y1x2y2)
 		return label_list, bbox_target_list
 
 	def get_bboxes(self,
