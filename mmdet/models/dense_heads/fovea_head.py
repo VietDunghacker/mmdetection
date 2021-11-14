@@ -52,8 +52,7 @@ class FoveaHead(AnchorFreeHead):
 				 num_classes,
 				 in_channels,
 				 base_edge_list=(16, 32, 64, 128, 256),
-				 scale_ranges=((8, 32), (16, 64), (32, 128), (64, 256), (128,
-																		 512)),
+				 scale_ranges=((8, 32), (16, 64), (32, 128), (64, 256), (128, 512)),
 				 sigma=0.4,
 				 with_deform=False,
 				 deform_groups=4,
@@ -168,8 +167,9 @@ class FoveaHead(AnchorFreeHead):
 		]
 		flatten_cls_scores = torch.cat(flatten_cls_scores)
 		flatten_bbox_preds = torch.cat(flatten_bbox_preds)
-		flatten_labels, flatten_bbox_targets = self.get_targets(
-			gt_bbox_list, gt_label_list, featmap_sizes, points)
+		bbox_preds_x1y1x2y2 = self.decode_bbox(bbox_preds, img_metas)
+		flatten_bbox_preds_x1y1x2y2 = torch.cat(bbox_preds_x1y1x2y2)
+		flatten_labels, flatten_bbox_targets, flatten_bbox_targets_x1y1x2y2 = self.get_targets(gt_bbox_list, gt_label_list, featmap_sizes, points)
 
 		# FG cat_id: [0, num_classes -1], BG cat_id: num_classes
 		pos_inds = ((flatten_labels >= 0) & (flatten_labels < self.num_classes)).nonzero().view(-1)
@@ -186,8 +186,7 @@ class FoveaHead(AnchorFreeHead):
 				avg_factor=num_pos)
 
 			pos_bbox_preds_x1y1x2y2 = flatten_bbox_preds_x1y1x2y2[pos_inds]
-			pos_bbox_targets_x1y1x2y2 = \
-				flatten_bbox_targets_x1y1x2y2[pos_inds]
+			pos_bbox_targets_x1y1x2y2 = flatten_bbox_targets_x1y1x2y2[pos_inds]
 			pos_ious = bbox_overlaps(
 				pos_bbox_preds_x1y1x2y2.detach(),
 				pos_bbox_targets_x1y1x2y2.detach(),
@@ -218,6 +217,13 @@ class FoveaHead(AnchorFreeHead):
 			gt_label_list,
 			featmap_size_list=featmap_sizes,
 			point_list=points)
+		flatten_bbox_targets_x1y1x2y2 = [
+			torch.cat([
+				bbox_targets_x1y1x2y2_level_img.reshape(-1, 4) for
+				bbox_targets_x1y1x2y2_level_img in bbox_targets_x1y1x2y2_level
+			])
+			for bbox_targets_x1y1x2y2_level in zip(*bbox_targets_x1y1x2y2_list)
+		]
 		flatten_labels = [
 			torch.cat([
 				labels_level_img.flatten() for labels_level_img in labels_level
@@ -231,7 +237,8 @@ class FoveaHead(AnchorFreeHead):
 		]
 		flatten_labels = torch.cat(flatten_labels)
 		flatten_bbox_targets = torch.cat(flatten_bbox_targets)
-		return flatten_labels, flatten_bbox_targets
+		flatten_bbox_targets_x1y1x2y2 = torch.cat(flatten_bbox_targets_x1y1x2y2)
+		return flatten_labels, flatten_bbox_targets, flatten_bbox_targets_x1y1x2y2
 
 	def _get_target_single(self,
 						   gt_bboxes_raw,
