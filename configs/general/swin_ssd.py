@@ -20,6 +20,7 @@ model = dict(
 		with_cp=True,
 		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
 	neck=dict(
+		type='SSDNeck',
 		in_channels=(512, 1024),
 		out_channels=(512, 1024, 512, 256, 256, 256, 256),
 		level_strides=(2, 2, 2, 2, 1),
@@ -27,6 +28,7 @@ model = dict(
 		last_kernel_size=4,
 		l2_norm_scale=20),
 	bbox_head=dict(
+		type='SSDHead',
 		num_classes=40,
 		in_channels=(512, 1024, 512, 256, 256, 256, 256),
 		anchor_generator=dict(
