@@ -119,8 +119,12 @@ class FoveaHead(AnchorFreeHead):
 				padding=1)
 
 	def forward_single(self, x):
-		cls_feat = x
-		reg_feat = x
+		if isinstance(x, list):
+			cls_feat = x[0]
+			reg_feat = x[1]
+		else:
+			cls_feat = x
+			reg_feat = x
 		for reg_layer in self.reg_convs:
 			reg_feat = reg_layer(reg_feat)
 		bbox_pred = self.conv_reg(reg_feat)
