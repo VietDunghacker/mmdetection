@@ -62,8 +62,6 @@ model = dict(
 		with_deform=True,
 		norm_cfg=dict(type='GN', num_groups=32, requires_grad=True),
 		loss_cls=dict(type='FocalLoss', use_sigmoid=True, gamma=1.50, alpha=0.4, loss_weight=1.0),
-		use_vfl=True,
-		loss_cls_vfl=dict(type='VarifocalLoss', use_sigmoid=True, alpha=0.75, gamma=2.0, iou_weighted=True, loss_weight=1.0),
 		loss_bbox=dict(type='SmoothL1Loss', beta=0.11, loss_weight=1.0)),
 	train_cfg = dict(),
 	test_cfg = dict(
