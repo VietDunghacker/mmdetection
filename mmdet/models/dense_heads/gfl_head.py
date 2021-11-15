@@ -478,7 +478,6 @@ class GFLHead(AnchorHead):
 			rescale=rescale,
 			with_nms=with_nms)
 
-
 	def get_targets(self,
 					anchor_list,
 					valid_flag_list,
