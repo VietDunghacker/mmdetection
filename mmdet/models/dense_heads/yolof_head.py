@@ -14,16 +14,13 @@ INF = 1e8
 
 def levels_to_images(mlvl_tensor):
 	"""Concat multi-level feature maps by image.
-
 	[feature_level0, feature_level1...] -> [feature_image0, feature_image1...]
 	Convert the shape of each element in mlvl_tensor from (N, C, H, W) to
 	(N, H*W , C), then split the element to N elements with shape (H*W, C), and
 	concat elements in same image of all level along first dimension.
-
 	Args:
 		mlvl_tensor (list[torch.Tensor]): list of Tensor which collect from
 			corresponding level. Each element is of shape (N, C, H, W)
-
 	Returns:
 		list[torch.Tensor]: A list that contains N tensors and each tensor is
 			of shape (num_elements, C)
@@ -42,7 +39,6 @@ def levels_to_images(mlvl_tensor):
 @HEADS.register_module()
 class YOLOFHead(AnchorHead):
 	"""YOLOFHead Paper link: https://arxiv.org/abs/2103.09460.
-
 	Args:
 		num_classes (int): The number of object classes (w/o background)
 		in_channels (List[int]): The number of input channels per scale.
@@ -88,19 +84,19 @@ class YOLOFHead(AnchorHead):
 		self.bbox_subnet = nn.Sequential(*bbox_subnet)
 		self.cls_score = nn.Conv2d(
 			self.in_channels,
-			self.num_anchors * self.num_classes,
+			self.num_base_priors * self.num_classes,
 			kernel_size=3,
 			stride=1,
 			padding=1)
 		self.bbox_pred = nn.Conv2d(
 			self.in_channels,
-			self.num_anchors * 4,
+			self.num_base_priors * 4,
 			kernel_size=3,
 			stride=1,
 			padding=1)
 		self.object_pred = nn.Conv2d(
 			self.in_channels,
-			self.num_anchors,
+			self.num_base_priors,
 			kernel_size=3,
 			stride=1,
 			padding=1)
@@ -127,7 +123,9 @@ class YOLOFHead(AnchorHead):
 
 		# implicit objectness
 		objectness = objectness.view(N, -1, 1, H, W)
-		normalized_cls_score = cls_score + objectness - torch.log(1. + torch.clamp(cls_score.exp(), max=INF) + torch.clamp(objectness.exp(), max=INF))
+		normalized_cls_score = cls_score + objectness - torch.log(
+			1. + torch.clamp(cls_score.exp(), max=INF) +
+			torch.clamp(objectness.exp(), max=INF))
 		normalized_cls_score = normalized_cls_score.view(N, -1, H, W)
 		return normalized_cls_score, bbox_reg
 
@@ -140,7 +138,6 @@ class YOLOFHead(AnchorHead):
 			 img_metas,
 			 gt_bboxes_ignore=None):
 		"""Compute losses of the head.
-
 		Args:
 			cls_scores (list[Tensor]): Box scores for each scale level
 				Has shape (batch, num_anchors * num_classes, h, w)
@@ -153,12 +150,11 @@ class YOLOFHead(AnchorHead):
 				image size, scaling factor, etc.
 			gt_bboxes_ignore (None | list[Tensor]): specify which bounding
 				boxes can be ignored when computing the loss. Default: None
-
 		Returns:
 			dict[str, Tensor]: A dictionary of loss components.
 		"""
 		assert len(cls_scores) == 1
-		assert self.anchor_generator.num_levels == 1
+		assert self.prior_generator.num_levels == 1
 
 		device = cls_scores[0].device
 		featmap_sizes = [featmap.size()[-2:] for featmap in cls_scores]
@@ -194,10 +190,8 @@ class YOLOFHead(AnchorHead):
 		cls_score = cls_scores[0].permute(0, 2, 3,
 										  1).reshape(-1, self.cls_out_channels)
 
-		num_total_samples = (num_total_pos +
-							 num_total_neg) if self.sampling else num_total_pos
-		num_total_samples = reduce_mean(
-			cls_score.new_tensor(num_total_samples)).clamp_(1.0).item()
+		num_total_samples = (num_total_pos + num_total_neg) if self.sampling else num_total_pos
+		num_total_samples = reduce_mean(cls_score.new_tensor(num_total_samples)).clamp_(1.0).item()
 
 		# classification loss
 		loss_cls = self.loss_cls(
@@ -232,7 +226,6 @@ class YOLOFHead(AnchorHead):
 					unmap_outputs=True):
 		"""Compute regression and classification targets for anchors in
 		multiple images.
-
 		Args:
 			cls_scores_list (list[Tensor])： Classification scores of
 				each image. each is a 4D-tensor, the shape is
@@ -251,10 +244,8 @@ class YOLOFHead(AnchorHead):
 			label_channels (int): Channel of label.
 			unmap_outputs (bool): Whether to map outputs back to the original
 				set of anchors.
-
 		Returns:
 			tuple: Usually returns a tuple containing learning targets.
-
 				- batch_labels (Tensor): Label of all images. Each element \
 					of is a tensor of shape (batch, h * w * num_anchors)
 				- batch_label_weights (Tensor): Label weights of all images \
@@ -318,7 +309,6 @@ class YOLOFHead(AnchorHead):
 							unmap_outputs=True):
 		"""Compute regression and classification targets for anchors in a
 		single image.
-
 		Args:
 			bbox_preds (Tensor): Bbox prediction of the image, which
 				shape is (h * w ,4)
@@ -336,7 +326,6 @@ class YOLOFHead(AnchorHead):
 			label_channels (int): Channel of label.
 			unmap_outputs (bool): Whether to map outputs back to the original
 				set of anchors.
-
 		Returns:
 			tuple:
 				labels (Tensor): Labels of image, which shape is
