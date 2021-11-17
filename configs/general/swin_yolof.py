@@ -21,7 +21,7 @@ model = dict(
 		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
 	neck=dict(
 		type='DilatedEncoder',
-		in_channels=1536,
+		in_channels=1024,
 		out_channels=512,
 		block_mid_channels=128,
 		num_residual_blocks=4),
