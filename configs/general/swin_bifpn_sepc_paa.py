@@ -51,6 +51,7 @@ model = dict(
 	],
 	bbox_head=dict(
 		type='PAAHead',
+		covariance_type='full',
 		reg_decoded_bbox=True,
 		score_voting=False,
 		topk=9,
