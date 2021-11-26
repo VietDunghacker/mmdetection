@@ -642,7 +642,7 @@ class PAAHead(ATSSHead):
 		mlvl_scores = torch.cat([mlvl_scores, padding], dim=1)
 
 		mlvl_iou_preds = torch.cat(mlvl_score_factors)
-		mlvl_nms_scores = (mlvl_scores * mlvl_iou_preds[:, None]).sqrt()
+		mlvl_nms_scores = mlvl_scores * mlvl_iou_preds[:, None]
 		det_bboxes, det_labels = multiclass_nms(
 			mlvl_bboxes,
 			mlvl_nms_scores,
