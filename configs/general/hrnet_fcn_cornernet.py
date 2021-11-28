@@ -32,8 +32,8 @@ model = dict(
 				block='BASIC',
 				num_blocks=(4, 4, 4, 4),
 				num_channels=(48, 96, 192, 384))),
-		norm_eval = False,
-		with_cp = True,
+		norm_eval=False,
+		with_cp=True,
 		init_cfg = dict(type='Pretrained', checkpoint='https://download.openmmlab.com/pretrain/third_party/hrnetv2_w48-d2186c55.pth')),
 	neck=dict(
 		type='FCNHead',

@@ -218,7 +218,7 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 
 	def init_weights(self):
 		super(CornerHead, self).init_weights()
-		bias_init = bias_init_with_prob(0.01)
+		bias_init = bias_init_with_prob(0.001)
 		for i in range(self.num_feat_levels):
 			# The initialization of parameters are different between
 			# nn.Conv2d and ConvModule. Our experiments show that
