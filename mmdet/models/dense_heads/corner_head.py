@@ -266,6 +266,7 @@ class CornerHead(BaseDenseHead, BBoxTestMixin):
 		lvl_ind = list(range(self.num_feat_levels))
 		return multi_apply(self.forward_single, feats, lvl_ind)
 
+	@force_fp32()
 	def forward_single(self, x, lvl_ind, return_pool=False):
 		"""Forward feature of a single level.
 
