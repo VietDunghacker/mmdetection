@@ -63,9 +63,9 @@ model = dict(
 			scales_per_octave=1,
 			strides=[8, 16, 32, 64, 128]),
 		loss_cls=dict(type='QualityFocalLoss', use_sigmoid=False, beta=2.0, loss_weight=1.0),
-		loss_dfl=dict(type='DistributionFocalLoss', loss_weight=0.25),
+		loss_dfl=dict(type='DistributionFocalLoss', loss_weight=0.5),
 		use_dgqp=True,
-		loss_bbox=dict(type='CIoULoss', loss_weight=2.0),
+		loss_bbox=dict(type='CIoULoss', loss_weight=1.0),
 		loss_bbox_refine=dict(type='CIoULoss', loss_weight=2.0)),
 	train_cfg = dict(
 		assigner=dict(type='ATSSAssigner', topk=13),
