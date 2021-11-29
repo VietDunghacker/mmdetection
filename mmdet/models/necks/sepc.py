@@ -28,6 +28,7 @@ class SEPC(BaseModule):
 				 pnorm_eval=True,
 				 lcnorm_eval=True,
 				 lcconv_padding=0,
+				 return_initial_value = False,
 				 init_cfg=None):
 		assert init_cfg is None, 'To prevent abnormal initialization ' \
 								 'behavior, init_cfg is not allowed to be set'
@@ -43,6 +44,7 @@ class SEPC(BaseModule):
 		self.lcnorm_cfg = lcnorm_cfg
 		self.pnorm_eval = pnorm_eval
 		self.lcnorm_eval = lcnorm_eval
+		self.return_initial_value = return_initial_value
 		self.pconvs = ModuleList()
 
 		for i in range(stacked_convs):
@@ -107,8 +109,10 @@ class SEPC(BaseModule):
 		if self.ibn:
 			cls_feats = integrated_bn(cls_feats, self.cnorm)
 			loc_feats = integrated_bn(loc_feats, self.lnorm)
-		outs = [[self.relu(cls_feat), self.relu(loc_feat)]
-				for cls_feat, loc_feat in zip(cls_feats, loc_feats)]
+		if self.return_initial_value:
+			outs = [[self.relu(cls_feat), self.relu(loc_feat), inp] for inp, cls_feat, loc_feat in zip(inputs, cls_feats, loc_feats)]
+		else:
+			outs = [[self.relu(cls_feat), self.relu(loc_feat)] for cls_feat, loc_feat in zip(cls_feats, loc_feats)]
 		return tuple(outs)
 
 	def train(self, mode=True):
