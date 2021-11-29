@@ -87,8 +87,12 @@ class OATHead(GFLHead):
 		return multi_apply(self.forward_single, feats, self.scales, self.refine_scales)
 
 	def forward_single(self, x, scale, refine_scale):
-		cls_feat = x
-		reg_feat = x
+		if isinstance(x, list):
+			cls_feat = x[0]
+			reg_feat = x[1]
+		else:
+			cls_feat = x
+			reg_feat = x
 
 		for cls_layer in self.cls_convs:
 			cls_feat = cls_layer(cls_feat)
@@ -121,7 +125,10 @@ class OATHead(GFLHead):
 				stat = prob_topk
 			quality_score = self.reg_conf(stat.type_as(reg_feat).reshape(N, -1, H, W))
 			cls_score = cls_score.sigmoid() * quality_score
-		return cls_score, bbox_pred, bbox_pred_refine
+		if self.training:
+			return cls_score, bbox_pred, bbox_pred_refine
+		else:
+			return cls_score, bbox_pred
 
 	def gen_dcn_offset(self, bbox_pred, point_offset):
 		N, C, H, W = bbox_pred.shape
@@ -307,134 +314,3 @@ class OATHead(GFLHead):
 		losses_bbox_refine = list(map(lambda x: x / avg_factor, losses_bbox_refine))
 		losses_dfl = list(map(lambda x: x / avg_factor, losses_dfl))
 		return dict(loss_cls=losses_cls, loss_bbox=losses_bbox, loss_bbox_refine=losses_bbox_refine, loss_dfl=losses_dfl)
-
-	@force_fp32(apply_to=('cls_scores', 'bbox_preds', 'bbox_preds_refine'))
-	def get_bboxes(self,
-				   cls_scores,
-				   bbox_preds,
-				   bbox_preds_refine,
-				   img_metas,
-				   cfg=None,
-				   rescale=False,
-				   with_nms=True):
-		assert len(cls_scores) == len(bbox_preds)
-		num_levels = len(cls_scores)
-
-		device = cls_scores[0].device
-		featmap_sizes = [cls_scores[i].shape[-2:] for i in range(num_levels)]
-		mlvl_anchors = self.anchor_generator.grid_priors(
-			featmap_sizes, device=device)
-
-		mlvl_cls_scores = [cls_scores[i].detach() for i in range(num_levels)]
-		mlvl_bbox_preds = [bbox_preds[i].detach() for i in range(num_levels)]
-		mlvl_bbox_preds_refine = [bbox_preds_refine[i].detach() for i in range(num_levels)]
-
-		if torch.onnx.is_in_onnx_export():
-			assert len(img_metas) == 1, 'Only support one input image while in exporting to ONNX'
-			img_shapes = img_metas[0]['img_shape_for_onnx']
-		else:
-			img_shapes = [img_metas[i]['img_shape'] for i in range(cls_scores[0].shape[0])]
-		scale_factors = [img_metas[i]['scale_factor'] for i in range(cls_scores[0].shape[0])]
-
-		if with_nms:
-			result_list = self._get_bboxes(mlvl_cls_scores, mlvl_bbox_preds, mlvl_bbox_preds_refine,
-										   mlvl_anchors, img_shapes, scale_factors, cfg, rescale)
-		else:
-			result_list = self._get_bboxes(mlvl_cls_scores, mlvl_bbox_preds, mlvl_bbox_preds_refine,
-										   mlvl_anchors, img_shapes, scale_factors, cfg, rescale, with_nms)
-		return result_list
-
-	def _get_bboxes(self,
-					cls_scores,
-					bbox_preds,
-					bbox_preds_refine,
-					mlvl_anchors,
-					img_shapes,
-					scale_factors,
-					cfg,
-					rescale=False,
-					with_nms=True):
-		"""Transform outputs for a single batch item into labeled boxes.
-		Args:
-			cls_scores (list[Tensor]): Box scores for a single scale level
-				has shape (N, num_classes, H, W).
-			bbox_preds (list[Tensor]): Box distribution logits for a single
-				scale level with shape (N, 4*(n+1), H, W), n is max value of
-				integral set.
-			bbox_preds_refine (list[Tensor]): Refined box distribution logits for a single
-				scale level with shape (N, 4*(n+1), H, W), n is max value of
-				integral set.
-			mlvl_anchors (list[Tensor]): Box reference for a single scale level
-				with shape (num_total_anchors, 4).
-			img_shapes (list[tuple[int]]): Shape of the input image,
-				list[(height, width, 3)].
-			scale_factors (list[ndarray]): Scale factor of the image arange as
-				(w_scale, h_scale, w_scale, h_scale).
-			cfg (mmcv.Config | None): Test / postprocessing configuration,
-				if None, test_cfg would be used.
-			rescale (bool): If True, return boxes in original image space.
-				Default: False.
-			with_nms (bool): If True, do nms before return boxes.
-				Default: True.
-		Returns:
-			list[tuple[Tensor, Tensor]]: Each item in result_list is 2-tuple.
-				The first item is an (n, 5) tensor, where 5 represent
-				(tl_x, tl_y, br_x, br_y, score) and the score between 0 and 1.
-				The shape of the second tensor in the tuple is (n,), and
-				each element represents the class label of the corresponding
-				box.
-		"""
-		cfg = self.test_cfg if cfg is None else cfg
-		assert len(cls_scores) == len(bbox_preds) == len(mlvl_anchors)
-		batch_size = cls_scores[0].shape[0]
-
-		mlvl_bboxes = []
-		mlvl_scores = []
-		for cls_score, bbox_pred_refine, stride, anchors in zip(cls_scores, bbox_preds_refine, self.anchor_generator.strides, mlvl_anchors):
-			assert cls_score.size()[-2:] == bbox_pred_refine.size()[-2:]
-			assert stride[0] == stride[1]
-			scores_shape = (batch_size, -1, self.cls_out_channels)
-			scores = cls_score.permute(0, 2, 3, 1).reshape(scores_shape)
-			if not self.use_dgqp:
-				scores = scores.sigmoid()
-
-			bbox_pred_refine = bbox_pred_refine.permute(0, 2, 3, 1)
-
-			bbox_pred_refine = self.integral(bbox_pred_refine) * stride[0]
-			bbox_pred_refine = bbox_pred_refine.reshape(batch_size, -1, 4)
-
-			nms_pre = cfg.get('nms_pre', -1)
-			if nms_pre > 0 and scores.shape[1] > nms_pre:
-				max_scores, _ = scores.max(-1)
-				_, topk_inds = max_scores.topk(nms_pre)
-				batch_inds = torch.arange(batch_size).view(-1, 1).expand_as(topk_inds).long()
-				anchors = anchors[topk_inds, :]
-				bbox_pred_refine = bbox_pred_refine[batch_inds, topk_inds, :]
-				scores = scores[batch_inds, topk_inds, :]
-			else:
-				anchors = anchors.expand_as(bbox_pred_refine)
-
-			bboxes = distance2bbox(self.anchor_center(anchors), bbox_pred_refine, max_shape=img_shapes)
-			mlvl_bboxes.append(bboxes)
-			mlvl_scores.append(scores)
-
-		batch_mlvl_bboxes = torch.cat(mlvl_bboxes, dim=1)
-		if rescale:
-			batch_mlvl_bboxes /= batch_mlvl_bboxes.new_tensor(scale_factors).unsqueeze(1)
-
-		batch_mlvl_scores = torch.cat(mlvl_scores, dim=1)
-		# Add a dummy background class to the backend when using sigmoid
-		# remind that we set FG labels to [0, num_class-1] since mmdet v2.0
-		# BG cat_id: num_class
-		if self.use_sigmoid_cls:
-			padding = batch_mlvl_scores.new_zeros(batch_size, batch_mlvl_scores.shape[1], 1)
-			batch_mlvl_scores = torch.cat([batch_mlvl_scores, padding], dim=-1)
-
-		if with_nms:
-			det_results = []
-			for (mlvl_bboxes, mlvl_scores) in zip(batch_mlvl_bboxes, batch_mlvl_scores):
-				det_bbox, det_label = multiclass_nms(mlvl_bboxes, mlvl_scores, cfg.score_thr, cfg.nms, cfg.max_per_img)
-				det_results.append(tuple([det_bbox, det_label]))
-		else:
-			det_results = [tuple(mlvl_bs) for mlvl_bs in zip(batch_mlvl_bboxes, batch_mlvl_scores)]
-		return det_results
