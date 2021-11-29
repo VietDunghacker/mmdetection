@@ -85,7 +85,8 @@ class OATHead(GFLHead):
 
 	def forward(self, feats):
 		return multi_apply(self.forward_single, feats, self.scales, self.refine_scales)
-
+	
+	@force_fp32()
 	def forward_single(self, x, scale, refine_scale):
 		if isinstance(x, list):
 			cls_feat = x[0]
