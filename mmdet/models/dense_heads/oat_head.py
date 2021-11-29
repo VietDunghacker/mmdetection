@@ -110,7 +110,7 @@ class OATHead(GFLHead):
 		reg_feat = self.oat_reg_dconv(reg_feat, reg_dcn_offset)
 		bbox_pred_refine = refine_scale(self.oat_reg_refine(reg_feat))
 
-		cls_feat_init = self.relu(self.cfa_cls_conv(cls_feat + x))
+		cls_feat_init = self.relu(self.cfa_cls_conv(cls_feat))
 		distanglement_vector = self.relu(self.cfa_distanglement(cls_feat_init))
 		cls_dcn_offset = distanglement_vector.exp() * dcn_offset.detach() - self.dcn_base_offset.type_as(bbox_pred)
 		cls_feat = self.oat_cls_dconv(cls_feat, cls_dcn_offset)
