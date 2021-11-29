@@ -47,7 +47,7 @@ model = dict(
  	 	distance_threshold=0.5,
  	 	score_thr=0.05,
  	 	max_per_img=100,
- 	 	nms=dict(type='nms')))
+ 	 	nms=dict(type='nms', iou_threshold=0.5)))
 
 # data setting
 img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
