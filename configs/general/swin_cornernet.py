@@ -36,8 +36,8 @@ model = dict(
  	 	loss_heatmap=dict(type='GaussianFocalLoss', alpha=2.0, gamma=4.0, loss_weight=1),
  	 	loss_embedding=dict(
  	 	 	type='AssociativeEmbeddingLoss',
- 	 	 	pull_weight=0.1,
- 	 	 	push_weight=0.1),
+ 	 	 	pull_weight=1,
+ 	 	 	push_weight=1),
  	 	loss_offset=dict(type='SmoothL1Loss', beta=1.0 / 9.0, loss_weight=1)),
  	# training and testing settings
  	train_cfg=None,
