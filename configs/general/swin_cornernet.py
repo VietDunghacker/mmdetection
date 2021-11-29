@@ -30,7 +30,7 @@ model = dict(
  	bbox_head=dict(
  	 	type='CornerHead',
  	 	num_classes=40,
- 	 	in_channels=256,
+ 	 	in_channels=128,
  	 	num_feat_levels=1,
  	 	corner_emb_channels=1,
  	 	loss_heatmap=dict(type='GaussianFocalLoss', alpha=2.0, gamma=4.0, loss_weight=1),
