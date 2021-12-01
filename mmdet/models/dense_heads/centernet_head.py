@@ -319,7 +319,7 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 			k=self.test_cfg.topk,
 			kernel=self.test_cfg.local_maximum_kernel)
 
-		height, width = img_metas[0]['batch_input_shape']
+		height, width = img_meta['batch_input_shape']
 
 		det_bboxes = batch_det_bboxes.view([-1, 5])
 		det_labels = batch_labels.view(-1)
