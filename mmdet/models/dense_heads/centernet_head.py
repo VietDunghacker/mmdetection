@@ -70,7 +70,7 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 
 	def init_weights(self):
 		"""Initialize weights of the head."""
-		bias_init = bias_init_with_prob(0.1)
+		bias_init = bias_init_with_prob(0.01)
 		self.heatmap_head[-1].bias.data.fill_(bias_init)
 		for head in [self.wh_head, self.offset_head]:
 			for m in head.modules():
