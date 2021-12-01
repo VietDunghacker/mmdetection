@@ -390,7 +390,7 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 
 		if labels.numel() > 0:
 			max_num = cfg.max_per_img
-			bboxes, keep = batched_nms(bboxes[:, :4], bboxes[:, 1].contiguous(), labels, cfg.nms)
+			bboxes, keep = batched_nms(bboxes[:, :4], bboxes[:, -1].contiguous(), labels, cfg.nms)
 			if max_num > 0:
 				bboxes = bboxes[:max_num]
 				labels = labels[keep][:max_num]
