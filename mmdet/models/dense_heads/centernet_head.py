@@ -246,7 +246,7 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 				   offset_preds,
 				   img_metas,
 				   rescale=True,
-				   with_nms=False):
+				   with_nms=True):
 		"""Transform network output for a batch into bbox predictions.
 		Args:
 			center_heatmap_preds (list[Tensor]): Center predict heatmaps for
@@ -335,8 +335,7 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 			det_bboxes[..., :4] /= det_bboxes.new_tensor(img_meta['scale_factor'])
 
 		if with_nms:
-			det_bboxes, det_labels = self._bboxes_nms(det_bboxes, det_labels,
-													  self.test_cfg)
+			det_bboxes, det_labels = self._bboxes_nms(det_bboxes, det_labels, self.test_cfg)
 		return det_bboxes, det_labels
 
 	def decode_heatmap(self,
