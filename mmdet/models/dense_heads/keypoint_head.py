@@ -202,7 +202,11 @@ class KeypointHead(AnchorFreeHead):
 			Tuple[torch.Tensor]: head_0_score,...,head_`len(choice)`_score,
 				head_0_offset,...head_`len(choice)`_offset
 		"""
-		feat = x
+		if isinstance(x, list):
+			feat = x[-1]
+		else:
+			feat = x
+			
 		for layer in self.shared_layers:
 			feat = layer(feat)
 

@@ -12,6 +12,7 @@ from mmdet.models.dense_heads.retina_head import RetinaHead
 from mmdet.models.dense_heads.gfl_head import GFLHead
 from mmdet.models.dense_heads.vfnet_head import VFNetHead
 from mmdet.models.dense_heads.paa_head import PAAHead
+from mmdet.models.dense_heads.reppoints_v2_head import RepPointsV2Head
 
 def anchorfree_forward_features(self, feats):
 	return multi_apply(self.forward_feature_single, feats)
@@ -76,7 +77,6 @@ def retina_forward_prediction_single(self, cls_feat, reg_feat):
 def gfl_forward_predictions(self, cls_feats, reg_feats):
 	return multi_apply(self.forward_prediction_single, cls_feats, reg_feats, self.scales)
 
-
 def gfl_forward_prediction_single(self, cls_feat, reg_feat, scale):
 	cls_score = self.gfl_cls(cls_feat)
 	bbox_pred = scale(self.gfl_reg(reg_feat)).float()
@@ -96,7 +96,6 @@ def gfl_forward_prediction_single(self, cls_feat, reg_feat, scale):
 
 def vfnet_forward_predictions(self, cls_feats, reg_feats):
 	return multi_apply(self.forward_prediction_single, cls_feats, reg_feats, self.scales, self.scales_refine, self.strides, self.reg_denoms)
-
 
 def vfnet_forward_prediction_single(self, cls_feat, reg_feat, scale, scale_refine, stride, reg_denom):
 	reg_feat_init = self.vfnet_reg_conv(reg_feat)
@@ -123,6 +122,69 @@ def vfnet_forward_prediction_single(self, cls_feat, reg_feat, scale, scale_refin
 
 	return cls_score, bbox_pred, bbox_pred_refine
 
+def reppointsv2_forward_predictions(self, cls_feats, pts_feats):
+	return multi_apply(self.forward_prediction_single, cls_feats, pts_feats)
+
+def reppointsv2_forward_prediction_single(self, cls_feat, pts_feat):
+	dcn_base_offset = self.dcn_base_offset.type_as(cls_feat)
+	# If we use center_init, the initial reppoints is from center points.
+	# If we use bounding bbox representation, the initial reppoints is
+	#   from regular grid placed on a pre-defined bbox.
+	if self.use_grid_points or not self.center_init:
+		scale = self.point_base_scale / 2
+		points_init = dcn_base_offset / dcn_base_offset.max() * scale
+		bbox_init = x.new_tensor([-scale, -scale, scale, scale]).view(1, 4, 1, 1)
+	else:
+		points_init = 0
+
+	shared_feat = pts_feat
+	for shared_conv in self.shared_convs:
+		shared_feat = shared_conv(shared_feat)
+
+	sem_feat = shared_feat
+	hem_feat = shared_feat
+
+	sem_scores_out = self.reppoints_sem_out(sem_feat)
+	sem_feat = self.reppoints_sem_embedding(sem_feat)
+
+	cls_feat = cls_feat + sem_feat
+	pts_feat = pts_feat + sem_feat
+	hem_feat = hem_feat + sem_feat
+
+	# generate heatmap and offset
+	hem_tl_feat = self.hem_tl(hem_feat)
+	hem_br_feat = self.hem_br(hem_feat)
+
+	hem_tl_score_out = self.reppoints_hem_tl_score_out(hem_tl_feat)
+	hem_tl_offset_out = self.reppoints_hem_tl_offset_out(hem_tl_feat)
+	hem_br_score_out = self.reppoints_hem_br_score_out(hem_br_feat)
+	hem_br_offset_out = self.reppoints_hem_br_offset_out(hem_br_feat)
+
+	hem_score_out = torch.cat([hem_tl_score_out, hem_br_score_out], dim=1)
+	hem_offset_out = torch.cat([hem_tl_offset_out, hem_br_offset_out], dim=1)
+
+	# initialize reppoints
+	pts_out_init = self.reppoints_pts_init_out(self.relu(self.reppoints_pts_init_conv(pts_feat)))
+	if self.use_grid_points:
+		pts_out_init, bbox_out_init = self.gen_grid_from_reg(pts_out_init, bbox_init.detach())
+	else:
+		pts_out_init = pts_out_init + points_init
+	# refine and classify reppoints
+	pts_out_init_grad_mul = (1 - self.gradient_mul) * pts_out_init.detach() + self.gradient_mul * pts_out_init
+	dcn_offset = pts_out_init_grad_mul - dcn_base_offset
+
+	hem_feat = torch.cat([hem_score_out, hem_offset_out], dim=1)
+	cls_feat = torch.cat([cls_feat, hem_feat], dim=1)
+	pts_feat = torch.cat([pts_feat, hem_feat], dim=1)
+
+	cls_out = self.reppoints_cls_out(self.relu(self.reppoints_cls_conv(cls_feat, dcn_offset)))
+	pts_out_refine = self.reppoints_pts_refine_out(self.relu(self.reppoints_pts_refine_conv(pts_feat, dcn_offset)))
+	if self.use_grid_points:
+		pts_out_refine, bbox_out_refine = self.gen_grid_from_reg(pts_out_refine, bbox_out_init.detach())
+	else:
+		pts_out_refine = pts_out_refine + pts_out_init.detach()
+	return cls_out, pts_out_init, pts_out_refine, hem_score_out, hem_offset_out, sem_scores_out
+
 def assign_methods_for_bvr(module: nn.Module):
 	"""Modify the structure of bbox_head by assigning methods.
 
@@ -130,12 +192,11 @@ def assign_methods_for_bvr(module: nn.Module):
 		module: bbox_head
 	"""
 	# check whether the bbox_head already has required methods
-	if hasattr(module, 'forward_features') and hasattr(module,
-													   'forward_predictions'):
+	if hasattr(module, 'forward_features') and hasattr(module, 'forward_predictions'):
 		return
 
 	# check whether BVR supports the bbox_head
-	supported_heads = ('ATSSHead', 'FCOSHead', 'RetinaHead', 'GFLHead', 'VFNetHead', 'PAAHead')
+	supported_heads = ('ATSSHead', 'FCOSHead', 'RetinaHead', 'GFLHead', 'VFNetHead', 'PAAHead', 'RepPointsV2Head')
 	module_name = module.__class__.__name__
 	assert module_name in supported_heads, 'not supported bbox_head'
 	assert hasattr(module, 'cls_convs'), 'not found cls_convs'
@@ -169,6 +230,9 @@ def assign_methods_for_bvr(module: nn.Module):
 	elif isinstance(module, GFLHead):
 		module.forward_predictions = types.MethodType(gfl_forward_predictions, module)
 		module.forward_prediction_single = types.MethodType(gfl_forward_prediction_single, module)
+	elif isinstance(module, RepPointsV2Head):
+		module.forward_predictions = types.MethodType(reppointsv2_forward_predictions, module)
+		module.forward_prediction_single = types.MethodType(reppointsv2_forward_prediction_single, module)
 	else:
 		assert False, 'this line should be unreachable'
 
