@@ -51,9 +51,9 @@ model = dict(
 	],
 	bbox_head=dict(
 		type='VFNetHead',
-		num_classes=37,
+		num_classes=40,
 		in_channels=256,
-		stacked_convs=4,
+		stacked_convs=0,
 		feat_channels=256,
 		strides=[8, 16, 32, 64, 128],
 		regress_ranges=((-1, 64), (64, 128), (128, 256), (256, 512), (512, 1e8)),
