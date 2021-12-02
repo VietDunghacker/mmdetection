@@ -14,10 +14,8 @@ from .anchor_head import AnchorHead
 class ATSSHead(AnchorHead):
 	"""Bridging the Gap Between Anchor-based and Anchor-free Detection via
 	Adaptive Training Sample Selection.
-
 	ATSS head structure is similar with FCOS, however ATSS use anchor boxes
 	and assign label by Adaptive Training Sample Selection instead max-iou.
-
 	https://arxiv.org/abs/1912.02424
 	"""
 
@@ -87,54 +85,49 @@ class ATSSHead(AnchorHead):
 					norm_cfg=self.norm_cfg))
 		self.atss_cls = nn.Conv2d(
 			self.feat_channels,
-			self.num_base_priors * self.cls_out_channels,
+			self.num_anchors * self.cls_out_channels,
 			3,
 			padding=1)
-		self.atss_reg = nn.Conv2d(self.feat_channels, self.num_base_priors * 4, 3, padding=1)
-		self.atss_centerness = nn.Conv2d(self.feat_channels, self.num_base_priors * 1, 3, padding=1)
-		self.scales = nn.ModuleList([Scale(1.0) for _ in self.prior_generator.strides])
+		self.atss_reg = nn.Conv2d(
+			self.feat_channels, self.num_base_priors * 4, 3, padding=1)
+		self.atss_centerness = nn.Conv2d(
+			self.feat_channels, self.num_base_priors * 1, 3, padding=1)
+		self.scales = nn.ModuleList(
+			[Scale(1.0) for _ in self.prior_generator.strides])
 
 	def forward(self, feats):
 		"""Forward features from the upstream network.
-
 		Args:
 			feats (tuple[Tensor]): Features from the upstream network, each is
 				a 4D-tensor.
-
 		Returns:
 			tuple: Usually a tuple of classification scores and bbox prediction
 				cls_scores (list[Tensor]): Classification scores for all scale
 					levels, each is a 4D-tensor, the channels number is
-					num_base_priors * num_classes.
+					num_anchors * num_classes.
 				bbox_preds (list[Tensor]): Box energies / deltas for all scale
 					levels, each is a 4D-tensor, the channels number is
-					num_base_priors * 4.
+					num_anchors * 4.
 		"""
 		return multi_apply(self.forward_single, feats, self.scales)
 
 	def forward_single(self, x, scale):
 		"""Forward feature of a single scale level.
-
 		Args:
 			x (Tensor): Features of a single scale level.
 			scale (:obj: `mmcv.cnn.Scale`): Learnable scale module to resize
 				the bbox prediction.
-
 		Returns:
 			tuple:
 				cls_score (Tensor): Cls scores for a single scale level
-					the channels number is num_base_priors * num_classes.
+					the channels number is num_anchors * num_classes.
 				bbox_pred (Tensor): Box energies / deltas for a single scale
-					level, the channels number is num_base_priors * 4.
+					level, the channels number is num_anchors * 4.
 				centerness (Tensor): Centerness for a single scale level, the
-					channel number is (N, num_base_priors * 1, H, W).
+					channel number is (N, num_anchors * 1, H, W).
 		"""
-		if isinstance(x, list):
-			cls_feat = x[0]
-			reg_feat = x[1]
-		else:
-			cls_feat = x
-			reg_feat = x
+		cls_feat = x
+		reg_feat = x
 		for cls_conv in self.cls_convs:
 			cls_feat = cls_conv(cls_feat)
 		for reg_conv in self.reg_convs:
@@ -148,29 +141,28 @@ class ATSSHead(AnchorHead):
 	def loss_single(self, anchors, cls_score, bbox_pred, centerness, labels,
 					label_weights, bbox_targets, num_total_samples):
 		"""Compute loss of a single scale level.
-
 		Args:
 			cls_score (Tensor): Box scores for each scale level
-				Has shape (N, num_base_priors * num_classes, H, W).
+				Has shape (N, num_anchors * num_classes, H, W).
 			bbox_pred (Tensor): Box energies / deltas for each scale
-				level with shape (N, num_base_priors * 4, H, W).
+				level with shape (N, num_anchors * 4, H, W).
 			anchors (Tensor): Box reference for each scale level with shape
 				(N, num_total_anchors, 4).
 			labels (Tensor): Labels of each anchors with shape
 				(N, num_total_anchors).
 			label_weights (Tensor): Label weights of each anchor with shape
 				(N, num_total_anchors)
-			bbox_targets (Tensor): BBox regression targets of each anchor wight
-				shape (N, num_total_anchors, 4).
+			bbox_targets (Tensor): BBox regression targets of each anchor
+				weight shape (N, num_total_anchors, 4).
 			num_total_samples (int): Number os positive samples that is
 				reduced over all GPUs.
-
 		Returns:
 			dict[str, Tensor]: A dictionary of loss components.
 		"""
 
 		anchors = anchors.reshape(-1, 4)
-		cls_score = cls_score.permute(0, 2, 3, 1).reshape(-1, self.cls_out_channels).contiguous()
+		cls_score = cls_score.permute(0, 2, 3, 1).reshape(
+			-1, self.cls_out_channels).contiguous()
 		bbox_pred = bbox_pred.permute(0, 2, 3, 1).reshape(-1, 4)
 		centerness = centerness.permute(0, 2, 3, 1).reshape(-1)
 		bbox_targets = bbox_targets.reshape(-1, 4)
@@ -178,11 +170,13 @@ class ATSSHead(AnchorHead):
 		label_weights = label_weights.reshape(-1)
 
 		# classification loss
-		loss_cls = self.loss_cls(cls_score, labels, label_weights, avg_factor=num_total_samples)
+		loss_cls = self.loss_cls(
+			cls_score, labels, label_weights, avg_factor=num_total_samples)
 
 		# FG cat_id: [0, num_classes -1], BG cat_id: num_classes
 		bg_class_ind = self.num_classes
-		pos_inds = ((labels >= 0) & (labels < bg_class_ind)).nonzero().squeeze(1)
+		pos_inds = ((labels >= 0)
+					& (labels < bg_class_ind)).nonzero().squeeze(1)
 
 		if len(pos_inds) > 0:
 			pos_bbox_targets = bbox_targets[pos_inds]
@@ -225,14 +219,13 @@ class ATSSHead(AnchorHead):
 			 img_metas,
 			 gt_bboxes_ignore=None):
 		"""Compute losses of the head.
-
 		Args:
 			cls_scores (list[Tensor]): Box scores for each scale level
-				Has shape (N, num_base_priors * num_classes, H, W)
+				Has shape (N, num_anchors * num_classes, H, W)
 			bbox_preds (list[Tensor]): Box energies / deltas for each scale
-				level with shape (N, num_base_priors * 4, H, W)
+				level with shape (N, num_anchors * 4, H, W)
 			centernesses (list[Tensor]): Centerness for each scale
-				level with shape (N, num_base_priors * 1, H, W)
+				level with shape (N, num_anchors * 1, H, W)
 			gt_bboxes (list[Tensor]): Ground truth bboxes for each image with
 				shape (num_gts, 4) in [tl_x, tl_y, br_x, br_y] format.
 			gt_labels (list[Tensor]): class indices corresponding to each box
@@ -240,7 +233,6 @@ class ATSSHead(AnchorHead):
 				image size, scaling factor, etc.
 			gt_bboxes_ignore (list[Tensor] | None): specify which bounding
 				boxes can be ignored when computing the loss.
-
 		Returns:
 			dict[str, Tensor]: A dictionary of loss components.
 		"""
@@ -248,7 +240,8 @@ class ATSSHead(AnchorHead):
 		assert len(featmap_sizes) == self.prior_generator.num_levels
 
 		device = cls_scores[0].device
-		anchor_list, valid_flag_list = self.get_anchors(featmap_sizes, img_metas, device=device)
+		anchor_list, valid_flag_list = self.get_anchors(
+			featmap_sizes, img_metas, device=device)
 		label_channels = self.cls_out_channels if self.use_sigmoid_cls else 1
 
 		cls_reg_targets = self.get_targets(
@@ -317,7 +310,6 @@ class ATSSHead(AnchorHead):
 					label_channels=1,
 					unmap_outputs=True):
 		"""Get targets for ATSS head.
-
 		This method is almost the same as `AnchorHead.get_targets()`. Besides
 		returning the targets as the parent method does, it also returns the
 		anchors as the first element of the returned tuple.
@@ -383,13 +375,12 @@ class ATSSHead(AnchorHead):
 						   unmap_outputs=True):
 		"""Compute regression, classification targets for anchors in a single
 		image.
-
 		Args:
 			flat_anchors (Tensor): Multi-level anchors of the image, which are
-				concatenated into a single tensor of shape (num_base_priors ,4)
+				concatenated into a single tensor of shape (num_anchors ,4)
 			valid_flags (Tensor): Multi level valid flags of the image,
 				which are concatenated into a single tensor of
-					shape (num_base_priors,).
+					shape (num_anchors,).
 			num_level_anchors Tensor): Number of anchors of each scale level.
 			gt_bboxes (Tensor): Ground truth bboxes of the image,
 				shape (num_gts, 4).
@@ -401,7 +392,6 @@ class ATSSHead(AnchorHead):
 			label_channels (int): Channel of label.
 			unmap_outputs (bool): Whether to map outputs back to the original
 				set of anchors.
-
 		Returns:
 			tuple: N is the number of total anchors in the image.
 				labels (Tensor): Labels of all anchors in the image with shape
@@ -425,10 +415,14 @@ class ATSSHead(AnchorHead):
 		# assign gt and sample anchors
 		anchors = flat_anchors[inside_flags, :]
 
-		num_level_anchors_inside = self.get_num_level_anchors_inside(num_level_anchors, inside_flags)
-		assign_result = self.assigner.assign(anchors, num_level_anchors_inside, gt_bboxes, gt_bboxes_ignore, gt_labels)
+		num_level_anchors_inside = self.get_num_level_anchors_inside(
+			num_level_anchors, inside_flags)
+		assign_result = self.assigner.assign(anchors, num_level_anchors_inside,
+											 gt_bboxes, gt_bboxes_ignore,
+											 gt_labels)
 
-		sampling_result = self.sampler.sample(assign_result, anchors, gt_bboxes)
+		sampling_result = self.sampler.sample(assign_result, anchors,
+											  gt_bboxes)
 
 		num_valid_anchors = anchors.shape[0]
 		bbox_targets = torch.zeros_like(anchors)
@@ -441,11 +435,12 @@ class ATSSHead(AnchorHead):
 		pos_inds = sampling_result.pos_inds
 		neg_inds = sampling_result.neg_inds
 		if len(pos_inds) > 0:
-			if hasattr(self, 'bbox_coder'):
-				pos_bbox_targets = self.bbox_coder.encode(sampling_result.pos_bboxes, sampling_result.pos_gt_bboxes)
-			else:
-				# used in VFNetHead
+			if self.reg_decoded_bbox:
 				pos_bbox_targets = sampling_result.pos_gt_bboxes
+			else:
+				pos_bbox_targets = self.bbox_coder.encode(
+					sampling_result.pos_bboxes, sampling_result.pos_gt_bboxes)
+
 			bbox_targets[pos_inds, :] = pos_bbox_targets
 			bbox_weights[pos_inds, :] = 1.0
 			if gt_labels is None:
@@ -453,7 +448,8 @@ class ATSSHead(AnchorHead):
 				# Foreground is the first class since v2.5.0
 				labels[pos_inds] = 0
 			else:
-				labels[pos_inds] = gt_labels[sampling_result.pos_assigned_gt_inds]
+				labels[pos_inds] = gt_labels[
+					sampling_result.pos_assigned_gt_inds]
 			if self.train_cfg.pos_weight <= 0:
 				label_weights[pos_inds] = 1.0
 			else:
