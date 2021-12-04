@@ -411,4 +411,4 @@ class CSWin(BaseModule):
 			if (i + 1) in self.out_indices:
 				out.append(self.save_out(x, norm, H, W))
 
-		return tuple(out)
+		return out
