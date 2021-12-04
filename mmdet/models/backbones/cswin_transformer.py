@@ -390,7 +390,7 @@ class CSWin(BaseModule):
 		for blk in self.stage1:
 			blk.H = H
 			blk.W = W
-			if self.with_cp:
+			if self.with_cp and x.requires_grad:
 				x = checkpoint.checkpoint(blk, x)
 			else:
 				x = blk(x)
