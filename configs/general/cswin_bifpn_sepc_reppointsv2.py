@@ -12,7 +12,7 @@ model = dict(
         drop_path_rate=0.6,
         out_indices=(1,2,3),
         with_cp=True,
-		init_cfg=dict(type='Pretrained', checkpoint='https://github.com/microsoft/CSWin-Transformer/releases/download/v0.1.0/cswin_base_224.pth')),
+		init_cfg=dict(type='Pretrained', checkpoint='/gdrive/My Drive/checkpoints/cswin_base_224.pth')),
 	neck=[
 		dict(
 			type='BiFPN',
