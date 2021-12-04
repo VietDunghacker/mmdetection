@@ -19,7 +19,6 @@ from mmcv_custom import load_checkpoint
 from mmdet.utils import get_root_logger
 from ..builder import BACKBONES
 
-
 class Mlp(nn.Module):
 	"""Multilayer perceptron used in Vision Transformers."""
 

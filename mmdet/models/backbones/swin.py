@@ -667,9 +667,7 @@ class SwinTransformer(BaseModule):
 	def init_weights(self):
 		logger = get_root_logger()
 		if self.init_cfg is None:
-			logger.warn(f'No pre-trained weights for '
-						f'{self.__class__.__name__}, '
-						f'training start from scratch')
+			logger.warn(f'No pre-trained weights for {self.__class__.__name__}, training start from scratch')
 			if self.use_abs_pos_embed:
 				trunc_normal_init(self.absolute_pos_embed, std=0.02)
 			for m in self.modules():
@@ -681,10 +679,7 @@ class SwinTransformer(BaseModule):
 					constant_init(m.bias, 0)
 					constant_init(m.weight, 1.0)
 		else:
-			assert 'checkpoint' in self.init_cfg, f'Only support ' \
-												  f'specify `Pretrained` in ' \
-												  f'`init_cfg` in ' \
-												  f'{self.__class__.__name__} '
+			assert 'checkpoint' in self.init_cfg, f'Only support specify `Pretrained` in `init_cfg` in {self.__class__.__name__} '
 			ckpt = _load_checkpoint(self.init_cfg.checkpoint, logger=logger, map_location='cpu')
 			if 'state_dict' in ckpt:
 				_state_dict = ckpt['state_dict']
@@ -757,9 +752,7 @@ class SwinTransformer(BaseModule):
 			if i in self.out_indices:
 				norm_layer = getattr(self, f'norm{i}')
 				out = norm_layer(out)
-				out = out.view(-1, *out_hw_shape,
-							   self.num_features[i]).permute(0, 3, 1,
-															 2).contiguous()
+				out = out.view(-1, *out_hw_shape, self.num_features[i]).permute(0, 3, 1, 2).contiguous()
 				outs.append(out)
 
 		return outs
