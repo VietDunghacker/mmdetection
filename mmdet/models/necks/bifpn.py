@@ -283,6 +283,8 @@ class BiFPN(BaseModule):
 				extra_inputs.append(self.extra_convs[i](inputs[-1]))
 			else:
 				extra_inputs.append(self.extra_convs[i](extra_inputs[-1]))
+		print(type(inputs))
+		print(type(extra_inputs))
 
 		outputs = inputs + extra_inputs
 		p3, p4, p5, p6, p7 = outputs
