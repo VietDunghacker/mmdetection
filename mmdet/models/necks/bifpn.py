@@ -194,6 +194,7 @@ class BiFPN(BaseModule):
 				 num_layers,
 				 num_outs,
 				 strides,
+				 start_index=0,
 				 weight_method="fast_attn",
 				 act_cfg="silu",
 				 separable_conv=True,
@@ -206,6 +207,7 @@ class BiFPN(BaseModule):
 		assert isinstance(in_channels, list)
 		self.with_cp = with_cp
 		self.num_backbone_features = len(in_channels)
+		self.start_index = start_index
 
 		assert self.num_backbone_features >= 2
 		assert num_outs - self.num_backbone_features >= 2
@@ -272,6 +274,7 @@ class BiFPN(BaseModule):
 
 	@auto_fp16()
 	def forward(self, inputs):
+		inputs = inputs[self.start_index:]
 		assert len(inputs) == len(self.in_channels)
 
 		extra_inputs = []
