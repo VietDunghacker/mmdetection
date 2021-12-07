@@ -30,6 +30,10 @@ class SingleStageDetector(BaseDetector):
 						  'please use "init_cfg" instead')
 			backbone.pretrained = pretrained
 		self.backbone = build_backbone(backbone)
+		self.use_cbnet = hasattr(self.backbone, 'cb_num_modules')
+		if self.use_cbnet:
+			self.forward_train = self.forward_train_cbnet
+
 		if neck is not None:
 			self.neck = build_neck(neck)
 		bbox_head.update(train_cfg=train_cfg)
@@ -163,3 +167,75 @@ class SingleStageDetector(BaseDetector):
 		det_bboxes, det_labels = self.bbox_head.get_bboxes(*outs, img_metas)
 
 		return det_bboxes, det_labels
+
+	@staticmethod
+	def _update_loss_for_cbnet(losses, idx, weight):
+		"""update loss for CBNetV2 by replacing keys and weighting values."""
+		new_losses = dict()
+		for k, v in losses.items():
+			if weight == 1:
+				new_k = k
+			else:
+				new_k = f'aux{idx}_{k}'
+			if 'loss' in k:
+				if isinstance(v, (list, tuple)):
+					new_losses[new_k] = [each_v * weight for each_v in v]
+				else:
+					new_losses[new_k] = v * weight
+			else:
+				new_losses[new_k] = v
+		return new_losses
+
+	def forward_train_cbnet(self,
+							img,
+							img_metas,
+							gt_bboxes,
+							gt_labels,
+							gt_bboxes_ignore=None,
+							gt_masks=None,
+							proposals=None,
+							**kwargs):
+		"""Forward function for training CBNetV2.
+		Args:
+			img (Tensor): of shape (N, C, H, W) encoding input images.
+				Typically these should be mean centered and std scaled.
+			img_metas (list[dict]): list of image info dict where each dict
+				has: 'img_shape', 'scale_factor', 'flip', and may also contain
+				'filename', 'ori_shape', 'pad_shape', and 'img_norm_cfg'.
+				For details on the values of these keys see
+				`mmdet/datasets/pipelines/formatting.py:Collect`.
+			gt_bboxes (list[Tensor]): Ground truth bboxes for each image with
+				shape (num_gts, 4) in [tl_x, tl_y, br_x, br_y] format.
+			gt_labels (list[Tensor]): class indices corresponding to each box
+			gt_bboxes_ignore (None | list[Tensor]): specify which bounding
+				boxes can be ignored when computing the loss.
+			gt_masks (None | Tensor) : true segmentation masks for each box
+				used if the architecture supports a segmentation task.
+			proposals : override rpn proposals with custom proposals. Use when
+				`with_rpn` is False.
+		Returns:
+			dict[str, Tensor]: a dictionary of loss components
+		"""
+		super(SingleStageDetector, self).forward_train(img, img_metas)
+		xs = self.extract_feat(img)
+
+		if not isinstance(xs[0], (list, tuple)):
+			xs = [xs]
+		cb_loss_weights = self.train_cfg.get('cb_loss_weights')
+		if cb_loss_weights is None:
+			if len(xs) > 1:
+				# refer CBNetV2 paper
+				cb_loss_weights = [0.5] + [1] * (len(xs) - 1)
+			else:
+				cb_loss_weights = [1]
+		assert len(cb_loss_weights) == len(xs)
+
+		losses = dict()
+
+		for i, x in enumerate(xs):
+			loss = self.bbox_head.forward_train(x, img_metas, gt_bboxes, gt_labels, gt_bboxes_ignore)
+			if len(xs) > 1:
+				loss = self._update_loss_for_cbnet(loss, idx=i, weight=cb_loss_weights[i])
+			losses.update(loss)
+
+		return losses
