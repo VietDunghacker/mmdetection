@@ -276,6 +276,8 @@ class BiFPN(BaseModule):
 	def forward(self, inputs):
 		inputs = inputs[self.start_index:]
 		assert len(inputs) == len(self.in_channels)
+		if isinstance(inputs, tuple):
+			inputs = list(inputs)
 
 		extra_inputs = []
 		for i in range(self.num_outs - len(self.in_channels)):
@@ -283,8 +285,6 @@ class BiFPN(BaseModule):
 				extra_inputs.append(self.extra_convs[i](inputs[-1]))
 			else:
 				extra_inputs.append(self.extra_convs[i](extra_inputs[-1]))
-		print(type(inputs))
-		print(type(extra_inputs))
 
 		outputs = inputs + extra_inputs
 		p3, p4, p5, p6, p7 = outputs
