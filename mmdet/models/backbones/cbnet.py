@@ -408,7 +408,7 @@ class CBSwinTransformer(BaseModule):
 			outs.append(feats)
 			if i < len(self.cb_modules) - 1:
 				cb_feats = self._forward_cb_feats(outs[-1], tmps)
-		return tuple(outs)
+		return outs
 
 	def train(self, mode=True):
 		"""Convert the model into training mode while keep layers freezed."""

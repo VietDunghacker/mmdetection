@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from .bfp import BFP
 from .bifpn import BiFPN
-from .cbnet_fpn import CBFPN, CBPAFPNX
+from .cbnet_fpn import CBFPN, CBBiFPN, CBPAFPNX, CBSEPC
 from .channel_mapper import ChannelMapper
 from .ct_resnet_neck import CTResNetNeck
 from .dilated_encoder import DilatedEncoder
@@ -28,5 +28,5 @@ __all__ = [
     'FPN', 'BFP', 'ChannelMapper', 'HRFPN', 'NASFPN', 'FPN_CARAFE', 'PAFPN',
     'NASFCOS_FPN', 'RFP', 'YOLOV3Neck', 'FPG', 'DilatedEncoder',
     'CTResNetNeck', 'SSDNeck', 'YOLOXPAFPN', 'FCNHead', 'SEPC', 'PAFPNX', 'DyHead', 'BiFPN',
-    'OPA_FPN', 'TPN', 'CBFPN', 'CBPAFPNX'
+    'OPA_FPN', 'TPN', 'CBFPN', 'CBPAFPNX', 'CBBiFPN', 'CBSEPC'
 ]
