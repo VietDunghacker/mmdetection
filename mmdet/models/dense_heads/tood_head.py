@@ -182,7 +182,7 @@ class TOODHead(AnchorHead):
 
 		return multi_apply(self.forward_single, feats, self.scales, level_anchor_list, self.anchor_generator.strides)
 
-
+	@force_fp32(apply_to=('x', ))
 	def forward_single(self, x, scale, anchor, stride):
 		"""Forward feature of a single scale level.
 		Args:
