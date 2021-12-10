@@ -3,9 +3,9 @@ from .accuracy import Accuracy, accuracy
 from .ae_loss import AssociativeEmbeddingLoss
 from .balanced_l1_loss import BalancedL1Loss, balanced_l1_loss
 from .cross_entropy_loss import (CrossEntropyLoss, binary_cross_entropy, cross_entropy, mask_cross_entropy)
-from .focal_loss import FocalLoss, FocalLossWithProb, sigmoid_focal_loss, SEPFocalLoss
+from .focal_loss import FocalLoss, sigmoid_focal_loss, SEPFocalLoss
 from .gaussian_focal_loss import GaussianFocalLoss, CustomGaussianFocalLoss
-from .gfocal_loss import DistributionFocalLoss, QualityFocalLoss, QualityFocalLossWithProb
+from .gfocal_loss import DistributionFocalLoss, QualityFocalLoss
 from .ghm_loss import GHMC, GHMR
 from .iou_loss import (BoundedIoULoss, CIoULoss, DIoULoss, GIoULoss, IoULoss, EIoULoss, CDIoULoss, bounded_iou_loss, iou_loss)
 from .kd_loss import KnowledgeDistillationKLDivLoss
@@ -14,6 +14,7 @@ from .pisa_loss import carl_loss, isr_p
 from .ranking_losses import aLRPLoss, APLoss, RankSort
 from .seesaw_loss import SeesawLoss
 from .smooth_l1_loss import L1Loss, SmoothL1Loss, l1_loss, smooth_l1_loss
+from .task_aligned_focal_loss import FocalLossWithProb, TaskAlignedFocalLoss
 from .utils import reduce_loss, weight_reduce_loss, weighted_loss
 from .varifocal_loss import VarifocalLoss
 
@@ -28,5 +29,5 @@ __all__ = [
 	'GaussianFocalLoss', 'QualityFocalLoss', 'DistributionFocalLoss',
 	'VarifocalLoss', 'KnowledgeDistillationKLDivLoss', 'SeesawLoss', 'SEPFocalLoss', 
 	'aLRPLoss', 'APLoss', 'RankSort', 'CustomGaussianFocalLoss',
-	'EIoULoss', 'CDIoULoss', 'QualityFocalLossWithProb', 'FocalLossWithProb'
+	'EIoULoss', 'CDIoULoss', 'TaskAlignedFocalLoss', 'FocalLossWithProb'
 ]

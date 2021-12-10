@@ -2,7 +2,7 @@ import torch
 
 from ..builder import BBOX_ASSIGNERS
 from ..iou_calculators import build_iou_calculator
-from .assign_result import AssignResult
+from .task_aligned_assign_result import TaskAlignedAssignResult
 from .base_assigner import BaseAssigner
 
 
@@ -17,9 +17,24 @@ class TaskAlignedAssigner(BaseAssigner):
 		topk (float): number of bbox selected in each level
 	"""
 
-	def __init__(self, topk, iou_calculator=dict(type='BboxOverlaps2D')):
+	def __init__(self,
+				 topk,
+				 iou_calculator=dict(type='BboxOverlaps2D'),
+				 ignore_iof_thr=-1):
 		self.topk = topk
 		self.iou_calculator = build_iou_calculator(iou_calculator)
+		self.ignore_iof_thr = ignore_iof_thr
+
+	def anchor_center(self, anchors):
+		"""Get anchor centers from anchors.
+		Args:
+			anchors (Tensor): Anchor list with shape (N, 4), "xyxy" format.
+		Returns:
+			Tensor: Anchor centers with shape (N, 2), "xy" format.
+		"""
+		anchors_cx = (anchors[:, 2] + anchors[:, 0]) / 2
+		anchors_cy = (anchors[:, 3] + anchors[:, 1]) / 2
+		return torch.stack([anchors_cx, anchors_cy], dim=-1)
 
 	def assign(self,
 			   scores,
@@ -33,11 +48,9 @@ class TaskAlignedAssigner(BaseAssigner):
 			   beta=6):
 		"""Assign gt to bboxes.
 		The assignment is done in following steps
-		1. compute alignment metric between all bbox (bbox of all pyramid
-		   levels) and gt
+		1. compute alignment metric between all bbox (bbox of all pyramid levels) and gt
 		2. select top-k bbox as candidates for each gt
-		3. limit the positive sample's center in gt (because the anchor-free
-		   detector only can predict positive distance)
+		3. limit the positive sample's center in gt (because the anchor-free detector only can predict positive distance)
 		Args:
 			scores (Tensor): predicted class probability, shape(n, 80)
 			decode_bboxes (Tensor): predicted bounding boxes, shape(n, 4)
@@ -57,10 +70,12 @@ class TaskAlignedAssigner(BaseAssigner):
 		# compute alignment metric between all bbox and gt
 		overlaps = self.iou_calculator(decode_bboxes, gt_bboxes).detach()
 		bbox_scores = scores[:, gt_labels].detach()
-		alignment_metrics = bbox_scores**alpha * overlaps**beta
+		alignment_metrics = bbox_scores ** alpha * overlaps ** beta
 
 		# assign 0 by default
-		assigned_gt_inds = alignment_metrics.new_full((num_bboxes, ), 0, dtype=torch.long)
+		assigned_gt_inds = alignment_metrics.new_full((num_bboxes, ),
+											 0,
+											 dtype=torch.long)
 		assign_metrics = alignment_metrics.new_zeros((num_bboxes, ))
 
 		if num_gt == 0 or num_bboxes == 0:
@@ -73,13 +88,10 @@ class TaskAlignedAssigner(BaseAssigner):
 				assigned_labels = None
 			else:
 				assigned_labels = alignment_metrics.new_full((num_bboxes, ), -1, dtype=torch.long)
-			assign_result = AssignResult(num_gt, assigned_gt_inds, max_overlaps, labels=assigned_labels)
-			assign_result.assign_metrics = assign_metrics
-			return assign_result
+			return TaskAlignedAssignResult(num_gt, assigned_gt_inds, max_overlaps, assign_metrics, labels=assigned_labels)
 
 		# select top-k bbox as candidates for each gt
-		_, candidate_idxs = alignment_metrics.topk(
-			self.topk, dim=0, largest=True)
+		_, candidate_idxs = alignment_metrics.topk(self.topk, dim=0, largest=True)
 		candidate_metrics = alignment_metrics[candidate_idxs, torch.arange(num_gt)]
 		is_pos = candidate_metrics > 0
 
@@ -124,6 +136,4 @@ class TaskAlignedAssigner(BaseAssigner):
 					assigned_gt_inds[pos_inds] - 1]
 		else:
 			assigned_labels = None
-		assign_result = AssignResult(num_gt, assigned_gt_inds, max_overlaps, labels=assigned_labels)
-		assign_result.assign_metrics = assign_metrics
-		return assign_result
+		return TaskAlignedAssignResult(num_gt, assigned_gt_inds, max_overlaps, assign_metrics, labels=assigned_labels)
