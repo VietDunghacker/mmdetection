@@ -57,9 +57,9 @@ model = dict(
 			alpha=0.25,
 			loss_weight=1.0),
 		loss_cls=dict(
-			type='QualityFocalLossWithProb',
+			type='TaskAlignedFocalLoss',
 			use_sigmoid=True,
-			beta=2.0,
+			gamma=2.0,
 			loss_weight=1.0),
 		loss_bbox=dict(type='CIoULoss', loss_weight=2.0),
 	),
