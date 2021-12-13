@@ -50,7 +50,7 @@ model = dict(
 	],
 	bbox_head=dict(
 		type='RepPointsV2Head',
-		num_classes=40,
+		num_classes=45,
 		in_channels=256,
 		feat_channels=256,
 		point_feat_channels=256,
@@ -212,7 +212,7 @@ train_pipeline = [
 		update_pad_shape=False,
 		skip_img_without_anno=False),	
 	dict(type='Normalize', **img_norm_cfg),
-	dict(type='LoadRPDV2Annotations', num_classes=40),
+	dict(type='LoadRPDV2Annotations', num_classes=45),
 	dict(type='RPDV2FormatBundle'),
 	dict(type='Collect', keys=['img', 'gt_bboxes', 'gt_labels', 'gt_sem_map', 'gt_sem_weights']),
 ]
