@@ -50,7 +50,7 @@ class RepVGGplusBlock(nn.Module):
 		padding_11 = padding - kernel_size // 2
 		self.rbr_1x1 = ConvModule(in_channels=in_channels, out_channels=out_channels, kernel_size=1, stride=stride, padding=padding_11, groups=groups, norm_cfg=norm_cfg, act_cfg=None)
 
-	def forward(self, x, L2):
+	def forward(self, x):
 		if self.rbr_identity is None:
 			id_out = 0
 		else:
@@ -109,22 +109,22 @@ class RepVGGplus(BaseModule):
 
 	def forward(self, x):
 		outs = []
-		out, L2 = self.stage0(x)
+		out = self.stage0(x)
 		if 0 in self.out_indices:
 			outs.append(out)
-		out, L2 = self.stage1(out)
+		out = self.stage1(out)
 		if 1 in self.out_indices:
 			outs.append(out)
-		out, L2 = self.stage2(out)
+		out = self.stage2(out)
 		stage2_aux = self.stage2_aux(out)
 		if 2 in self.out_indices:
 			outs.append(out)
-		out, L2 = self.stage3_first(out)
+		out = self.stage3_first(out)
 		stage3_first_aux = self.stage3_first_aux(out)
-		out, L2 = self.stage3_second(out)
+		out = self.stage3_second(out)
 		if 3 in self.out_indices:
 			outs.append(out)
-		out, L2 = self.stage4(out)
+		out = self.stage4(out)
 		if 4 in self.out_indices:
 			outs.append(out)
 		return outs
