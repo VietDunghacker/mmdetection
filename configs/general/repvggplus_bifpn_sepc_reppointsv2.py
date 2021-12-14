@@ -5,16 +5,17 @@ model = dict(
 	type='RepPointsV2Detector',
 	backbone=dict(
 		type='RepVGGplus',
-		num_blocks=[4, 6, 16, 1],
-		width_multiplier=[3, 3, 3, 5],
+		num_blocks=[8, 14, 24, 1],
+		width_multiplier=[2.5, 2.5, 2.5, 5],
 		use_post_se=True,
 		out_indices=(2,3,4),
-		with_cp=True
+		with_cp=True,
+		init_cfg=dict(type='Pretrained', checkpoint='/gdrive/My Drive/checkpoints/RepVGGplus-L2pse-train.pth')),
 	),
 	neck=[
 		dict(
 			type='BiFPN',
-			in_channels=[384, 768, 2560],
+			in_channels=[320, 640, 2560],
 			out_channels=256,
 			input_indices=(1, 2, 3),
 			num_outs=5,
