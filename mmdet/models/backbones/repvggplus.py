@@ -43,7 +43,7 @@ class RepVGGplusBlock(nn.Module):
 			self.post_se = nn.Identity()
 
 		if out_channels == in_channels and stride == 1:
-			self.rbr_identity = build_norm_layer(norm_cfg)[1]
+			self.rbr_identity = build_norm_layer(norm_cfg, out_channels)[1]
 		else:
 			self.rbr_identity = None
 		self.rbr_dense = ConvModule(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size, stride=stride, padding=padding, groups=groups, norm_cfg=norm_cfg, act_cfg=None)
