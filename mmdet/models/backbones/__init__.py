@@ -15,6 +15,7 @@ from .lit import LIT
 from .mobilenet_v2 import MobileNetV2
 from .pvt import PyramidVisionTransformer, PyramidVisionTransformerV2
 from .regnet import RegNet
+from .repvggplus import RepVGGplus
 from .res2net import Res2Net
 from .resnest import ResNeSt
 from .resnet import ResNet, ResNetV1d
@@ -30,5 +31,5 @@ __all__ = [
     'DetectoRS_ResNeXt', 'Darknet', 'ResNeSt', 'TridentResNet', 'CSPDarknet',
     'SwinTransformer', 'EfficientNet', 'DLA', 'PyramidVisionTransformer', 'PyramidVisionTransformerV2',
     'CrossFormer_S', 'CrossFormer_B', 'CrossFormer_L', 'LIT', 'XCiT', 'CBResNet', 'CBRes2Net',
-    'CBSwinTransformer', 'CSWin'
+    'CBSwinTransformer', 'CSWin', 'RepVGGplus'
 ]
