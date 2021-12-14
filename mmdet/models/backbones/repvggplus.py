@@ -116,11 +116,9 @@ class RepVGGplus(BaseModule):
 		if 1 in self.out_indices:
 			outs.append(out)
 		out = self.stage2(out)
-		stage2_aux = self.stage2_aux(out)
 		if 2 in self.out_indices:
 			outs.append(out)
 		out = self.stage3_first(out)
-		stage3_first_aux = self.stage3_first_aux(out)
 		out = self.stage3_second(out)
 		if 3 in self.out_indices:
 			outs.append(out)
