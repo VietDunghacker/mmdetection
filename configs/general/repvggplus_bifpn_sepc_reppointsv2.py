@@ -10,7 +10,7 @@ model = dict(
 		use_post_se=True,
 		out_indices=(2,3,4),
 		with_cp=True,
-		init_cfg=dict(type='Pretrained', checkpoint='/gdrive/My Drive/checkpoints/RepVGGplus-L2pse-train.pth')),
+		init_cfg=dict(type='Pretrained', checkpoint='/gdrive/My Drive/checkpoints/RepVGGplus-L2pse-train.pth'),
 	),
 	neck=[
 		dict(
