@@ -14,7 +14,7 @@ class SEBlock(nn.Module):
         self.down = nn.Conv2d(in_channels=input_channels, out_channels=internal_neurons, kernel_size=1, stride=1, bias=True)
         self.up = nn.Conv2d(in_channels=internal_neurons, out_channels=input_channels, kernel_size=1, stride=1, bias=True)
         self.input_channels = input_channels
-        self.pool = nn.ADAPTIVEAVGPOOL2D((1,1))
+        self.pool = nn.AdaptiveAvgPool2d((1,1))
 
     def forward(self, inputs):
         x = self.pool(inputs)
