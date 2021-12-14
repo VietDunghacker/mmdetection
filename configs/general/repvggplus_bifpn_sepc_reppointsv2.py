@@ -10,7 +10,7 @@ model = dict(
 		use_post_se=True,
 		out_indices=(2,3,4),
 		with_cp=True
-		)
+	),
 	neck=[
 		dict(
 			type='BiFPN',

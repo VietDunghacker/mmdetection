@@ -24,7 +24,6 @@ class SEBlock(nn.Module):
         return inputs * x
 
 class RepVGGplusBlock(nn.Module):
-
 	def __init__(self, in_channels, out_channels, kernel_size,
 				 stride=1, padding=0, dilation=1, groups=1, padding_mode='zeros',
 				 norm_cfg=dict(type='BN', requires_grad=True),
@@ -58,11 +57,9 @@ class RepVGGplusBlock(nn.Module):
 			id_out = self.rbr_identity(x)
 		out = self.rbr_dense(x) + self.rbr_1x1(x) + id_out
 		out = self.post_se(self.nonlinearity(out))
-
 		return out
 
 class RepVGGplusStage(nn.Module):
-
 	def __init__(self, in_planes, planes, num_blocks, stride, norm_cfg, with_cp, use_post_se=False):
 		super().__init__()
 		strides = [stride] + [1] * (num_blocks - 1)
