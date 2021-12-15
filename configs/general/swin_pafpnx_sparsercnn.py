@@ -48,7 +48,7 @@ model = dict(
 		bbox_head=[
 			dict(
 				type='DIIHead',
-				num_classes=37,
+				num_classes=45,
 				num_ffn_fcs=2,
 				num_heads=8,
 				num_cls_fcs=1,
@@ -65,8 +65,8 @@ model = dict(
 					input_feat_shape=7,
 					act_cfg=dict(type='ReLU', inplace=True),
 					norm_cfg=dict(type='LN')),
-				loss_bbox=dict(type='SmoothL1Loss', beta=0.01, loss_weight=5.0),
-				loss_iou=dict(type='CIoULoss', loss_weight=2.0),
+				loss_bbox=dict(type='L1Loss', loss_weight=5.0),
+				loss_iou=dict(type='GIoULoss', loss_weight=2.0),
 				loss_cls=dict(type='FocalLoss', use_sigmoid=True, gamma=2.0, alpha=0.25, loss_weight=2.0),
 				bbox_coder=dict(
 					type='DeltaXYWHBBoxCoder',
@@ -82,8 +82,8 @@ model = dict(
 				assigner=dict(
 					type='HungarianAssigner',
 					cls_cost=dict(type='FocalLossCost', weight=2.0),
-					reg_cost=dict(type='BBoxL1Cost', smooth=True, beta=0.01, weight=5.0),
-					iou_cost=dict(type='IoUCost', iou_mode='ciou', weight=2.0)),
+					reg_cost=dict(type='BBoxL1Cost', weight=5.0),
+					iou_cost=dict(type='IoUCost', iou_mode='giou', weight=2.0)),
 				sampler=dict(type='PseudoSampler'),
 				pos_weight=1) for _ in range(num_stages)
 		]),
@@ -92,9 +92,9 @@ model = dict(
 # data setting
 dataset_type = 'CocoDataset'
 data_root = '/content/data/'
-img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
+img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.455], to_rgb=True)
 albu_train_transforms = [
-	dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0, rotate_limit=0, interpolation=1, p=0.5, border_mode = 0),
+	dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.1, rotate_limit=1, interpolation=1, p=0.5, border_mode = 0),
 	dict(type='RandomBrightnessContrast', brightness_limit=0.1, contrast_limit=0.1),
 	dict(type='RGBShift', r_shift_limit=10, g_shift_limit=10, b_shift_limit=10),
 	dict(type='HueSaturationValue', hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20),
