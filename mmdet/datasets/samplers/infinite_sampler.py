@@ -55,7 +55,6 @@ class InfiniteGroupBatchSampler(Sampler):
 		self.buffer_per_group = {k: [] for k in range(len(self.group_sizes))}
 
 		self.size = len(dataset)
-		self.indices = self._indices_of_rank()
 
 	def _infinite_indices(self):
 		"""Infinitely yield a sequence of indices."""
