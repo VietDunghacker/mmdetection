@@ -1901,6 +1901,7 @@ class CutOut:
 
 	def __call__(self, results):
 		"""Call function to drop some regions of image."""
+		cv2.imwrite("test.jpg", results['img'])
 		h, w, c = results['img'].shape
 		n_holes = np.random.randint(self.n_holes[0], self.n_holes[1] + 1)
 		for _ in range(n_holes):
@@ -2433,20 +2434,16 @@ class RandomAffine:
 		center_matrix[1, 2] = -img.shape[0] / 2  # y translation (pixels)
 
 		# Rotation
-		rotation_degree = random.uniform(-self.max_rotate_degree,
-										 self.max_rotate_degree)
+		rotation_degree = random.uniform(-self.max_rotate_degree, self.max_rotate_degree)
 		rotation_matrix = self._get_rotation_matrix(rotation_degree)
 
 		# Scaling
-		scaling_ratio = random.uniform(self.scaling_ratio_range[0],
-									   self.scaling_ratio_range[1])
+		scaling_ratio = random.uniform(self.scaling_ratio_range[0], self.scaling_ratio_range[1])
 		scaling_matrix = self._get_scaling_matrix(scaling_ratio)
 
 		# Shear
-		x_degree = random.uniform(-self.max_shear_degree,
-								  self.max_shear_degree)
-		y_degree = random.uniform(-self.max_shear_degree,
-								  self.max_shear_degree)
+		x_degree = random.uniform(-self.max_shear_degree, self.max_shear_degree)
+		y_degree = random.uniform(-self.max_shear_degree, self.max_shear_degree)
 		shear_matrix = self._get_shear_matrix(x_degree, y_degree)
 
 		# Translation
