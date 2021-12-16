@@ -288,7 +288,7 @@ class SparseRoIHead(CascadeRoIHead):
 			bboxes_per_img = bboxes_per_img[keep]
 			labels_per_img = labels_per_img[keep]
 
-			bboxes_per_img, labels_per_img = self._bboxes_nms(bboxes_per_img, labels_per_img, self.test_cfg)
+			#bboxes_per_img, labels_per_img = self._bboxes_nms(bboxes_per_img, labels_per_img, self.test_cfg)
 
 			det_bboxes.append(bboxes_per_img)
 			det_labels.append(labels_per_img)
