@@ -1901,7 +1901,6 @@ class CutOut:
 
 	def __call__(self, results):
 		"""Call function to drop some regions of image."""
-		cv2.imwrite("test.jpg", results['img'])
 		h, w, c = results['img'].shape
 		n_holes = np.random.randint(self.n_holes[0], self.n_holes[1] + 1)
 		for _ in range(n_holes):
