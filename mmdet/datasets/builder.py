@@ -12,7 +12,7 @@ from mmcv.utils import Registry, build_from_cfg
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import Sampler
 
-from .samplers import DistributedGroupSampler, DistributedSampler, GroupSampler, ClassAwareSampler
+from .samplers import DistributedGroupSampler, DistributedSampler, GroupSampler, ClassAwareSampler, InfiniteBatchSampler, InfiniteGroupBatchSampler
 
 if platform.system() != 'Windows':
 	# https://github.com/pytorch/pytorch/issues/973
@@ -89,6 +89,7 @@ def build_dataloader(dataset,
 					 shuffle=True,
 					 seed=None,
 					 class_aware_sampler=False,
+					 infinite_sampler=False,
 					 **kwargs):
 	"""Build PyTorch DataLoader.
 
@@ -110,6 +111,8 @@ def build_dataloader(dataset,
 	Returns:
 		DataLoader: A PyTorch dataloader.
 	"""
+	assert not (class_aware_sampler and infinite_sampler)
+
 	rank, world_size = get_dist_info()
 	if dist:
 		# DistributedGroupSampler will definitely shuffle the data to satisfy
@@ -133,6 +136,9 @@ def build_dataloader(dataset,
 
 	if class_aware_sampler:
 		sampler = ClassAwareSampler(dataset, samples_per_gpu) if shuffle else None
+
+	if infinite_sampler:
+		sampler = InfiniteGroupBatchSampler(dataset, batch_size, world_size, rank, seed=seed) if shuffle else None
 
 	data_loader = DataLoader(
 		dataset,
