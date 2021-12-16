@@ -68,20 +68,8 @@ class InfiniteGroupBatchSampler(Sampler):
 			else:
 				yield from torch.arange(self.size).tolist()
 
-	def _indices_of_rank(self):
-		"""Slice the infinite indices by rank."""
-		yield from itertools.islice(self._infinite_indices(), self.rank, None,
-									self.world_size)
-
 	def __iter__(self):
-		# once batch size is reached, yield the indices
-		for idx in self.indices:
-			flag = self.flag[idx]
-			group_buffer = self.buffer_per_group[flag]
-			group_buffer.append(idx)
-			if len(group_buffer) == self.batch_size:
-				yield group_buffer[:]
-				del group_buffer[:]
+		yield from itertools.islice(self._infinite_indices(), None)
 
 	def __len__(self):
 		"""Length of base dataset."""
