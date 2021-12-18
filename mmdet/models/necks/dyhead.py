@@ -1,188 +1,211 @@
+import mmcv
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.checkpoint as cp
-
-from mmcv.ops import ModulatedDeformConv2d
-from mmcv.runner import BaseModule, ModuleList, auto_fp16
+from mmcv.cnn import (ConvModule, build_activation_layer, build_norm_layer,
+					  constant_init, normal_init)
+from mmcv.ops.modulated_deform_conv import ModulatedDeformConv2d
+from mmcv.runner import BaseModule
 
 from ..builder import NECKS
 
-def _make_divisible(v, divisor, min_value=None):
-	if min_value is None:
-		min_value = divisor
-	new_v = max(min_value, int(v + divisor / 2) // divisor * divisor)
+# Reference:
+# https://github.com/microsoft/DynamicHead
+# https://github.com/jshilong/SEPC
 
-	if new_v < 0.9 * v:
-		new_v += divisor
-	return new_v
+# We follow official code for hard-sigmoid function.
+# paper's hard-sigmoid corresponds to HSigmoid(bias=1.0, divisor=2.0)
+# code's hard-sigmoid corresponds to HSigmoid(bias=3.0, divisor=6.0)
+# https://github.com/microsoft/DynamicHead/blob/master/dyhead/dyrelu.py
 
-class DyConvBlock(BaseModule):
-	def __init__(self, in_channels, out_channels, stride, init_cfg=None):
-		assert init_cfg is None, 'To prevent abnormal initialization behavior, init_cfg is not allowed to be set'
-		super(DyConvBlock, self).__init__(init_cfg=init_cfg)
-		self.conv = ModulatedDeformConv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1)
-		self.bn = nn.GroupNorm(num_groups=16, num_channels=out_channels)
 
-	def forward(self, input, offset, mask):
-		x = self.conv(input.contiguous(), offset, mask)
-		x = self.bn(x)
-		return x
+class DYReLU(BaseModule):
+	"""DYReLU module for Task-aware Attention in DyHead.
+	Dynamic ReLU https://arxiv.org/abs/2003.10027
+	Args:
+		in_channels (int): The input channels of the DYReLU module.
+		out_channels (int): The output channels of the DYReLU module.
+		ratio (int): Squeeze ratio in Squeeze-and-Excitation-like module,
+			the intermediate channel will be ``int(channels/ratio)``.
+			Default: 4.
+		conv_cfg (None or dict): Config dict for convolution layer.
+			Default: None, which means using conv2d.
+		act_cfg (dict or Sequence[dict]): Config dict for activation layer.
+			If act_cfg is a dict, two activation layers will be configurated
+			by this dict. If act_cfg is a sequence of dicts, the first
+			activation layer will be configurated by the first dict and the
+			second activation layer will be configurated by the second dict.
+			Default: (dict(type='ReLU'), dict(type='HSigmoid', bias=3.0,
+			divisor=6.0))
+		init_cfg (dict or list[dict], optional): Initialization config dict.
+			Default: None
+	"""
 
-class DynamicReLU(BaseModule):
-	def __init__(self, in_channels, out_channels, reduction=4, lambda_a=1.0, K2=True, use_bias=True, use_spatial=False, init_a=[1.0, 0.0], init_b=[0.0, 0.0], init_cfg=None):
-		assert init_cfg is None, 'To prevent abnormal initialization behavior, init_cfg is not allowed to be set'
-		super(DynamicReLU, self).__init__(init_cfg=init_cfg)
-		self.out_channels = out_channels
-		self.lambda_a = lambda_a * 2
-		self.K2 = K2
-		self.avg_pool = nn.AdaptiveAvgPool2d(1)
-
-		self.use_bias = use_bias
-		if K2:
-			self.exp = 4 if use_bias else 2
-		else:
-			self.exp = 2 if use_bias else 1
-		self.init_a = init_a
-		self.init_b = init_b
-
-		# determine squeeze
-		if reduction == 4:
-			squeeze = in_channels // reduction
-		else:
-			squeeze = _make_divisible(in_channels // reduction, 4)
-
-		self.fc = nn.Sequential(
-			nn.Linear(in_channels, squeeze),
-			nn.ReLU(inplace=True),
-			nn.Linear(squeeze, out_channels * self.exp),
-			nn.Hardsigmoid(inplace=True)
-		)
-		if use_spatial:
-			self.spa = nn.Sequential(
-				nn.Conv2d(in_channels, 1, kernel_size=1),
-				nn.BatchNorm2d(1),
-			)
-		else:
-			self.spa = None
-
-	def forward(self, x):
-		if isinstance(x, list):
-			x_in = x[0]
-			x_out = x[1]
-		else:
-			x_in = x
-			x_out = x
-
-		b, c, h, w = x_in.size()
-		y = self.avg_pool(x_in).view(b, c)
-		y = self.fc(y).view(b, self.out_channels * self.exp, 1, 1)
-
-		if self.exp == 4:
-			a1, b1, a2, b2 = torch.split(y, self.out_channels, dim=1)
-			a1 = (a1 - 0.5) * self.lambda_a + self.init_a[0]  # 1.0
-			a2 = (a2 - 0.5) * self.lambda_a + self.init_a[1]
-
-			b1 = b1 - 0.5 + self.init_b[0]
-			b2 = b2 - 0.5 + self.init_b[1]
-			out = torch.max(x_out * a1 + b1, x_out * a2 + b2)
-		elif self.exp == 2:
-			if self.use_bias:  # bias but not PL
-				a1, b1 = torch.split(y, self.out_channels, dim=1)
-				a1 = (a1 - 0.5) * self.lambda_a + self.init_a[0]  # 1.0
-				b1 = b1 - 0.5 + self.init_b[0]
-				out = x_out * a1 + b1
-
-			else:
-				a1, a2 = torch.split(y, self.out_channels, dim=1)
-				a1 = (a1 - 0.5) * self.lambda_a + self.init_a[0]  # 1.0
-				a2 = (a2 - 0.5) * self.lambda_a + self.init_a[1]
-				out = torch.max(x_out * a1, x_out * a2)
-		elif self.exp == 1:
-			a1 = y
-			a1 = (a1 - 0.5) * self.lambda_a + self.init_a[0]  # 1.0
-			out = x_out * a1
-
-		if self.spa:
-			ys = self.spa(x_in).view(b, -1)
-			ys = F.softmax(ys, dim=1).view(b, 1, h, w) * h * w
-			ys = F.hardtanh(ys, 0, 3, inplace=True)/3
-			out = out * ys
-
-		return out
-
-class DyConv(BaseModule):
-	def __init__(self, in_channels=256, out_channels=256, init_cfg=dict(type='Normal', layer=['Conv2d', 'ModulatedDeformConv2d'], mean=0, std=0.01)):
-		super(DyConv, self).__init__(init_cfg=init_cfg)
-
-		self.DyConv = nn.ModuleList()
-		self.DyConv.append(DyConvBlock(in_channels, out_channels, 1))
-		self.DyConv.append(DyConvBlock(in_channels, out_channels, 1))
-		self.DyConv.append(DyConvBlock(in_channels, out_channels, 2))
-
-		self.AttnConv = nn.Sequential(
-			nn.AdaptiveAvgPool2d(1),
-			nn.Conv2d(in_channels, 1, kernel_size=1),
-			nn.ReLU(inplace=True))
-
-		self.relu = DynamicReLU(in_channels, out_channels)
-		self.offset = nn.Conv2d(in_channels, 27, kernel_size=3, stride=1, padding=1)
-
-	def forward(self, p3, p4, p5, p6, p7):
-		x = [p3, p4, p5, p6, p7]
-		next_x = []
-		for level, feature in enumerate(x):
-			offset_mask = self.offset(feature)
-			offset = offset_mask[:, :18, :, :].contiguous().to(feature.dtype)
-			mask = offset_mask[:, 18:, :, :].sigmoid().contiguous().to(feature.dtype)
-
-			temp_fea = [self.DyConv[1](feature, offset, mask)]
-			if level > 0:
-				temp_fea.append(self.DyConv[2](x[level - 1], offset, mask))
-			if level < len(x) - 1:
-				temp_fea.append(F.interpolate(self.DyConv[0](x[level + 1], offset, mask), size=[feature.size(2), feature.size(3)], mode = 'bilinear', align_corners=True))
-			attn_fea = []
-			res_fea = []
-			for fea in temp_fea:
-				res_fea.append(fea)
-				attn_fea.append(self.AttnConv(fea))
-
-			res_fea = torch.stack(res_fea)
-			spa_pyr_attn = F.hardsigmoid(torch.stack(attn_fea), inplace=True)
-			mean_fea = torch.mean(res_fea * spa_pyr_attn, dim=0, keepdim=False)
-			next_x.append(self.relu(mean_fea))
-		p3, p4, p5, p6, p7 = next_x
-		return p3, p4, p5, p6, p7
-
-@NECKS.register_module()
-class DyHead(BaseModule):
 	def __init__(self,
 				 in_channels,
 				 out_channels,
-				 num_convs,
-				 with_cp=False,
-				 init_cfg=dict(type='Normal', layer=['Conv2d', 'ModulatedDeformConv2d'], mean=0, std=0.01)):
-		super(DyHead, self).__init__(init_cfg=init_cfg)
+				 ratio=4,
+				 conv_cfg=None,
+				 act_cfg=(dict(type='ReLU'),
+						  dict(type='HSigmoid', bias=3.0, divisor=6.0)),
+				 init_cfg=None):
+		super().__init__(init_cfg=init_cfg)
+		if isinstance(act_cfg, dict):
+			act_cfg = (act_cfg, act_cfg)
+		assert len(act_cfg) == 2
+		assert mmcv.is_tuple_of(act_cfg, dict)
 		self.in_channels = in_channels
 		self.out_channels = out_channels
-		self.with_cp = with_cp
+		self.expansion = 4  # for a1, b1, a2, b2
+		self.global_avgpool = nn.AdaptiveAvgPool2d(1)
+		self.conv1 = ConvModule(
+			in_channels=in_channels,
+			out_channels=int(in_channels / ratio),
+			kernel_size=1,
+			stride=1,
+			conv_cfg=conv_cfg,
+			act_cfg=act_cfg[0])
+		self.conv2 = ConvModule(
+			in_channels=int(in_channels / ratio),
+			out_channels=out_channels * self.expansion,
+			kernel_size=1,
+			stride=1,
+			conv_cfg=conv_cfg,
+			act_cfg=act_cfg[1])
 
-		self.dyhead_tower = ModuleList()
-		for i in range(num_convs):
-			self.dyhead_tower.append(
-				DyConv(
-					in_channels if i == 0 else out_channels,
-					out_channels,
-				)
-			)
-
-	@auto_fp16()
 	def forward(self, x):
-		assert isinstance(x, (list, tuple))
-		p3, p4, p5, p6, p7 = x
-		for block in self.dyhead_tower:
-			if p3.requires_grad and self.with_cp:
-				p3, p4, p5, p6, p7 = cp.checkpoint(block, p3, p4, p5, p6, p7)
+		"""Forward function."""
+		# forward Squeeze-and-Excitation-like module
+		coeffs = self.global_avgpool(x)
+		coeffs = self.conv1(coeffs)
+		coeffs = self.conv2(coeffs)  # [0.0, 1.0] if default HSigmoid
+		# split DYReLU coefficients and normalize them
+		a1, b1, a2, b2 = torch.split(coeffs, self.out_channels, dim=1)
+		a1 = (a1 - 0.5) * 2.0 + 1.0  # [-1.0, 1.0] + 1.0
+		a2 = (a2 - 0.5) * 2.0  # [-1.0, 1.0]
+		b1 = b1 - 0.5  # [-0.5, 0.5]
+		b2 = b2 - 0.5  # [-0.5, 0.5]
+		out = torch.max(x * a1 + b1, x * a2 + b2)
+		return out
+
+
+class MDCN3x3Norm(nn.Module):
+	"""ModulatedDeformConv2d with normalization layer."""
+
+	def __init__(self,
+				 in_channels,
+				 out_channels,
+				 stride=1,
+				 norm_cfg=dict(type='GN', num_groups=16, requires_grad=True)):
+		super().__init__()
+		self.conv = ModulatedDeformConv2d(
+			in_channels, out_channels, 3, stride=stride, padding=1)
+		self.norm = build_norm_layer(norm_cfg, out_channels)[1]
+
+	def forward(self, x, offset, mask):
+		"""Forward function."""
+		x = self.conv(x.contiguous(), offset, mask)
+		x = self.norm(x)
+		return x
+
+
+class DyHeadBlock(nn.Module):
+	"""DyHead Block."""
+
+	def __init__(self,
+				 in_channels=256,
+				 out_channels=256,
+				 act_cfg=dict(type='HSigmoid', bias=3.0, divisor=6.0)):
+		super().__init__()
+		# (offset_x, offset_y, mask) * kernel_size_y * kernel_size_x
+		self.offset_and_mask_dim = 3 * 3 * 3
+		self.offset_dim = 2 * 3 * 3
+
+		self.spatial_conv_high = MDCN3x3Norm(in_channels, out_channels)
+		self.spatial_conv_med = MDCN3x3Norm(in_channels, out_channels)
+		self.spatial_conv_low = MDCN3x3Norm(
+			in_channels, out_channels, stride=2)
+		self.spatial_conv_offset = nn.Conv2d(
+			in_channels, self.offset_and_mask_dim, 3, padding=1)
+		self.scale_attn_conv = nn.Sequential(
+			nn.AdaptiveAvgPool2d(1), nn.Conv2d(in_channels, 1, 1),
+			nn.ReLU(inplace=True))
+		self.scale_attn_sigmoid = build_activation_layer(act_cfg)
+		self.task_attn_module = DYReLU(in_channels, out_channels)
+		self._init_weights()
+
+	def _init_weights(self):
+		for m in self.modules():
+			if isinstance(m, nn.Conv2d):
+				normal_init(m, 0, 0.01)
+		constant_init(self.spatial_conv_offset, 0)
+
+	def forward(self, p3, p4, p5, p6, p7):
+		"""Forward function."""
+		x = [p3, p4, p5, p6, p7]
+		outs = []
+		for level, feature in enumerate(x):
+			# calculate offset and mask of DCNv2 from median-level feature
+			offset_and_mask = self.spatial_conv_offset(feature)
+			offset = offset_and_mask[:, :self.offset_dim, :, :]
+			mask = offset_and_mask[:, self.offset_dim:, :, :].sigmoid()
+
+			# spatial-aware attention
+			mlvl_feats = [self.spatial_conv_med(feature, offset, mask)]
+			if level > 0:
+				mlvl_feats.append(
+					self.spatial_conv_low(x[level - 1], offset, mask))
+			if level < len(x) - 1:
+				mlvl_feats.append(
+					F.interpolate(
+						self.spatial_conv_high(x[level + 1], offset, mask),
+						size=feature.shape[-2:],
+						mode='bilinear',
+						align_corners=True))
+
+			# scale-aware attention and task-aware attention
+			res_feat = torch.stack(mlvl_feats)
+			attn_feats = [self.scale_attn_conv(feat) for feat in mlvl_feats]
+			scale_attn = self.scale_attn_sigmoid(torch.stack(attn_feats))
+			mean_feat = torch.mean(res_feat * scale_attn, dim=0, keepdim=False)
+			outs.append(self.task_attn_module(mean_feat))
+
+		return outs
+
+
+@NECKS.register_module()
+class DyHead(BaseModule):
+	"""DyHead neck consisting of multiple DyHead Blocks.
+	https://arxiv.org/abs/2106.08322
+	"""
+
+	def __init__(self,
+				 in_channels=256,
+				 out_channels=256,
+				 stacked_convs=6,
+				 with_cp=False,
+				 init_cfg=None):
+		assert init_cfg is None, 'To prevent abnormal initialization behavior, init_cfg is not allowed to be set'
+		super().__init__(init_cfg=init_cfg)
+		self.in_channels = in_channels
+		self.out_channels = out_channels
+		self.stacked_convs = stacked_convs
+
+		dyhead_blocks = []
+		for i in range(stacked_convs):
+			in_channels = self.in_channels if i == 0 else self.out_channels
+			dyhead_blocks.append(DyHeadBlock(in_channels, self.out_channels))
+		self.dyhead_blocks = nn.ModuleList(*dyhead_blocks)
+
+	def forward(self, inputs):
+		"""Forward function."""
+		assert len(inputs) == 5
+		p3, p4, p5, p6, p7 = inputs
+
+		for blk in self.dyhead_blocks:
+			if self.with_cp and x.requires_grad:
+				p3, p4, p5, p6, p7 = cp.checkpoint(blk, p3, p4, p5, p6, p7)
 			else:
-				p3, p4, p5, p6, p7 = block(p3, p4, p5, p6, p7)
-		return p3, p4, p5, p6, p7
+				p3, p4, p5, p6, p7 = blk(p3, p4, p5, p6, p7)
+		return tuple(outs)
