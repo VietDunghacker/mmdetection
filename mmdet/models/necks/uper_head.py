@@ -4,7 +4,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from mmcv.cnn import ConvModule
 
-from mmseg.ops import resize
 from ..builder import NECKS
 from .decode_head import BaseDecodeHead
 from .psp_head import PPM
