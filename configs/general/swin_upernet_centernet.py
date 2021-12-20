@@ -23,7 +23,7 @@ model = dict(
 		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
 	neck=dict(
 		type='UPerHead',
-		in_channels=[96, 192, 384, 768],
+		in_channels=[128, 256, 512, 1024],
 		in_index=[0, 1, 2, 3],
 		pool_scales=(1, 2, 3, 6),
 		channels=512,
