@@ -105,4 +105,4 @@ class UPerHead(BaseDecodeHead):
 			fpn_outs[i] = F.interpolate(fpn_outs[i], size=fpn_outs[0].shape[2:], mode='bilinear', align_corners=False)
 		fpn_outs = torch.cat(fpn_outs, dim=1)
 		output = self.fpn_bottleneck(fpn_outs)
-		return output
+		return [output, ]
