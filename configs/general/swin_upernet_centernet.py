@@ -28,7 +28,7 @@ model = dict(
 		pool_scales=(1, 2, 3, 6),
 		channels=512,
 		dropout_ratio=0.1,
-		norm_cfg=dict(type='GN', num_groups=32, requires_grad=True),
+		norm_cfg=dict(type='BN', requires_grad=True),
 		align_corners=False),
 	bbox_head=dict(
 		type='CenterNetHead',
