@@ -107,7 +107,6 @@ class CenterNetHead(BaseDenseHead, BBoxTestMixin):
 		offset_pred = self.offset_head(feat)
 		return center_heatmap_pred, wh_pred, offset_pred
 
-	@force_fp32(apply_to=('center_heatmap_preds', 'wh_preds', 'offset_preds'))
 	def loss(self,
 			 center_heatmap_preds,
 			 wh_preds,
