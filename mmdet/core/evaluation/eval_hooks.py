@@ -119,7 +119,7 @@ class EvalHook(BaseEvalHook):
 			table_data = [headers]
 			table_data += [result for result in results_2d]
 			table = AsciiTable(table_data)
-			print_log('\n' + table.table, logger=runner.logger)
+			#print_log('\n' + table.table, logger=runner.logger)
 
 		if 'AP_per_class' in eval_res.keys():
 			del eval_res['AP_per_class']

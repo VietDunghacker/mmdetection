@@ -64,7 +64,7 @@ class ClassAwareSampler(Sampler):
 		table_data = [headers]
 		table_data += [result for result in results_2d]
 		table = AsciiTable(table_data)
-		print_log('\n' + table.table)
+		#print_log('\n' + table.table)
 
 		self.weights = self._get_class_balance_factor()
 
@@ -73,7 +73,7 @@ class ClassAwareSampler(Sampler):
 
 	def _infinite_indices(self):
 		while True:
-			ids = torch.multinomial(self.weights, self._size * 10, replacement=False)
+			ids = torch.multinomial(self.weights, self._size * 100, replacement=False)
 			yield from ids
 			self.weights = self._get_class_balance_factor()
 
