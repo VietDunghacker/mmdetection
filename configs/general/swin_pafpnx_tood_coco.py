@@ -16,22 +16,19 @@ model = dict(
 		attn_drop_rate=0.,
 		drop_path_rate=0.3,
 		patch_norm=True,
-		out_indices=(1, 2, 3),
+		out_indices=(0, 1, 2, 3),
 		with_cp=True,
 		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
 	neck=dict(
-		type='BiFPN',
-		in_channels=[256, 512, 1024],
+		type='PAFPNX',
+		in_channels=[128, 256, 512, 1024],
 		out_channels=256,
-		input_indices=(1, 2, 3),
-		num_outs=5,
-		strides=[8, 16, 32],
-		num_layers=1,
-		weight_method='fast_attn',
-		act_cfg='silu',
-		separable_conv=True,
-		epsilon=0.0001
-	),
+		start_level=1,
+		add_extra_convs='on_output',
+		num_outs=4,
+		relu_before_extra_convs=True,
+		pafpn_conv_cfg=dict(type='DCNv2'),
+		norm_cfg=dict(type='GN', num_groups=32, requires_grad=True)),
 	bbox_head=dict(
 		type='TOODHead',
 		num_classes=40,
@@ -64,7 +61,7 @@ model = dict(
 		loss_bbox=dict(type='CIoULoss', loss_weight=2.0),
 	),
 	train_cfg = dict(
-		initial_epoch=0,
+		initial_iter=4000,
 		initial_assigner=dict(type='ATSSAssigner', topk=9),
 		assigner=dict(type='TaskAlignedAssigner', topk=13),
 		alpha=1,
@@ -86,8 +83,8 @@ data_root = 'data/coco/'
 img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 albu_train_transforms = [
 	dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.1, rotate_limit=1, interpolation=1, p=0.5, border_mode = 0),
-	dict(type='RandomBrightnessContrast', brightness_limit=0.1, contrast_limit=0.1),
-	dict(type='RGBShift', r_shift_limit=10, g_shift_limit=10, b_shift_limit=10),
+	dict(type='ColorJitter', brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2),
+	dict(type='RGBShift', r_shift_limit=20, g_shift_limit=20, b_shift_limit=20),
 	dict(type='HueSaturationValue', hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20),
 	dict(
 		type='OneOf',
@@ -96,6 +93,13 @@ albu_train_transforms = [
 			dict(type='ToGray', p = 1.0)
 		],
 		p=0.1),
+	dict(
+		type='OneOf',
+		transforms=[
+			dict(type='MedianBlur', blur_limit=3, p=1.0),
+			dict(type='Blur', blur_limit=3, p=1.0),
+		],
+		p=0.1)
 ]
 
 train_pipeline = [
@@ -103,74 +107,15 @@ train_pipeline = [
 		type = 'AutoAugment',
 		policies = [
 			[
-				dict(type='Mosaic', center_ratio_range=(0.9, 1.1), img_scale=(960, 960), pad_val=0.0),
-				dict(type='Resize', img_scale=[(800, 800), (960, 960)], multiscale_mode='range', keep_ratio=True),
-			],
-			[
 				dict(type='Mosaic', center_ratio_range=(0.8, 1.2), img_scale=(960, 960), pad_val=0.0),
-				dict(type='Resize', img_scale=[(800, 800), (960, 960)], multiscale_mode='range', keep_ratio=True),
-			],
-			[
-				dict(type='Resize', img_scale=(960, 960), keep_ratio=True),
-				dict(type='Pad', size_divisor=960),
-				dict(
-					type='Albu',
-					transforms=[
-						dict(type = "Crop", x_min = 0, y_min = 480, x_max = 960, y_max = 960),
-						dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.1, rotate_limit=45, interpolation=1, p=0.5, border_mode = 0)],
-					bbox_params=dict(
-						type='BboxParams',
-						format='pascal_voc',
-						label_fields=['gt_labels'],
-						min_visibility=0.8,
-						filter_lost_elements=True),
-					keymap={
-						'img': 'image',
-						'gt_bboxes': 'bboxes'
-					},
-					update_pad_shape=False,
-					skip_img_without_anno=False),
-				dict(type='Resize', img_scale=[(640, 640), (960, 960)], multiscale_mode='range', keep_ratio=True, override=True),
-			],
-			[
-				dict(type='Resize', img_scale=(960, 960), keep_ratio=True),
-				dict(type='Pad', size_divisor=960),
-				dict(
-					type='Albu',
-					transforms=[
-						dict(
-							type = "OneOf",
-							transforms=[
-								dict(type = "Crop", x_min = 0, y_min = i, x_max = 960, y_max = 960) for i in range(480, 720, 10)
-								],
-							p=1.0),
-						dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.1, rotate_limit=45, interpolation=1, p=0.5, border_mode = 0),					
-						],
-					bbox_params=dict(
-						type='BboxParams',
-						format='pascal_voc',
-						label_fields=['gt_labels'],
-						min_visibility=0.8,
-						filter_lost_elements=True),
-					keymap={
-						'img': 'image',
-						'gt_bboxes': 'bboxes'
-					},
-					update_pad_shape=False,
-					skip_img_without_anno=False),
-				dict(type = 'Pad', size_divisor = 960),
-				dict(
-					type='MixUp',
-					img_scale=(960, 960),
-					ratio_range=(1.0, 1.0),
-					pad_val=0.0),
-			],
-			[
-				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
 				dict(type='Resize', img_scale=[(640, 640), (960, 960)], multiscale_mode='range', keep_ratio=True),
 			],
 			[
-				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
+				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.8, 0.8), allow_negative_crop = True),
+				dict(type='Resize', img_scale=[(640, 640), (960, 960)], multiscale_mode='range', keep_ratio=True),
+			],
+			[
+				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.7, 0.7), allow_negative_crop = True),
 				dict(type='Resize', img_scale=[(640, 640), (960, 960)], multiscale_mode='range', keep_ratio=True),
 			]
 		]
