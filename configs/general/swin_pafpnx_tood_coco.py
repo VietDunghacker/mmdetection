@@ -107,9 +107,7 @@ train_pipeline = [
 		type = 'AutoAugment',
 		policies = [
 			[
-				dict(type='Mosaic', center_ratio_range=(0.8, 1.2), img_scale=(960, 960), pad_val=0.0),
-				dict(type='RandomAffine', scaling_ratio_range=(1, 1), max_rotate_degree=0, max_translate_ratio=0, max_shear_degree=0, border=(-480, -480), skip_filter=False),
-				dict(type='MixUp', img_scale=(960, 960), ratio_range=(0.8, 1.6), pad_val=0.0, skip_filter=False),
+				dict(type='Mosaic', center_ratio_range=(0.8, 1.2), img_scale=(640, 640), pad_val=0.0),
 				dict(type='Resize', img_scale=[(640, 640), (960, 960)], multiscale_mode='range', keep_ratio=True),
 			],
 			[
