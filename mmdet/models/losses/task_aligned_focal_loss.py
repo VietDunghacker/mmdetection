@@ -38,7 +38,12 @@ def task_aligned_focal_loss(prob,
 	target_one_hot = prob.new_zeros(len(prob), len(prob[0]) + 1)
 	target_one_hot = target_one_hot.scatter_(1, target.unsqueeze(1), 1)[:, :-1]
 	soft_label = alignment_metric.unsqueeze(-1) * target_one_hot
-	ce_loss = F.binary_cross_entropy(prob, soft_label, reduction='none')
+	try:
+		ce_loss = F.binary_cross_entropy(prob, soft_label, reduction='none')
+	except Exception as e:
+		print(prob.max())
+		print(soft_label.max())
+		assert False
 	loss = torch.pow(torch.abs(soft_label - prob), gamma) * ce_loss
 	loss = weight_reduce_loss(loss, weight, reduction, avg_factor)
 	return loss
