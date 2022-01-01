@@ -12,7 +12,7 @@ from .normed_predictor import NormedConv2d, NormedLinear
 from .positional_encoding import (LearnedPositionalEncoding,
 								  SinePositionalEncoding)
 from .res_layer import ResLayer, SimplifiedBasicBlock
-from .se_layer import SELayer
+from .se_layer import SELayer, DYReLU
 from .sepc_dconv import ModulatedSEPCConv, SEPCConv
 from .transformer import (DetrTransformerDecoder, DetrTransformerDecoderLayer,
 						  DynamicConv, PatchEmbed, Transformer, nchw_to_nlc,
@@ -25,5 +25,5 @@ __all__ = [
 	'LearnedPositionalEncoding', 'DynamicConv', 'SimplifiedBasicBlock',
 	'NormedLinear', 'NormedConv2d', 'make_divisible', 'InvertedResidual',
 	'SELayer', 'interpolate_as', 'ConvUpsample', 'CSPLayer', "ModulatedSEPCConv", 'SEPCConv',
-	'BRPool', 'TLPool', 'PatchEmbed', 'nchw_to_nlc', 'nlc_to_nchw', 'pvt_convert'
+	'BRPool', 'TLPool', 'PatchEmbed', 'nchw_to_nlc', 'nlc_to_nchw', 'pvt_convert', 'DYReLU'
 ]
