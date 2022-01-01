@@ -1,4 +1,7 @@
+import datetime
 import numpy as np
+import sys
+import time
 
 from .api_wrappers import COCOeval
 
@@ -248,3 +251,309 @@ class USBeval(COCOeval):
 		elif iouType == 'keypoints':
 			raise NotImplementedError
 		self.stats = summarize()
+
+class COCOevalLRP (CocoEval):
+	def __init__(self, cocoGt=None, cocoDt=None, tau=0.5):
+		'''
+		Initialize CocoEval using coco APIs for gt and dt
+		:param cocoGt: coco object with ground truth annotations
+		:param cocoDt: coco object with detection results
+		:return: None
+		'''
+		super().__init__(cocoGt=cocoGt, cocoDt=cocoDt, iouType="bbox")
+		self.params = Params(tau)
+
+	def evaluate(self):
+		'''
+		Run per image evaluation on given images and store results (a list of dict) in self.evalImgs
+		:return: None
+		'''
+		tic = time.time()
+		print('Running per image evaluation...')
+		p = self.params
+		p.imgIds = list(np.unique(p.imgIds))
+		if p.useCats:
+			p.catIds = list(np.unique(p.catIds))
+		self.params=p
+
+		self._prepare()
+		# loop through images, area range, max detection number
+		catIds = p.catIds if p.useCats else [-1]
+
+		computeIoU = self.computeIoU
+		self.ious = {(imgId, catId): computeIoU(imgId, catId) \
+						for imgId in p.imgIds
+						for catId in catIds}
+
+		evaluateImg = self.evaluateImg
+		maxDet = p.maxDets
+		self.evalImgs = [evaluateImg(imgId, catId, areaRng, maxDet)
+				 for catId in catIds
+				 for areaRng in p.areaRng
+				 for imgId in p.imgIds
+			 ]
+
+		self._paramsEval = copy.deepcopy(self.params)
+		toc = time.time()
+		print('DONE (t={:0.2f}s).'.format(toc-tic))
+
+	def evaluateImg(self, imgId, catId, aRng, maxDet):
+		'''
+		perform evaluation for single category and image
+		:return: dict (single image results)
+		'''
+		p = self.params
+		if p.useCats:
+			gt = self._gts[imgId,catId]
+			dt = self._dts[imgId,catId]
+		else:
+			gt = [_ for cId in p.catIds for _ in self._gts[imgId,cId]]
+			dt = [_ for cId in p.catIds for _ in self._dts[imgId,cId]]
+		if len(gt) == 0 and len(dt) ==0:
+			return None
+
+		for g in gt:
+			if g['ignore'] or (g['area']<aRng[0] or g['area']>aRng[1]):
+				g['_ignore'] = 1
+			else:
+				g['_ignore'] = 0
+
+		# sort dt highest score first, sort gt ignore last
+		gtind = np.argsort([g['_ignore'] for g in gt], kind='mergesort')
+		gt = [gt[i] for i in gtind]
+		dtind = np.argsort([-d['score'] for d in dt], kind='mergesort')
+		dt = [dt[i] for i in dtind[0:maxDet]]
+		iscrowd = [int(o['iscrowd']) for o in gt]
+		# load computed ious
+		ious = self.ious[imgId, catId][:, gtind] if len(self.ious[imgId, catId]) > 0 else self.ious[imgId, catId]
+
+		T = 1
+		G = len(gt)
+		D = len(dt)
+		gtm  = np.zeros((T,G))
+		dtm  = np.zeros((T,D))
+		dtIoU = np.zeros((T,D))
+		gtIg = np.array([g['_ignore'] for g in gt])
+		dtIg = np.zeros((T,D))
+		if not len(ious)==0:
+			for dind, d in enumerate(dt):
+				# information about best match so far (m=-1 -> unmatched)
+				iou = min([p.iouThrs,1-1e-10])
+				m   = -1
+				for gind, g in enumerate(gt):
+					# if this gt already matched, and not a crowd, continue
+					if gtm[0,gind]>0 and not iscrowd[gind]:
+						continue
+					# if dt matched to reg gt, and on ignore gt, stop
+					if m>-1 and gtIg[m]==0 and gtIg[gind]==1:
+						break
+					# continue to next gt unless better match made
+					if ious[dind,gind] < iou:
+						continue
+					# if match successful and best so far, store appropriately
+					iou=ious[dind,gind]
+					m=gind
+				# if match made store id of match for both dt and gt
+				if m ==-1:
+					continue
+				dtIg[0,dind] = gtIg[m]
+				dtIoU[0,dind]=iou
+				dtm[0,dind]  = gt[m]['id']
+				gtm[0,m]	 = d['id']
+
+		# set unmatched detections outside of area range to ignore
+		a = np.array([d['area']<aRng[0] or d['area']>aRng[1] for d in dt]).reshape((1, len(dt)))
+		dtIg = np.logical_or(dtIg, np.logical_and(dtm==0, np.repeat(a,T,0)))
+		# store results for given image and category
+		return {
+				'image_id':	 imgId,
+				'category_id':  catId,
+				'aRng':		 aRng,
+				'maxDet':	   maxDet,
+				'dtIds':		[d['id'] for d in dt],
+				'gtIds':		[g['id'] for g in gt],
+				'dtMatches':	dtm,
+				'gtMatches':	gtm,
+				'dtScores':	 [d['score'] for d in dt],
+				'gtIgnore':	 gtIg,
+				'dtIgnore':	 dtIg,
+				'dtIoUs'  :	 dtIoU
+			}
+
+	def accumulate(self, p = None):
+		'''
+		Accumulate per image evaluation results and store the result in self.eval
+		:param p: input params for evaluation
+		:return: None
+		'''
+		print('Accumulating evaluation results...')
+		tic = time.time()
+		if not self.evalImgs:
+			print('Please run evaluate() first')
+		# allows input customized parameters
+		if p is None:
+			p = self.params
+		p.catIds = p.catIds if p.useCats == 1 else [-1]
+		T		   = 1
+		S		   = len(p.confScores)
+		K		   = len(p.catIds) if p.useCats else 1
+		omega=np.zeros((S,K))
+		nhat=np.zeros((S,K))
+		mhat=np.zeros((S,K))
+		LRPError=-np.ones((S,K))
+		LocError=-np.ones((S,K))
+		FPError=-np.ones((S,K))
+		FNError=-np.ones((S,K))
+		OptLRPError=-np.ones((1,K))
+		OptLocError=-np.ones((1,K))
+		OptFPError=-np.ones((1,K))
+		OptFNError=-np.ones((1,K))
+		Threshold=-np.ones((1,K))
+		index=np.zeros((1,K))
+		
+		# create dictionary for future indexing
+		_pe = self._paramsEval
+		catIds = _pe.catIds if _pe.useCats else [-1]
+		setK = set(catIds)
+		setI = set(_pe.imgIds)
+		# get inds to evaluate
+		k_list = [n for n, k in enumerate(p.catIds)  if k in setK]
+		i_list = [n for n, i in enumerate(p.imgIds)  if i in setI]
+		I0 = len(_pe.imgIds)
+		# retrieve E at each category, area range, and max number of detections
+		for k, k0 in enumerate(k_list):
+			Nk = k0*I0
+			E = [self.evalImgs[Nk + i] for i in i_list]
+			E = [e for e in E if not e is None]
+			if len(E) == 0:
+				continue
+			dtScores = np.concatenate([e['dtScores'][0:p.maxDets] for e in E])
+
+			# different sorting method generates slightly different results.
+			# mergesort is used to be consistent as Matlab implementation.
+			inds = np.argsort(-dtScores, kind='mergesort')
+			dtScoresSorted = dtScores[inds]
+
+			dtm  = np.concatenate([e['dtMatches'][:,0:p.maxDets] for e in E], axis=1)[:,inds]
+			dtIg = np.concatenate([e['dtIgnore'][:,0:p.maxDets]  for e in E], axis=1)[:,inds]
+			IoUoverlap = np.squeeze(np.concatenate([e['dtIoUs'][:,0:p.maxDets]  for e in E], axis=1)[:,inds], axis=0)
+			for i in range(len(IoUoverlap)):
+				if IoUoverlap[i]!=0:
+					IoUoverlap[i]=1-IoUoverlap[i]
+			gtIg = np.concatenate([e['gtIgnore'] for e in E])
+			npig = np.count_nonzero(gtIg==0 )
+			if npig == 0:
+				continue
+			tps = np.squeeze(np.logical_and(			   dtm,  np.logical_not(dtIg) )*1)
+			fps = np.squeeze(np.logical_and(np.logical_not(dtm), np.logical_not(dtIg) )*1)
+			IoUoverlap=np.multiply(IoUoverlap,tps)
+			np.set_printoptions(threshold=sys.maxsize)
+			for s, s0 in enumerate(_pe.confScores):
+				thrind=np.sum(dtScoresSorted>=s0)
+				omega[s,k]=np.sum(tps[0:thrind])
+				nhat[s,k]=np.sum(fps[0:thrind])
+				mhat[s,k]=npig-omega[s,k]
+				l=np.maximum((omega[s,k]+nhat[s,k]),npig);
+				FPError[s,k]=(1-_pe.iouThrs)*(nhat[s,k]/l)
+				FNError[s,k]=(1-_pe.iouThrs)*(mhat[s,k]/l)
+				Z=((omega[s,k]+mhat[s,k]+nhat[s,k])/l);
+				LRPError[s,k]=(np.sum(IoUoverlap[:thrind])/l)+FPError[s,k]+FNError[s,k];			
+				LRPError[s,k]=LRPError[s,k]/Z;
+				LRPError[s,k]=LRPError[s,k]/(1-_pe.iouThrs);
+				LocError[s,k]=np.sum(IoUoverlap[:thrind])/omega[s,k];
+				FPError[s,k]=nhat[s,k]/(omega[s,k]+nhat[s,k]);
+				FNError[s,k]=mhat[s,k]/npig
+			
+			OptLRPError[0,k]=min(LRPError[:,k]) 
+			ind=np.argmin(LRPError[:,k])
+			OptLocError[0,k]=LocError[ind,k]
+			OptFPError[0,k]=FPError[ind,k]
+			OptFNError[0,k]=FNError[ind,k]
+			Threshold[0,k]=ind*0.01
+			no_gt = (OptLRPError == -1)
+			OptLRPError[no_gt] = np.nan
+			OptLocError[no_gt] = np.nan 
+			OptFPError[no_gt] = np.nan 
+			OptFNError[no_gt] = np.nan 
+			Threshold[no_gt] = np.nan
+
+		moLRPLoc=np.nanmean(OptLocError)
+		moLRPFP=np.nanmean(OptFPError)
+		moLRPFN=np.nanmean(OptFNError)
+		moLRP=np.nanmean(OptLRPError)
+
+		self.eval = {
+			'params': p,
+			'counts': [S, K],
+			'date': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+			'LRPError': LRPError,
+			'BoxLocComp':  LocError,
+			'FPComp': FPError,
+			'FNComp': FNError,
+			'oLRPError': OptLRPError,
+			'oBoxLocComp': OptLocError,
+			'oFPComp': OptFPError,
+			'oFNComp': OptFNError,
+			'moLRP': moLRP,
+			'moLRPLoc': moLRPLoc,
+			'moLRPFP': moLRPFP,
+			'moLRPFN': moLRPFN,
+			'OptThresholds':Threshold
+		}
+		toc = time.time()
+		print('DONE (t={:0.2f}s).'.format( toc-tic))
+
+	def summarize(self, detailed=0):
+		'''
+		Compute and display summary metrics for evaluation results.
+		Note this functin can *only* be applied on the default parameter setting
+		'''
+		if detailed==1:
+			print('LRP, oLRP, moLRP and Class Specific Optimal Thresholds are as follows: \n ')
+			print('------------------------------------------------------ \n ')
+			print('------------------------------------------------------ \n ')
+			print('1.LRP and Components:\n')
+			print('LRP= \n'+str(self.eval['LRPError'])+'\n')
+			print('LRPLocalization=\n'+str(self.eval['BoxLocComp'])+'\n')
+			print('LRPFalsePositive=\n'+str(self.eval['FPComp'])+'\n')
+			print('LRPFalseNegative=\n'+str(self.eval['FNComp'])+'\n')
+			print('------------------------------------------------------ \n ')
+			print('------------------------------------------------------ \n ')
+			print('2.Optimal LRP and Components:')
+			print('------------------------------------------------------ \n ')
+			print('oLRP='+str(self.eval['oLRPError'])+'\n')
+			print('oLRPLocalization=\n'+str(self.eval['oBoxLocComp'])+'\n')
+			print('oLRPFalsePositive=\n'+str(self.eval['oFPComp'])+'\n')
+			print('oLRPFalseNegative=\n'+str(self.eval['oFNComp'])+'\n')
+			print('------------------------------------------------------ \n')
+			print('------------------------------------------------------ \n ')
+			print('3.Mean Optimal LRP and Components:')
+			print('------------------------------------------------------ \n ')
+			print('moLRP={:0.4f}, moLRP_LocComp={:0.4f}, moLRP_FPComp={:0.4f}, moLRP_FNComp={:0.4f} \n'.format(self.eval['moLRP'], self.eval['moLRPLoc'],self.eval['moLRPFP'],self.eval['moLRPFN']))
+			print('------------------------------------------------------ \n ')
+			print('------------------------------------------------------ \n ')
+			print('4.Optimal Class Specific Thresholds:\n')
+			print(self.eval['OptThresholds'])
+			print('------------------------------------------------------ \n ')
+			print('------------------------------------------------------ \n ')
+		else:
+			print('oLRP, moLRP and Class Specific Optimal Thresholds are as follows: \n ')
+			print('------------------------------------------------------ \n ')
+			print('------------------------------------------------------ \n ')
+			print('1.Optimal LRP and Components:')
+			print('------------------------------------------------------ \n ')
+			print('oLRP='+str(self.eval['oLRPError'])+'\n')
+			print('oLRPLocalization=\n'+str(self.eval['oBoxLocComp'])+'\n')
+			print('oLRPFalsePositive=\n'+str(self.eval['oFPComp'])+'\n')
+			print('oLRPFalseNegative=\n'+str(self.eval['oFNComp'])+'\n')
+			print('------------------------------------------------------ \n')
+			print('------------------------------------------------------ \n ')
+			print('2.Mean Optimal LRP and Components:')
+			print('------------------------------------------------------ \n ')
+			print('moLRP={:0.4f}, moLRP_LocComp={:0.4f}, moLRP_FPComp={:0.4f}, moLRP_FNComp={:0.4f} \n'.format(self.eval['moLRP'], self.eval['moLRPLoc'],self.eval['moLRPFP'],self.eval['moLRPFN']))
+			print('------------------------------------------------------ \n ')
+			print('------------------------------------------------------ \n ')
+			print('3.Optimal Class Specific Thresholds:\n')
+			print(self.eval['OptThresholds'])
+			print('------------------------------------------------------ \n ')
+			print('------------------------------------------------------ \n ')

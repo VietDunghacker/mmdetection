@@ -264,8 +264,7 @@ class TOODHead(AnchorHead):
 			raise NotImplementedError
 		reg_offset = F.relu(self.reg_offset_conv1(feat))
 		reg_offset = self.reg_offset_conv2(reg_offset)
-		bbox_pred = self.deform_sampling(reg_bbox.contiguous(),
-										 reg_offset.contiguous())
+		bbox_pred = self.deform_sampling(reg_bbox.contiguous(), reg_offset.contiguous())
 
 		return cls_score, bbox_pred
 

@@ -15,7 +15,7 @@ from mmdet.core import eval_recalls
 from .api_wrappers import COCO, COCOeval
 from .builder import DATASETS
 from .custom import CustomDataset
-from .usbeval import USBeval
+from .usbeval import USBeval, COCOevalLRP
 
 @DATASETS.register_module()
 class CocoDataset(CustomDataset):
@@ -367,7 +367,10 @@ class CocoDataset(CustomDataset):
 				classwise=True,
 				proposal_nums=(1, 10, 100),
 				iou_thrs=None,
-				area_range_type='absolute_scale_ap'):
+				usb_eval=True,
+				LRP_eval=True,
+				area_range_type='absolute_scale_ap',
+				tau=0.5):
 		"""Evaluation in COCO protocol.
 		Args:
 			results (list[list | tuple]): Testing results of the dataset.
@@ -429,18 +432,11 @@ class CocoDataset(CustomDataset):
 				predictions = mmcv.load(result_files[metric])
 				if iou_type == 'segm':
 					# Refer to https://github.com/cocodataset/cocoapi/blob/master/PythonAPI/pycocotools/coco.py#L331  # noqa
-					# When evaluating mask AP, if the results contain bbox,
-					# cocoapi will use the box area instead of the mask area
-					# for calculating the instance area. Though the overall AP
-					# is not affected, this leads to different
-					# small/medium/large mask AP results.
+					# When evaluating mask AP, if the results contain bbox, cocoapi will use the box area instead of the mask area for calculating the instance area. Though the overall AP is not affected, this leads to different small/medium/large mask AP results.
 					for x in predictions:
 						x.pop('bbox')
 					warnings.simplefilter('once')
-					warnings.warn(
-						'The key "bbox" is deleted for more accurate mask AP '
-						'of small/medium/large instances since v2.12.0. This '
-						'does not change the overall mAP calculation.',
+					warnings.warn('The key "bbox" is deleted for more accurate mask AP of small/medium/large instances since v2.12.0. This does not change the overall mAP calculation.',
 						UserWarning)
 				cocoDt = cocoGt.loadRes(predictions)
 			except IndexError:
@@ -450,8 +446,10 @@ class CocoDataset(CustomDataset):
 					level=logging.ERROR)
 				break
 
-			cocoEval = USBeval(
-				cocoGt, cocoDt, iou_type, area_range_type=area_range_type)
+			if LRP_eval:
+				cocoEval = COCOevalLRP(cocoGt, cocoDt, iou_type, tau=tau)
+			else:
+				cocoEval = USBeval(cocoGt, cocoDt, iou_type, area_range_type=area_range_type)
 			cocoEval.params.catIds = self.cat_ids
 			cocoEval.params.imgIds = self.img_ids
 			cocoEval.params.maxDets = list(proposal_nums)
