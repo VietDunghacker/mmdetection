@@ -368,7 +368,7 @@ class CocoDataset(CustomDataset):
 				proposal_nums=(1, 10, 100),
 				iou_thrs=None,
 				usb_eval=True,
-				LRP_eval=True,
+				LRP_eval=False,
 				area_range_type='absolute_scale_ap',
 				tau=0.5):
 		"""Evaluation in COCO protocol.

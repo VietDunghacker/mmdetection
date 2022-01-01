@@ -252,7 +252,7 @@ class USBeval(COCOeval):
 			raise NotImplementedError
 		self.stats = summarize()
 
-class COCOevalLRP (CocoEval):
+class COCOevalLRP(COCOeval):
 	def __init__(self, cocoGt=None, cocoDt=None, tau=0.5):
 		'''
 		Initialize CocoEval using coco APIs for gt and dt
