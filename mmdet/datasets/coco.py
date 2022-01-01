@@ -15,7 +15,7 @@ from mmdet.core import eval_recalls
 from .api_wrappers import COCO, COCOeval
 from .builder import DATASETS
 from .custom import CustomDataset
-from .usbeval import USBeval, COCOevalLRP
+from .usbeval import USBeval
 
 @DATASETS.register_module()
 class CocoDataset(CustomDataset):
@@ -368,9 +368,7 @@ class CocoDataset(CustomDataset):
 				proposal_nums=(1, 10, 100),
 				iou_thrs=None,
 				usb_eval=True,
-				LRP_eval=False,
-				area_range_type='absolute_scale_ap',
-				tau=0.5):
+				area_range_type='absolute_scale_ap'):
 		"""Evaluation in COCO protocol.
 		Args:
 			results (list[list | tuple]): Testing results of the dataset.
@@ -446,10 +444,7 @@ class CocoDataset(CustomDataset):
 					level=logging.ERROR)
 				break
 
-			if LRP_eval:
-				cocoEval = COCOevalLRP(cocoGt, cocoDt, iou_type, tau=tau)
-			else:
-				cocoEval = USBeval(cocoGt, cocoDt, iou_type, area_range_type=area_range_type)
+			cocoEval = USBeval(cocoGt, cocoDt, iou_type, area_range_type=area_range_type)
 			cocoEval.params.catIds = self.cat_ids
 			cocoEval.params.imgIds = self.img_ids
 			cocoEval.params.maxDets = list(proposal_nums)
