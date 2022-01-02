@@ -247,8 +247,8 @@ class DIIHead(BBoxHead):
 				pos_bbox_pred = bbox_pred.reshape(bbox_pred.size(0), 4)[pos_inds.type(torch.bool)]
 				imgs_whwh = imgs_whwh.reshape(bbox_pred.size(0), 4)[pos_inds.type(torch.bool)]
 				losses['loss_bbox'] = self.loss_bbox(
-					pos_bbox_pred / imgs_whwh,
-					bbox_targets[pos_inds.type(torch.bool)] / imgs_whwh,
+					pos_bbox_pred,
+					bbox_targets[pos_inds.type(torch.bool)],
 					bbox_weights[pos_inds.type(torch.bool)],
 					avg_factor=avg_factor)
 				losses['loss_iou'] = self.loss_iou(
