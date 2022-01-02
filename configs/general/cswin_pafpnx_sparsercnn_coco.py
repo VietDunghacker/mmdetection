@@ -15,25 +15,17 @@ model = dict(
 		out_indices=(0,1,2,3),
 		with_cp=True,
 		init_cfg=dict(type='Pretrained', checkpoint='/gdrive/My Drive/checkpoints/cswin_base_224.pth')),
-	neck=[
-		dict(
-			type='PAFPNX',
-			in_channels=[96, 192, 384, 768],
-			out_channels=256,
-			start_level=0,
-			add_extra_convs='on_output',
-			num_outs=4,
-			relu_before_extra_convs=True,
-			pafpn_conv_cfg=dict(type='DCNv2'),
-			norm_cfg=dict(type='GN', num_groups=32, requires_grad=True)
-		),
-		dict(
-			type='DyHead',
-			in_channels=256,
-			out_channels=256,
-			num_blocks=6,
-			with_cp=True)
-	],
+	neck= dict(
+		type='PAFPNX',
+		in_channels=[96, 192, 384, 768],
+		out_channels=256,
+		start_level=0,
+		add_extra_convs='on_output',
+		num_outs=4,
+		relu_before_extra_convs=True,
+		pafpn_conv_cfg=dict(type='DCNv2'),
+		norm_cfg=dict(type='GN', num_groups=32, requires_grad=True)
+	),
 	rpn_head=dict(
 		type='EmbeddingRPNHead',
 		num_proposals=num_proposals,
