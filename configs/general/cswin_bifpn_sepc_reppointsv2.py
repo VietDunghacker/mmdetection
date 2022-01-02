@@ -5,13 +5,13 @@ model = dict(
 	type='RepPointsV2Detector',
 	backbone=dict(
 		type='CSWin',
-        embed_dim=96,
-        depth=[2,4,32,2],
-        num_heads=[4,8,16,32],
-        split_size=[1,2,7,7],
-        drop_path_rate=0.6,
-        out_indices=(1,2,3),
-        with_cp=True,
+		embed_dim=96,
+		depth=[2,4,32,2],
+		num_heads=[4,8,16,32],
+		split_size=[1,2,7,7],
+		drop_path_rate=0.6,
+		out_indices=(1,2,3),
+		with_cp=True,
 		init_cfg=dict(type='Pretrained', checkpoint='/gdrive/My Drive/checkpoints/cswin_base_224.pth')),
 	neck=[
 		dict(

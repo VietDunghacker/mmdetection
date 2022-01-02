@@ -2,25 +2,19 @@ _base_ = [
 	'../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py'
 ]
 num_stages = 6
-num_proposals = 128
+num_proposals = 300
 model = dict(
 	type='SparseRCNN',
 	backbone=dict(
-		type='SwinTransformer',
-		embed_dims=128,
-		depths=[2, 2, 18, 2],
-		num_heads=[4, 8, 16, 32],
-		window_size=7,
-		mlp_ratio=4,
-		qkv_bias=True,
-		qk_scale=None,
-		drop_rate=0.,
-		attn_drop_rate=0.,
-		drop_path_rate=0.3,
-		patch_norm=True,
-		out_indices=(0, 1, 2, 3),
+		type='CSWin',
+		embed_dim=96,
+		depth=[2,4,32,2],
+		num_heads=[4,8,16,32],
+		split_size=[1,2,7,7],
+		drop_path_rate=0.6,
+		out_indices=(0,1,2,3),
 		with_cp=True,
-		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
+		init_cfg=dict(type='Pretrained', checkpoint='/gdrive/My Drive/checkpoints/cswin_base_224.pth')),
 	neck=[
 		dict(
 			type='PAFPNX',
