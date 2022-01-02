@@ -289,13 +289,9 @@ class BBoxHead(BaseModule):
 					# already encoded coordinates to absolute format.
 					bbox_pred = self.bbox_coder.decode(rois[:, 1:], bbox_pred)
 				if self.reg_class_agnostic:
-					pos_bbox_pred = bbox_pred.view(
-						bbox_pred.size(0), 4)[pos_inds.type(torch.bool)]
+					pos_bbox_pred = bbox_pred.view(bbox_pred.size(0), 4)[pos_inds.type(torch.bool)]
 				else:
-					pos_bbox_pred = bbox_pred.view(
-						bbox_pred.size(0), -1,
-						4)[pos_inds.type(torch.bool),
-						   labels[pos_inds.type(torch.bool)]]
+					pos_bbox_pred = bbox_pred.view(bbox_pred.size(0), -1, 4)[pos_inds.type(torch.bool), labels[pos_inds.type(torch.bool)]]
 				losses['loss_bbox'] = self.loss_bbox(
 					pos_bbox_pred,
 					bbox_targets[pos_inds.type(torch.bool)],

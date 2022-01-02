@@ -18,7 +18,7 @@ model = dict(
 	neck=[
 		dict(
 			type='PAFPNX',
-			in_channels=[128, 256, 512, 1024],
+			in_channels=[96, 192, 384, 768],
 			out_channels=256,
 			start_level=0,
 			add_extra_convs='on_output',
