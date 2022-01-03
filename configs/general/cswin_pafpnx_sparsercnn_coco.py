@@ -11,7 +11,7 @@ model = dict(
 		depth=[2,4,32,2],
 		num_heads=[4,8,16,32],
 		split_size=[1,2,7,7],
-		drop_path_rate=0.6,
+		drop_path_rate=0.3,
 		out_indices=(0,1,2,3),
 		with_cp=True,
 		init_cfg=dict(type='Pretrained', checkpoint='/gdrive/My Drive/checkpoints/cswin_base_224.pth')),
@@ -37,7 +37,7 @@ model = dict(
 		proposal_feature_channel=256,
 		bbox_roi_extractor=dict(
 			type='SingleRoIExtractor',
-			roi_layer=dict(type='RoIAlign', output_size=7, sampling_ratio=0),
+			roi_layer=dict(type='RoIAlign', output_size=7, sampling_ratio=2),
 			out_channels=256,
 			featmap_strides=[4, 8, 16, 32]),
 		bbox_head=[
