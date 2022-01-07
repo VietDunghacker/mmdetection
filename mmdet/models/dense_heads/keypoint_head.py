@@ -760,12 +760,10 @@ def _topk(scores: torch.Tensor, locations: torch.Tensor, k: int = 40):
 	batch, cat, height, width = scores.size()
 	pnum = height * width
 
-	topk_scores, topk_inds = torch.topk(
-		scores.view(batch, cat, -1), min(pnum, k))
+	topk_scores, topk_inds = torch.topk(scores.view(batch, cat, -1), min(pnum, k))
 	topk_inds = topk_inds % (height * width)
-	topk_score, topk_ind = torch.topk(
-		topk_scores.view(batch, -1), min(pnum, k))
-	topk_clses = topk_ind // topk_scores.size()[-1]
+	topk_score, topk_ind = torch.topk(topk_scores.view(batch, -1), min(pnum, k))
+	topk_clses = torch.div(topk_ind, topk_scores.size()[-1], rounding_mode='floor')
 
 	topk_inds = _gather_feat(topk_inds.view(batch, -1, 1),
 							 topk_ind).view(batch,
