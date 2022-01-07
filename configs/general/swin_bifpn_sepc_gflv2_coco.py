@@ -27,7 +27,7 @@ model = dict(
 			input_indices=(1, 2, 3),
 			num_outs=5,
 			strides=[8, 16, 32],
-			num_layers=1,
+			num_layers=3,
 			weight_method='fast_attn',
 			norm_cfg=dict(type='GN', num_groups=32, requires_grad=True),
 			act_cfg='silu',
