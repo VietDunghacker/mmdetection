@@ -2,7 +2,7 @@ _base_ = [
 	'../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py'
 ]
 model = dict(
-	type='BVR',
+	type='GFL',
 	backbone=dict(
 		type='SwinTransformer',
 		embed_dims=128,
@@ -16,7 +16,7 @@ model = dict(
 		attn_drop_rate=0.,
 		drop_path_rate=0.3,
 		patch_norm=True,
-		out_indices=(1, 2, 3,),
+		out_indices=(1, 2, 3),
 		with_cp=True,
 		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
 	neck=[
@@ -46,69 +46,30 @@ model = dict(
 			pnorm_eval=False,
 			lcnorm_eval=False,
 			lcconv_padding=1,
-			return_initial_value=True,
 			pnorm_cfg=dict(type='GN', num_groups=32, requires_grad=True),
 			lcnorm_cfg=dict(type='GN', num_groups=32, requires_grad=True))
 	],
 	bbox_head=dict(
-		type='BVRHead',
-		bbox_head_cfg=dict(
-			type='GFLHead',
-			num_classes=40,
-			in_channels=256,
-			stacked_convs=0,
-			feat_channels=256,
-			anchor_generator=dict(
-				type='AnchorGenerator',
-				ratios=[1.0],
-				octave_base_scale=8,
-				scales_per_octave=1,
-				strides=[8, 16, 32, 64, 128]),
-			loss_cls=dict(type='QualityFocalLoss', use_sigmoid=False, beta=2.0, loss_weight=1.0),
-			loss_dfl=dict(type='DistributionFocalLoss', loss_weight=0.25),
-			use_dgqp = True,
-			loss_bbox=dict(type='CIoULoss', loss_weight=2.0)),
-		keypoint_pos='input',
-		keypoint_head_cfg=dict(
-			type='KeypointHead',
-			num_classes=40,
-			in_channels=256,
-			stacked_convs=2,
-			strides=[8, 16, 32, 64, 128],
-			shared_stacked_convs=0,
-			logits_convs=1,
-			head_types=['top_left_corner', 'bottom_right_corner', 'center'],
-			corner_pooling=False,
-			loss_offset=dict(type='SmoothL1Loss', beta=1.0 / 9.0, loss_weight=1.0),
-			loss_cls=dict(type='GaussianFocalLoss', loss_weight=0.25)),
-		cls_keypoint_cfg=dict(
-			keypoint_types=['center'],
-			with_key_score=False,
-			with_relation=True),
-		reg_keypoint_cfg=dict(
-			keypoint_types=['top_left_corner', 'bottom_right_corner'],
-			with_key_score=False,
-			with_relation=True),
-		keypoint_cfg=dict(max_keypoint_num=20, keypoint_score_thr=0.0),
-		feature_selection_cfg=dict(
-			selection_method='index',
-			cross_level_topk=50,
-			cross_level_selection=True),
-		num_attn_heads=8,
-		scale_position=False,
-		pos_cfg=dict(base_size=[300, 300], log_scale=True, num_layers=2),
-		shared_positional_encoding_outer=True),
-	train_cfg=dict(
-		bbox=dict(
-			assigner=dict(type='ATSSAssigner', topk=9),
-			allowed_border=-1,
-			pos_weight=-1,
-			debug=False),
-		keypoint=dict(
-			assigner=dict(type='PointKptAssigner'),
-			allowed_border=-1,
-			pos_weight=-1,
-			debug=False)),
+		type='GFLHead',
+		num_classes=37,
+		in_channels=256,
+		stacked_convs=0,
+		feat_channels=256,
+		anchor_generator=dict(
+			type='AnchorGenerator',
+			ratios=[1.0],
+			octave_base_scale=8,
+			scales_per_octave=1,
+			strides=[8, 16, 32, 64, 128]),
+		loss_cls=dict(type='QualityFocalLoss', use_sigmoid=False, beta=2.0, loss_weight=1.0),
+		loss_dfl=dict(type='DistributionFocalLoss', loss_weight=0.25),
+		use_dgqp=True,
+		loss_bbox=dict(type='CIoULoss', loss_weight=2.0)),
+	train_cfg = dict(
+		assigner=dict(type='ATSSAssigner', topk=13),
+		allowed_border=-1,
+		pos_weight=-1,
+		debug=False),
 	test_cfg = dict(
 		nms_pre=1000,
 		min_bbox_size=0,
@@ -120,7 +81,7 @@ model = dict(
 # data setting
 img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 albu_train_transforms = [
-	dict(type='ShiftScaleRotate', shift_limit=0.1, scale_limit=0.5, rotate_limit=5, interpolation=1, p=0.5, border_mode = 0),
+	dict(type='ShiftScaleRotate', shift_limit=0.1, scale_limit=0.1, rotate_limit=5, interpolation=1, p=0.5, border_mode = 0),
 	dict(type='ColorJitter', brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2),
 	dict(type='RGBShift', r_shift_limit=20, g_shift_limit=20, b_shift_limit=20),
 	dict(type='HueSaturationValue', hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20),
