@@ -646,7 +646,6 @@ class Pad:
 		Returns:
 			dict: Updated result dict.
 		"""
-		cv2.imwrite("test.jpg", results["img"])
 		self._pad_img(results)
 		self._pad_masks(results)
 		self._pad_seg(results)
