@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from .cbnet import CBRes2Net, CBResNet, CBSwinTransformer
+from .convnext import ConvNeXt
 from .crossformer import CrossFormer_S, CrossFormer_B, CrossFormer_L
 from .csp_darknet import CSPDarknet
 from .cswin_transformer import CSWin
@@ -31,5 +32,5 @@ __all__ = [
     'DetectoRS_ResNeXt', 'Darknet', 'ResNeSt', 'TridentResNet', 'CSPDarknet',
     'SwinTransformer', 'EfficientNet', 'DLA', 'PyramidVisionTransformer', 'PyramidVisionTransformerV2',
     'CrossFormer_S', 'CrossFormer_B', 'CrossFormer_L', 'LIT', 'XCiT', 'CBResNet', 'CBRes2Net',
-    'CBSwinTransformer', 'CSWin', 'RepVGGplus'
+    'CBSwinTransformer', 'CSWin', 'RepVGGplus', 'ConvNeXt'
 ]

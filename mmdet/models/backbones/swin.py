@@ -555,8 +555,7 @@ class SwinTransformer(BaseModule):
 				f'The size of image should have length 1 or 2, ' \
 				f'but got {len(pretrain_img_size)}'
 
-		assert not (init_cfg and pretrained), \
-			'init_cfg and pretrained cannot be specified at the same time'
+		assert not (init_cfg and pretrained), 'init_cfg and pretrained cannot be specified at the same time'
 		if isinstance(pretrained, str):
 			warnings.warn('DeprecationWarning: pretrained is deprecated, '
 						  'please use "init_cfg" instead')
