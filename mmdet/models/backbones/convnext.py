@@ -37,8 +37,7 @@ class Block(nn.Module):
 		self.pwconv1 = nn.Linear(dim, 4 * dim) # pointwise/1x1 convs, implemented with linear layers
 		self.act = nn.GELU()
 		self.pwconv2 = nn.Linear(4 * dim, dim)
-		self.gamma = nn.Parameter(layer_scale_init_value * torch.ones((dim)), 
-									requires_grad=True) if layer_scale_init_value > 0 else None
+		self.gamma = nn.Parameter(layer_scale_init_value * torch.ones((dim)), requires_grad=True) if layer_scale_init_value > 0 else None
 		self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
 
 	def forward(self, x):
