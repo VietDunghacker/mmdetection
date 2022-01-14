@@ -122,11 +122,11 @@ train_pipeline = [
 				dict(type='Resize', img_scale=[(800, 800), (960, 960)], multiscale_mode='range', keep_ratio=True),
 			],
 			[
-				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
+				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.6, 0.6), allow_negative_crop = True),
 				dict(type='Resize', img_scale=[(640, 640), (960, 960)], multiscale_mode='range', keep_ratio=True),
 			],
 			[
-				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.8, 0.8), allow_negative_crop = True),
+				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.6, 0.6), allow_negative_crop = True),
 				dict(type='Resize', img_scale=[(640, 640), (960, 960)], multiscale_mode='range', keep_ratio=True),
 			]
 		]
@@ -146,7 +146,7 @@ train_pipeline = [
 			type='BboxParams',
 			format='pascal_voc',
 			label_fields=['gt_labels'],
-			min_visibility=0.0,
+			min_visibility=0.1,
 			filter_lost_elements=True),
 		keymap={
 			'img': 'image',
