@@ -156,10 +156,10 @@ train_pipeline = [
 						dict(
 							type = "OneOf",
 							transforms=[
-								dict(type = "Crop", x_min = 0, y_min = i, x_max = 960, y_max = 960) for i in range(480, 720, 10)
+								dict(type = "Crop", x_min = 0, y_min = i, x_max = 960, y_max = min(i + 100, 960)) for i in range(480, 900, 10)
 								],
 							p=1.0),
-						dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.1, rotate_limit=45, interpolation=1, p=0.5, border_mode = 0),					
+						dict(type='ShiftScaleRotate', shift_limit=0.1, scale_limit=0.1, rotate_limit=45, interpolation=1, p=0.5, border_mode = 0),					
 						],
 					bbox_params=dict(
 						type='BboxParams',
