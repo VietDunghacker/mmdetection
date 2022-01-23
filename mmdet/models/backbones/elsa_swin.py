@@ -504,11 +504,11 @@ class ELSASwin(nn.Module):
 				 lam=0, gamma=1,
 				 frozen_stages=-1,
 				 use_checkpoint=False,
-                 pretrained=None,
-                 init_cfg=None,
+				 pretrained=None,
+				 init_cfg=None,
 				 **kwargs):
 		super().__init__(init_cfg=init_cfg)
-        self.pretrained = pretrained
+		self.pretrained = pretrained
 
 		self.pretrain_img_size = pretrain_img_size
 		self.num_layers = len(depths)
