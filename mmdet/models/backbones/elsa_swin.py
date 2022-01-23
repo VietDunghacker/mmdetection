@@ -11,6 +11,7 @@ import torch.utils.checkpoint as checkpoint
 import numpy as np
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_, Mlp
 
+from mmcv.runner import BaseModule
 from mmcv_custom import load_checkpoint
 from mmdet.utils import get_root_logger
 from ..builder import BACKBONES
@@ -477,7 +478,7 @@ class PatchEmbed(nn.Module):
 
 
 @BACKBONES.register_module()
-class ELSASwin(nn.Module):
+class ELSASwin(BaseModule):
 	"""
 	Implementation of ELSA Swin Transformer
 	"""
