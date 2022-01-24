@@ -10,7 +10,6 @@ from .detectors_resnet import DetectoRS_ResNet
 from .detectors_resnext import DetectoRS_ResNeXt
 from .dla import DLA
 from .efficientnet import EfficientNet
-from .elsa_swin import ELSASwin
 from .hourglass import HourglassNet
 from .hrnet import HRNet
 from .lit import LIT
@@ -33,5 +32,5 @@ __all__ = [
     'DetectoRS_ResNeXt', 'Darknet', 'ResNeSt', 'TridentResNet', 'CSPDarknet',
     'SwinTransformer', 'EfficientNet', 'DLA', 'PyramidVisionTransformer', 'PyramidVisionTransformerV2',
     'CrossFormer_S', 'CrossFormer_B', 'CrossFormer_L', 'LIT', 'XCiT', 'CBResNet', 'CBRes2Net',
-    'CBSwinTransformer', 'CSWin', 'RepVGGplus', 'ConvNeXt', 'ELSASwin'
+    'CBSwinTransformer', 'CSWin', 'RepVGGplus', 'ConvNeXt'
 ]
