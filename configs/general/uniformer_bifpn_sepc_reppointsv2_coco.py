@@ -17,7 +17,7 @@ model = dict(
 		windows=False,
 		hybrid=True,
 		window_size=14,
-		pretrained='/gdrive/My Drive/checkpoints/uniformer_base_in1k.pth',
+		pretrained='/gdrive/My Drive/checkpoints/uniformer_base_tl_384.pth',
 		use_checkpoint=True),
 	neck=[
 		dict(
