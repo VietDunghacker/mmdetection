@@ -264,7 +264,7 @@ class UniFormer(BaseModule):
 		"""
 		super().__init__(init_cfg=init_cfg)
 		self.out_indices = out_indices
-		self.prtrained = pretrained
+		self.pretrained = pretrained
 		self.use_checkpoint = use_checkpoint
 		self.windows = windows
 		self.num_features = self.embed_dim = embed_dim  # num_features for consistency with other models
