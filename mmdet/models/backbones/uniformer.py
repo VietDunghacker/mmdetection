@@ -351,7 +351,7 @@ class UniFormer(BaseModule):
 		x = self.patch_embed1(x)
 		x = self.pos_drop(x)
 		for i, blk in enumerate(self.blocks1):
-			if self.use_checkpoint:
+			if self.use_checkpoint and x.requires_grad:
 				x = checkpoint.checkpoint(blk, x)
 			else:
 				x = blk(x)
@@ -360,7 +360,7 @@ class UniFormer(BaseModule):
 			out.append(x_out.permute(0, 3, 1, 2).contiguous())
 		x = self.patch_embed2(x)
 		for i, blk in enumerate(self.blocks2):
-			if self.use_checkpoint:
+			if self.use_checkpoint and x.requires_grad:
 				x = checkpoint.checkpoint(blk, x)
 			else:
 				x = blk(x)
@@ -369,7 +369,7 @@ class UniFormer(BaseModule):
 			out.append(x_out.permute(0, 3, 1, 2).contiguous())
 		x = self.patch_embed3(x)
 		for i, blk in enumerate(self.blocks3):
-			if self.use_checkpoint:
+			if self.use_checkpoint and x.requires_grad:
 				x = checkpoint.checkpoint(blk, x)
 			else:
 				x = blk(x)
@@ -378,7 +378,7 @@ class UniFormer(BaseModule):
 			out.append(x_out.permute(0, 3, 1, 2).contiguous())
 		x = self.patch_embed4(x)
 		for i, blk in enumerate(self.blocks4):
-			if self.use_checkpoint:
+			if self.use_checkpoint and x.requires_grad:
 				x = checkpoint.checkpoint(blk, x)
 			else:
 				x = blk(x)
