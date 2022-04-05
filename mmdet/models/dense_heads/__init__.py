@@ -29,6 +29,7 @@ from .paa_head import PAAHead
 from .pisa_retinanet_head import PISARetinaHead
 from .pisa_ssd_head import PISASSDHead
 from .qfl_head import QFLHead
+from .query_generator import InitialQueryGenerator
 from .rank_based_paa_head import RankBasedPAAHead
 from .reppoints_head import RepPointsHead
 from .reppoints_v2_head import RepPointsV2Head
@@ -56,5 +57,5 @@ __all__ = [
 	'AutoAssignHead', 'DETRHead', 'YOLOFHead', 'DeformableDETRHead',
 	'CenterNetHead', 'YOLOXHead', 'RepPointsV2Head',
 	'BVRHead', 'KeypointHead', 'TOODHead', "OATHead", 'QFLHead', 'RankBasedPAAHead',
-	'DDODHead', 'CenterRPNHead'
+	'DDODHead', 'CenterRPNHead', 'InitialQueryGenerator'
 ]
