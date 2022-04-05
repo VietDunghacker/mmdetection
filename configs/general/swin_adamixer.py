@@ -2,7 +2,7 @@ _base_ = [
 	'../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py'
 ]
 num_stages = 6
-num_proposals = 128
+num_proposals = 100
 
 # P_in for spatial mixing in the paper.
 in_points_list = [32, ] * num_stages
@@ -40,7 +40,7 @@ model = dict(
 		num_outs=4),
 	rpn_head=dict(
 		type='InitialQueryGenerator',
-		num_proposals=num_proposals,
+		num_query=num_proposals,
 		content_dim=256),
 	roi_head=dict(
 		type='AdaMixerDecoder',

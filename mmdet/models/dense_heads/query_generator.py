@@ -18,8 +18,7 @@ class InitialQueryGenerator(BaseModule):
 				 content_dim=256,
 				 init_cfg=None,
 				 **kwargs):
-		assert init_cfg is None, 'To prevent abnormal initialization ' \
-								 'behavior, init_cfg is not allowed to be set'
+		assert init_cfg is None, 'To prevent abnormal initialization behavior, init_cfg is not allowed to be set'
 		super(InitialQueryGenerator, self).__init__(init_cfg)
 		self.num_query = num_query
 		self.content_dim = content_dim
@@ -27,8 +26,7 @@ class InitialQueryGenerator(BaseModule):
 
 	def _init_layers(self):
 		self.init_proposal_bboxes = nn.Embedding(self.num_query, 4)
-		self.init_content_features = nn.Embedding(
-			self.num_query, self.content_dim)
+		self.init_content_features = nn.Embedding(self.num_query, self.content_dim)
 
 	def init_weights(self):
 		super(InitialQueryGenerator, self).init_weights()
@@ -61,11 +59,9 @@ class InitialQueryGenerator(BaseModule):
 		xyzr = torch.cat([xy, z, r], dim=-1).detach()
 
 		init_content_features = self.init_content_features.weight.clone()
-		init_content_features = init_content_features[None].expand(
-			num_imgs, *init_content_features.size())
+		init_content_features = init_content_features[None].expand(num_imgs, *init_content_features.size())
 
-		init_content_features = torch.layer_norm(
-			init_content_features, normalized_shape=[init_content_features.size(-1)])
+		init_content_features = torch.layer_norm(init_content_features, normalized_shape=[init_content_features.size(-1)])
 
 		return xyzr, init_content_features, imgs_whwh
 

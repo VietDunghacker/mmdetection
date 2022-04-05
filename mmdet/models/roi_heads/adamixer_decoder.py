@@ -1,5 +1,7 @@
 import torch
 
+from mmcv.ops import batched_nms
+
 from mmdet.core import bbox2result, bbox2roi, bbox_xyxy_to_cxcywh
 from mmdet.core.bbox.samplers import PseudoSampler
 from ..builder import HEADS
@@ -185,7 +187,12 @@ class AdaMixerDecoder(CascadeRoIHead):
 			if rescale:
 				scale_factor = img_metas[img_id]['scale_factor']
 				bbox_pred_per_img /= bbox_pred_per_img.new_tensor(scale_factor)
-			det_bboxes.append(torch.cat([bbox_pred_per_img, scores_per_img[:, None]], dim=1))
+			bboxes_per_img = torch.cat([bbox_pred_per_img, scores_per_img[:, None]], dim=1)
+			keep = bboxes_per_img[:, -1] > self.test_cfg.score_threshold
+			bboxes_per_img = bboxes_per_img[keep]
+			labels_per_img = labels_per_img[keep]
+
+			det_bboxes.append(bboxes_per_img)
 			det_labels.append(labels_per_img)
 
 		bbox_results = [
@@ -216,3 +223,11 @@ class AdaMixerDecoder(CascadeRoIHead):
 				query_content = bbox_results['query_content']
 				query_xyzr = bbox_results['query_xyzr']
 		return all_stage_bbox_results
+
+	def _bboxes_nms(self, bboxes, labels, cfg):
+		if labels.numel() == 0:
+			return bboxes, labels
+
+		out_bboxes, keep = batched_nms(bboxes[:, :4].contiguous(), bboxes[:, -1].contiguous(), labels, cfg.nms)
+		out_labels = labels[keep]
+		return out_bboxes, out_labels
