@@ -32,7 +32,7 @@ model = dict(
 		with_cp=True,
 		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
 	neck=dict(
-		type='ChannelMapper',
+		type='ChannelMapping',
 		in_channels=[256, 512, 1024, 2048],
 		out_channels=256,
 		start_level=0,
