@@ -14,6 +14,7 @@ model = dict(
 		focal_levels=[2,2,2,2],
 		out_indices=(1,2,3),
 		use_conv_embed=False, 
+		pretrained='https://projects4jw.blob.core.windows.net/focalnet/release/classification/focalnet_base_srf.pth',
 		init_cfg=dict(type='Pretrained', checkpoint='https://projects4jw.blob.core.windows.net/focalnet/release/classification/focalnet_base_srf.pth')),
 	neck=[
 		dict(
