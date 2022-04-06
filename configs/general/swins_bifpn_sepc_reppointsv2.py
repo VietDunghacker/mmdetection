@@ -18,6 +18,7 @@ model = dict(
 		patch_norm=True,
 		out_indices=(1, 2, 3),
 		with_cp=True,
+		convert_weights=True,
 		init_cfg=dict(type='Pretrained', checkpoint='https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_small_patch4_window7_224.pth')),
 	neck=[
 		dict(
