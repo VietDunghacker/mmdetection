@@ -1,103 +1,98 @@
 _base_ = [
 	'../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py'
 ]
-num_stages = 6
-num_proposals = 100
-
-# P_in for spatial mixing in the paper.
-in_points_list = [32, ] * num_stages
-
-# P_out for spatial mixing in the paper. Also named as `out_points` in this codebase.
-out_patterns_list = [128, ] * num_stages
-
-# G for the mixer grouping in the paper. Please distinguishe it from num_heads in MHSA in this codebase.
-n_group_list = [4, ] * num_stages
-
 model = dict(
-	type='SparseRCNN',
+	type='RepPointsV2Detector',
 	backbone=dict(
-		type='SwinTransformer',
-		embed_dims=128,
+		type='FocalNet',
+		embed_dim=128,
 		depths=[2, 2, 18, 2],
-		num_heads=[4, 8, 16, 32],
-		window_size=7,
-		mlp_ratio=4,
-		qkv_bias=True,
-		qk_scale=None,
-		drop_rate=0.,
-		attn_drop_rate=0.,
-		drop_path_rate=0.3,
+		drop_path_rate=0.5,
 		patch_norm=True,
-		out_indices=(0, 1, 2, 3),
-		with_cp=True,
-		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
-	neck=dict(
-		type='ChannelMapping',
-		in_channels=[128, 256, 512, 1024],
-		out_channels=256,
-		start_level=0,
-		add_extra_convs='on_output',
-		num_outs=4),
-	rpn_head=dict(
-		type='InitialQueryGenerator',
-		num_query=num_proposals,
-		content_dim=256),
-	roi_head=dict(
-		type='AdaMixerDecoder',
-		featmap_strides=[4, 8, 16, 32],
-		num_stages=num_stages,
-		stage_loss_weights=[1] * num_stages,
-		content_dim=256,
-		bbox_head=[
-			dict(
-				type='AdaMixerDecoderStage',
-				num_classes=80,
-				num_ffn_fcs=2,
-				num_heads=8,
-				num_cls_fcs=1,
-				num_reg_fcs=1,
-				feedforward_channels=2048,
-				content_dim=256,
-				feat_channels=256,
-				dropout=0.0,
-				in_points=in_points_list[stage_idx],
-				out_points=out_patterns_list[stage_idx],
-				n_groups=n_group_list[stage_idx],
-				ffn_act_cfg=dict(type='ReLU', inplace=True),
-				loss_bbox=dict(type='L1Loss', loss_weight=5.0),
-				loss_iou=dict(type='GIoULoss', loss_weight=2.0),
-				loss_cls=dict(
-					type='FocalLoss',
-					use_sigmoid=True,
-					gamma=2.0,
-					alpha=0.25,
-					loss_weight=2.0),
-				# NOTE: The following argument is a placeholder to hack the code. No real effects for decoding or updating bounding boxes.
-				bbox_coder=dict(
-					type='DeltaXYWHBBoxCoder',
-					clip_border=False,
-					target_means=[0., 0., 0., 0.],
-					target_stds=[0.5, 0.5, 1., 1.])) for stage_idx in range(num_stages)
-		]),
-	# training and testing settings
-	train_cfg=dict(
-		rpn=None,
-		rcnn=[
-			dict(
-				assigner=dict(
-					type='HungarianAssigner',
-					cls_cost=dict(type='FocalLossCost', weight=2.0),
-					reg_cost=dict(type='BBoxL1Cost', weight=5.0),
-					iou_cost=dict(type='IoUCost', iou_mode='giou', weight=2.0)),
-				sampler=dict(type='PseudoSampler'),
-				pos_weight=1) for _ in range(num_stages)
-		]),
-	test_cfg=dict(rpn=None, rcnn=dict(max_per_img=num_proposals, score_threshold = 0.05)))
+		with_cp=False,
+		focal_windows=[9,9,9,9],
+		focal_levels=[2,2,2,2],
+		out_indices=(1,2,3),
+		use_conv_embed=False, 
+		init_cfg=dict(type='Pretrained', checkpoint='https://projects4jw.blob.core.windows.net/focalnet/release/classification/focalnet_base_srf.pth')),
+	neck=[
+		dict(
+			type='BiFPN',
+			in_channels=[256, 512, 1024],
+			out_channels=256,
+			input_indices=(1, 2, 3),
+			num_outs=5,
+			strides=[8, 16, 32],
+			num_layers=1,
+			weight_method='fast_attn',
+			act_cfg='silu',
+			separable_conv=True,
+			epsilon=0.0001
+		),
+		dict(
+			type='SEPC',
+			in_channels=[256] * 5,
+			out_channels=256,
+			stacked_convs=3,
+			num_outs=5,
+			pconv_deform=True,
+			lcconv_deform=True,
+			ibn=True,  # please set imgs/gpu >= 4
+			pnorm_eval=False,
+			lcnorm_eval=False,
+			lcconv_padding=1,
+			pnorm_cfg=dict(type='GN', num_groups=32, requires_grad=True),
+			lcnorm_cfg=dict(type='GN', num_groups=32, requires_grad=True))
+	],
+	bbox_head=dict(
+		type='RepPointsV2Head',
+		num_classes=45,
+		in_channels=256,
+		feat_channels=256,
+		point_feat_channels=256,
+		stacked_convs=0,
+		shared_stacked_convs=1,
+		first_kernel_size=3,
+		kernel_size=1,
+		corner_dim=64,
+		num_points=9,
+		gradient_mul=0.1,
+		point_strides=[8, 16, 32, 64, 128],
+		point_base_scale=4,
+		norm_cfg=dict(type='GN', num_groups=32, requires_grad=True),
+		loss_cls=dict(type='FocalLoss', use_sigmoid=True, gamma=2.0, alpha=0.25, loss_weight=1.0),
+		loss_bbox_init=dict(type='CIoULoss', loss_weight=1.0),
+		loss_bbox_refine=dict(type='CIoULoss', loss_weight = 2.0),
+		loss_heatmap=dict(type='GaussianFocalLoss', alpha=2.0, gamma=4.0, loss_weight=0.25),
+		loss_offset=dict(type='SmoothL1Loss', beta=1.0 / 9.0, loss_weight=1.0),
+		loss_sem=dict(type='SEPFocalLoss', gamma=2.0, alpha=0.25, loss_weight=0.1),
+		transform_method='exact_minmax'),
+	train_cfg = dict(
+		init=dict(
+			assigner=dict(type='PointAssignerV2', scale=4, pos_num=1),
+			allowed_border=-1,
+			pos_weight=-1,
+			debug=False),
+		heatmap=dict(
+			assigner=dict(type='PointHMAssigner', gaussian_bump=True, gaussian_iou=0.7),
+			allowed_border=-1,
+			pos_weight=-1,
+			debug=False),
+		refine=dict(
+			assigner=dict(type='ATSSAssigner', topk=9),
+			allowed_border=-1,
+			pos_weight=-1,
+			debug=False)),
+	test_cfg = dict(
+		nms_pre=1000,
+		min_bbox_size=0,
+		score_thr=0.05,
+		nms=dict(type='soft_nms', iou_threshold=0.6),
+		max_per_img=100)
+	)
 
 # data setting
-dataset_type = 'CocoDataset'
-data_root = '/content/data/'
-img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.455], to_rgb=True)
+img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 albu_train_transforms = [
 	dict(type='ShiftScaleRotate', shift_limit=0.1, scale_limit=0.1, rotate_limit=1, interpolation=1, p=0.5, border_mode = 0),
 	dict(type='ColorJitter', brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2),
@@ -149,6 +144,7 @@ train_pipeline = [
 					  (16, 8), (8, 16), (16, 16), (16, 32), (32, 16), (32, 32),
 					  (32, 48), (48, 32), (48, 48)]),
 	dict(type='RandomFlip', flip_ratio=0.5),
+	dict(type='Pad', size_divisor=32),
 	dict(
 		type='Albu',
 		transforms=albu_train_transforms,
@@ -165,8 +161,9 @@ train_pipeline = [
 		update_pad_shape=False,
 		skip_img_without_anno=False),	
 	dict(type='Normalize', **img_norm_cfg),
-	dict(type='DefaultFormatBundle'),
-	dict(type='Collect', keys=['img', 'gt_bboxes', 'gt_labels']),
+	dict(type='LoadRPDV2Annotations', num_classes=45),
+	dict(type='RPDV2FormatBundle'),
+	dict(type='Collect', keys=['img', 'gt_bboxes', 'gt_labels', 'gt_sem_map', 'gt_sem_weights']),
 ]
 
 test_pipeline = [
@@ -194,9 +191,9 @@ data = dict(
 optimizer = dict(
 	_delete_ = True,
 	type='AdamW',
-	lr=0.000025,
+	lr=0.0001,
 	betas=(0.9, 0.999),
-	weight_decay=0.0001,
+	weight_decay=0.05,
 	paramwise_cfg=dict(
 		custom_keys={
 			'absolute_pos_embed': dict(decay_mult=0.),

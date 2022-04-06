@@ -3,81 +3,71 @@ _base_ = [
 ]
 num_stages = 6
 num_proposals = 100
-
-# P_in for spatial mixing in the paper.
-in_points_list = [32, ] * num_stages
-
-# P_out for spatial mixing in the paper. Also named as `out_points` in this codebase.
-out_patterns_list = [128, ] * num_stages
-
-# G for the mixer grouping in the paper. Please distinguishe it from num_heads in MHSA in this codebase.
-n_group_list = [4, ] * num_stages
-
 model = dict(
 	type='SparseRCNN',
 	backbone=dict(
-		type='SwinTransformer',
-		embed_dims=128,
+		type='FocalNet',
+		embed_dim=128,
 		depths=[2, 2, 18, 2],
-		num_heads=[4, 8, 16, 32],
-		window_size=7,
-		mlp_ratio=4,
-		qkv_bias=True,
-		qk_scale=None,
-		drop_rate=0.,
-		attn_drop_rate=0.,
-		drop_path_rate=0.3,
+		drop_path_rate=0.5,
 		patch_norm=True,
-		out_indices=(0, 1, 2, 3),
-		with_cp=True,
-		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
+		with_cp=False,
+		focal_windows=[9,9,9,9],
+		focal_levels=[2,2,2,2], 
+		use_conv_embed=False, 
+		init_cfg=dict(type='Pretrained', checkpoint='https://projects4jw.blob.core.windows.net/focalnet/release/classification/focalnet_base_srf.pth')),
 	neck=dict(
-		type='ChannelMapping',
+		type='PAFPNX',
 		in_channels=[128, 256, 512, 1024],
 		out_channels=256,
 		start_level=0,
 		add_extra_convs='on_output',
-		num_outs=4),
+		num_outs=4,
+		relu_before_extra_convs=True,
+		pafpn_conv_cfg=dict(type='DCNv2'),
+		norm_cfg=dict(type='GN', num_groups=32, requires_grad=True)),
 	rpn_head=dict(
-		type='InitialQueryGenerator',
-		num_query=num_proposals,
-		content_dim=256),
+		type='EmbeddingRPNHead',
+		num_proposals=num_proposals,
+		proposal_feature_channel=256),
 	roi_head=dict(
-		type='AdaMixerDecoder',
-		featmap_strides=[4, 8, 16, 32],
+		type='SparseRoIHead',
 		num_stages=num_stages,
 		stage_loss_weights=[1] * num_stages,
-		content_dim=256,
+		proposal_feature_channel=256,
+		bbox_roi_extractor=dict(
+			type='SingleRoIExtractor',
+			roi_layer=dict(type='RoIAlign', output_size=7, sampling_ratio=0),
+			out_channels=256,
+			featmap_strides=[4, 8, 16, 32]),
 		bbox_head=[
 			dict(
-				type='AdaMixerDecoderStage',
-				num_classes=80,
+				type='DIIHead',
+				num_classes=45,
 				num_ffn_fcs=2,
 				num_heads=8,
 				num_cls_fcs=1,
-				num_reg_fcs=1,
+				num_reg_fcs=3,
 				feedforward_channels=2048,
-				content_dim=256,
-				feat_channels=256,
+				in_channels=256,
 				dropout=0.0,
-				in_points=in_points_list[stage_idx],
-				out_points=out_patterns_list[stage_idx],
-				n_groups=n_group_list[stage_idx],
 				ffn_act_cfg=dict(type='ReLU', inplace=True),
+				dynamic_conv_cfg=dict(
+					type='DynamicConv',
+					in_channels=256,
+					feat_channels=64,
+					out_channels=256,
+					input_feat_shape=7,
+					act_cfg=dict(type='ReLU', inplace=True),
+					norm_cfg=dict(type='LN')),
 				loss_bbox=dict(type='L1Loss', loss_weight=5.0),
 				loss_iou=dict(type='GIoULoss', loss_weight=2.0),
-				loss_cls=dict(
-					type='FocalLoss',
-					use_sigmoid=True,
-					gamma=2.0,
-					alpha=0.25,
-					loss_weight=2.0),
-				# NOTE: The following argument is a placeholder to hack the code. No real effects for decoding or updating bounding boxes.
+				loss_cls=dict(type='FocalLoss', use_sigmoid=True, gamma=2.0, alpha=0.25, loss_weight=2.0),
 				bbox_coder=dict(
 					type='DeltaXYWHBBoxCoder',
 					clip_border=False,
 					target_means=[0., 0., 0., 0.],
-					target_stds=[0.5, 0.5, 1., 1.])) for stage_idx in range(num_stages)
+					target_stds=[0.5, 0.5, 1., 1.])) for _ in range(num_stages)
 		]),
 	# training and testing settings
 	train_cfg=dict(
@@ -92,16 +82,16 @@ model = dict(
 				sampler=dict(type='PseudoSampler'),
 				pos_weight=1) for _ in range(num_stages)
 		]),
-	test_cfg=dict(rpn=None, rcnn=dict(max_per_img=num_proposals, score_threshold = 0.05)))
+	test_cfg=dict(rpn=None, rcnn=dict(max_per_img=num_proposals, score_threshold = 0.05, nms = dict(type='nms', iou_threshold=0.6))))
 
 # data setting
 dataset_type = 'CocoDataset'
 data_root = '/content/data/'
-img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
+img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.455], to_rgb=True)
 albu_train_transforms = [
 	dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.1, rotate_limit=1, interpolation=1, p=0.5, border_mode = 0),
-	dict(type='ColorJitter', brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2),
-	dict(type='RGBShift', r_shift_limit=20, g_shift_limit=20, b_shift_limit=20),
+	dict(type='RandomBrightnessContrast', brightness_limit=0.1, contrast_limit=0.1),
+	dict(type='RGBShift', r_shift_limit=10, g_shift_limit=10, b_shift_limit=10),
 	dict(type='HueSaturationValue', hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20),
 	dict(
 		type='OneOf',
@@ -110,13 +100,6 @@ albu_train_transforms = [
 			dict(type='ToGray', p = 1.0)
 		],
 		p=0.1),
-	dict(
-		type='OneOf',
-		transforms=[
-			dict(type='MedianBlur', blur_limit=3, p=1.0),
-			dict(type='Blur', blur_limit=3, p=1.0),
-		],
-		p=0.1)
 ]
 
 train_pipeline = [
@@ -124,15 +107,74 @@ train_pipeline = [
 		type = 'AutoAugment',
 		policies = [
 			[
-				dict(type='Mosaic', center_ratio_range=(0.8, 1.2), img_scale=(640, 640), pad_val=0.0),
+				dict(type='Mosaic', center_ratio_range=(0.9, 1.1), img_scale=(960, 960), pad_val=0.0),
 				dict(type='Resize', img_scale=[(800, 800), (960, 960)], multiscale_mode='range', keep_ratio=True),
+			],
+			[
+				dict(type='Mosaic', center_ratio_range=(0.8, 1.2), img_scale=(960, 960), pad_val=0.0),
+				dict(type='Resize', img_scale=[(800, 800), (960, 960)], multiscale_mode='range', keep_ratio=True),
+			],
+			[
+				dict(type='Resize', img_scale=(960, 960), keep_ratio=True),
+				dict(type='Pad', size_divisor=960),
+				dict(
+					type='Albu',
+					transforms=[
+						dict(type = "Crop", x_min = 0, y_min = 480, x_max = 960, y_max = 960),
+						dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.1, rotate_limit=45, interpolation=1, p=0.5, border_mode = 0)],
+					bbox_params=dict(
+						type='BboxParams',
+						format='pascal_voc',
+						label_fields=['gt_labels'],
+						min_visibility=0.8,
+						filter_lost_elements=True),
+					keymap={
+						'img': 'image',
+						'gt_bboxes': 'bboxes'
+					},
+					update_pad_shape=False,
+					skip_img_without_anno=False),
+				dict(type='Resize', img_scale=[(640, 640), (960, 960)], multiscale_mode='range', keep_ratio=True, override=True),
+			],
+			[
+				dict(type='Resize', img_scale=(960, 960), keep_ratio=True),
+				dict(type='Pad', size_divisor=960),
+				dict(
+					type='Albu',
+					transforms=[
+						dict(
+							type = "OneOf",
+							transforms=[
+								dict(type = "Crop", x_min = 0, y_min = i, x_max = 960, y_max = 960) for i in range(480, 720, 10)
+								],
+							p=1.0),
+						dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.1, rotate_limit=45, interpolation=1, p=0.5, border_mode = 0),					
+						],
+					bbox_params=dict(
+						type='BboxParams',
+						format='pascal_voc',
+						label_fields=['gt_labels'],
+						min_visibility=0.8,
+						filter_lost_elements=True),
+					keymap={
+						'img': 'image',
+						'gt_bboxes': 'bboxes'
+					},
+					update_pad_shape=False,
+					skip_img_without_anno=False),
+				dict(type = 'Pad', size_divisor = 960),
+				dict(
+					type='MixUp',
+					img_scale=(960, 960),
+					ratio_range=(1.0, 1.0),
+					pad_val=0.0),
 			],
 			[
 				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
 				dict(type='Resize', img_scale=[(640, 640), (960, 960)], multiscale_mode='range', keep_ratio=True),
 			],
 			[
-				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.8, 0.8), allow_negative_crop = True),
+				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
 				dict(type='Resize', img_scale=[(640, 640), (960, 960)], multiscale_mode='range', keep_ratio=True),
 			]
 		]
@@ -189,7 +231,7 @@ data = dict(
 optimizer = dict(
 	_delete_ = True,
 	type='AdamW',
-	lr=0.00006,
+	lr=0.000025,
 	betas=(0.9, 0.999),
 	weight_decay=0.0001,
 	paramwise_cfg=dict(

@@ -177,15 +177,13 @@ class AdaMixerDecoder(CascadeRoIHead):
 
 		for img_id in range(num_imgs):
 			cls_score_per_img = cls_score[img_id]
-			scores_per_img, topk_indices = cls_score_per_img.flatten(
-				0, 1).topk(
-					self.test_cfg.max_per_img, sorted=False)
+			scores_per_img, topk_indices = cls_score_per_img.flatten(0, 1).topk(self.test_cfg.max_per_img, sorted=False)
 			labels_per_img = topk_indices % num_classes
-			bbox_pred_per_img = bboxes_list[img_id][topk_indices //
-													num_classes]
+			bbox_pred_per_img = bboxes_list[img_id][topk_indices // num_classes]
 			if rescale:
 				scale_factor = img_metas[img_id]['scale_factor']
 				bbox_pred_per_img /= bbox_pred_per_img.new_tensor(scale_factor)
+			bbox_pred_per_img.clamp_(min=0)
 			bboxes_per_img = torch.cat([bbox_pred_per_img, scores_per_img[:, None]], dim=1)
 			keep = bboxes_per_img[:, -1] > self.test_cfg.score_threshold
 			bboxes_per_img = bboxes_per_img[keep]
