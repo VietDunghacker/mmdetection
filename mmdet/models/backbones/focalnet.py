@@ -242,7 +242,7 @@ class BasicLayer(nn.Module):
 
 		for blk in self.blocks:
 			blk.H, blk.W = H, W
-			if self.with_cp:
+			if self.with_cp and x.requires_grad:
 				x = checkpoint.checkpoint(blk, x)
 			else:
 				x = blk(x)
