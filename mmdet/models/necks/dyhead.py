@@ -61,8 +61,10 @@ class DyHeadBlock(nn.Module):
 	def __init__(self,
 				 in_channels,
 				 out_channels,
+				 zero_init_offset=True,
 				 act_cfg=dict(type='HSigmoid', bias=3.0, divisor=6.0)):
 		super().__init__()
+		self.zero_init_offset = zero_init_offset
 		# (offset_x, offset_y, mask) * kernel_size_y * kernel_size_x
 		self.offset_and_mask_dim = 3 * 3 * 3
 		self.offset_dim = 2 * 3 * 3
@@ -70,8 +72,7 @@ class DyHeadBlock(nn.Module):
 		self.spatial_conv_high = DyDCNv2(in_channels, out_channels)
 		self.spatial_conv_mid = DyDCNv2(in_channels, out_channels)
 		self.spatial_conv_low = DyDCNv2(in_channels, out_channels, stride=2)
-		self.spatial_conv_offset = nn.Conv2d(
-			in_channels, self.offset_and_mask_dim, 3, padding=1)
+		self.spatial_conv_offset = nn.Conv2d(in_channels, self.offset_and_mask_dim, 3, padding=1)
 		self.scale_attn_module = nn.Sequential(
 			nn.AdaptiveAvgPool2d(1), nn.Conv2d(out_channels, 1, 1),
 			nn.ReLU(inplace=True), build_activation_layer(act_cfg))
@@ -82,15 +83,11 @@ class DyHeadBlock(nn.Module):
 		for m in self.modules():
 			if isinstance(m, nn.Conv2d):
 				normal_init(m, 0, 0.01)
-		constant_init(self.spatial_conv_offset, 0)
+		if self.zero_init_offset:
+			constant_init(self.spatial_conv_offset, 0)
 
-	def forward(self, p3, p4, p5, p6, p7=None):
+	def forward(self, x):
 		"""Forward function."""
-		if p7 is None:
-			x = p3, p4, p5, p6
-		else:
-			x = p3, p4, p5, p6, p7
-		
 		outs = []
 		for level in range(len(x)):
 			# calculate offset and mask of DCNv2 from middle-level feature
@@ -133,38 +130,26 @@ class DyHead(BaseModule):
 			Default: None.
 	"""
 
-	def __init__(self, in_channels, out_channels, num_blocks=6, with_cp=False, init_cfg=None):
+	def __init__(self, in_channels, out_channels, num_blocks=6, zero_init_offset=True, init_cfg=None):
 		assert init_cfg is None, 'To prevent abnormal initialization behavior, init_cfg is not allowed to be set'
 		super().__init__(init_cfg=init_cfg)
 		self.in_channels = in_channels
 		self.out_channels = out_channels
 		self.num_blocks = num_blocks
-		self.with_cp = with_cp
+		self.zero_init_offset = zero_init_offset
 
-		self.dyhead_blocks = ModuleList()
+		dyhead_blocks = []
 		for i in range(num_blocks):
 			in_channels = self.in_channels if i == 0 else self.out_channels
-			self.dyhead_blocks.append(DyHeadBlock(in_channels, self.out_channels))
+			dyhead_blocks.append(
+				DyHeadBlock(
+					in_channels,
+					self.out_channels,
+					zero_init_offset=zero_init_offset))
+		self.dyhead_blocks = nn.Sequential(*dyhead_blocks)
 
 	def forward(self, inputs):
 		"""Forward function."""
 		assert isinstance(inputs, (tuple, list))
-		if len(inputs) == 4:
-			p3, p4, p5, p6 = inputs
-			for blk in self.dyhead_blocks:
-				if self.with_cp and p3.requires_grad:
-					p3, p4, p5, p6 = cp.checkpoint(blk, p3, p4, p5, p6)
-				else:
-					p3, p4, p5, p6 = blk(p3, p4, p5, p6)
-			outs = p3, p4, p5, p6
-		elif len(inputs) == 5:
-			p3, p4, p5, p6, p7 = inputs
-			for blk in self.dyhead_blocks:
-				if self.with_cp and p3.requires_grad:
-					p3, p4, p5, p6, p7 = cp.checkpoint(blk, p3, p4, p5, p6, p7)
-				else:
-					p3, p4, p5, p6, p7 = blk(p3, p4, p5, p6, p7)
-			outs = p3, p4, p5, p6, p7
-		else:
-			assert False, "Not supported!"
+		outs = self.dyhead_blocks(inputs)
 		return tuple(outs)
