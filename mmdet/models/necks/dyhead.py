@@ -5,7 +5,7 @@ import torch.utils.checkpoint as cp
 from mmcv.cnn import (build_activation_layer, build_norm_layer, constant_init,
 					  normal_init)
 from mmcv.ops.modulated_deform_conv import ModulatedDeformConv2d
-from mmcv.runner import BaseModule, ModuleList
+from mmcv.runner import BaseModule, ModuleList, auto_fp16
 
 from ..builder import NECKS
 from ..utils import DYReLU
@@ -34,8 +34,7 @@ class DyDCNv2(nn.Module):
 		super().__init__()
 		self.with_norm = norm_cfg is not None
 		bias = not self.with_norm
-		self.conv = ModulatedDeformConv2d(
-			in_channels, out_channels, 3, stride=stride, padding=1, bias=bias)
+		self.conv = ModulatedDeformConv2d(in_channels, out_channels, 3, stride=stride, padding=1, bias=bias)
 		self.norm = build_norm_layer(norm_cfg, out_channels)[1]
 
 	def forward(self, x, offset, mask):
@@ -148,6 +147,7 @@ class DyHead(BaseModule):
 					zero_init_offset=zero_init_offset))
 		self.dyhead_blocks = nn.Sequential(*dyhead_blocks)
 
+	@auto_fp16()
 	def forward(self, inputs):
 		"""Forward function."""
 		assert isinstance(inputs, (tuple, list))
