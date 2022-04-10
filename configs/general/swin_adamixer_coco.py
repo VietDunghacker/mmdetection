@@ -2,7 +2,7 @@ _base_ = [
 	'../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py'
 ]
 num_stages = 6
-num_proposals = 500
+num_proposals = 300
 
 # P_in for spatial mixing in the paper.
 in_points_list = [32, ] * num_stages
