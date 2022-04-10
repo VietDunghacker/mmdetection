@@ -203,10 +203,6 @@ class AdaMixerDecoderStage(BBoxHead):
 		self.attention = MultiheadAttention(content_dim, num_heads, dropout)
 		self.attention_norm = build_norm_layer(dict(type='LN'), content_dim)[1]
 
-		self.instance_interactive_conv_dropout = nn.Dropout(dropout)
-		self.instance_interactive_conv_norm = build_norm_layer(
-			dict(type='LN'), content_dim)[1]
-
 		self.ffn = FFN(
 			content_dim,
 			feedforward_channels,
