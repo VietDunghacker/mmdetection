@@ -2,7 +2,7 @@ _base_ = [
 	'../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py'
 ]
 num_stages = 6
-num_proposals = 100
+num_proposals = 500
 
 # P_in for spatial mixing in the paper.
 in_points_list = [32, ] * num_stages
@@ -64,8 +64,8 @@ model = dict(
 				out_points=out_patterns_list[stage_idx],
 				n_groups=n_group_list[stage_idx],
 				ffn_act_cfg=dict(type='ReLU', inplace=True),
-				loss_bbox=dict(type='L1Loss', loss_weight=5.0),
-				loss_iou=dict(type='GIoULoss', loss_weight=2.0),
+				loss_bbox=dict(type='SmoothL1Loss', loss_weight=10.0),
+				loss_iou=dict(type='CIoULoss', loss_weight=2.0),
 				loss_cls=dict(
 					type='FocalLoss',
 					use_sigmoid=True,
@@ -87,8 +87,8 @@ model = dict(
 				assigner=dict(
 					type='HungarianAssigner',
 					cls_cost=dict(type='FocalLossCost', weight=2.0),
-					reg_cost=dict(type='BBoxL1Cost', weight=5.0),
-					iou_cost=dict(type='IoUCost', iou_mode='giou', weight=2.0)),
+					reg_cost=dict(type='BBoxL1Cost', smooth=True, weight=10.0),
+					iou_cost=dict(type='IoUCost', iou_mode='ciou', weight=2.0)),
 				sampler=dict(type='PseudoSampler'),
 				pos_weight=1) for _ in range(num_stages)
 		]),
