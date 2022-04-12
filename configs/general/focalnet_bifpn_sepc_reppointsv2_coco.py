@@ -4,21 +4,18 @@ _base_ = [
 model = dict(
 	type='RepPointsV2Detector',
 	backbone=dict(
-		type='SwinTransformer',
-		embed_dims=128,
+		type='FocalNet',
+		embed_dim=128,
 		depths=[2, 2, 18, 2],
-		num_heads=[4, 8, 16, 32],
-		window_size=7,
-		mlp_ratio=4,
-		qkv_bias=True,
-		qk_scale=None,
-		drop_rate=0.,
-		attn_drop_rate=0.,
-		drop_path_rate=0.3,
+		drop_path_rate=0.5,
 		patch_norm=True,
-		out_indices=(1, 2, 3),
 		with_cp=True,
-		init_cfg=dict(type='Pretrained', checkpoint='/gdrive/My Drive/checkpoints/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
+		focal_windows=[9,9,9,9],
+		focal_levels=[2,2,2,2],
+		out_indices=(1,2,3),
+		use_conv_embed=False, 
+		pretrained='https://projects4jw.blob.core.windows.net/focalnet/release/classification/focalnet_base_srf.pth',
+		init_cfg=dict(type='Pretrained', checkpoint='https://projects4jw.blob.core.windows.net/focalnet/release/classification/focalnet_base_srf.pth')),
 	neck=[
 		dict(
 			type='BiFPN',
@@ -33,11 +30,24 @@ model = dict(
 			separable_conv=True,
 			epsilon=0.0001
 		),
-		dict(type='DyHead', in_channels=256, out_channels=256, num_blocks=3)
+		dict(
+			type='SEPC',
+			in_channels=[256] * 5,
+			out_channels=256,
+			stacked_convs=3,
+			num_outs=5,
+			pconv_deform=True,
+			lcconv_deform=True,
+			ibn=True,  # please set imgs/gpu >= 4
+			pnorm_eval=False,
+			lcnorm_eval=False,
+			lcconv_padding=1,
+			pnorm_cfg=dict(type='GN', num_groups=32, requires_grad=True),
+			lcnorm_cfg=dict(type='GN', num_groups=32, requires_grad=True))
 	],
 	bbox_head=dict(
 		type='RepPointsV2Head',
-		num_classes=45,
+		num_classes=80,
 		in_channels=256,
 		feat_channels=256,
 		point_feat_channels=256,
@@ -78,18 +88,17 @@ model = dict(
 		nms_pre=1000,
 		min_bbox_size=0,
 		score_thr=0.05,
-		nms=dict(type='nms', iou_threshold=0.6),
+		nms=dict(type='soft_nms', iou_threshold=0.6),
 		max_per_img=100)
 	)
 
 # data setting
 img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 albu_train_transforms = [
-	dict(type='ShiftScaleRotate', shift_limit=0.1, scale_limit=0.1, rotate_limit=1, interpolation=1, p=0.5, border_mode = 0),
+	dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.1, rotate_limit=1, interpolation=1, p=0.5, border_mode = 0),
 	dict(type='ColorJitter', brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2),
 	dict(type='RGBShift', r_shift_limit=20, g_shift_limit=20, b_shift_limit=20),
 	dict(type='HueSaturationValue', hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20),
-	dict(type='RandomRotate90'),
 	dict(
 		type='OneOf',
 		transforms=[
@@ -111,20 +120,16 @@ train_pipeline = [
 		type = 'AutoAugment',
 		policies = [
 			[
-				dict(type='Mosaic', center_ratio_range=(0.9, 1.1), img_scale=(960, 960), pad_val=0.0),
-				dict(type='Resize', img_scale=[(800, 800), (960, 960)], multiscale_mode='range', keep_ratio=True),
-			],
-			[
-				dict(type='Mosaic', center_ratio_range=(0.8, 1.2), img_scale=(960, 960), pad_val=0.0),
-				dict(type='Resize', img_scale=[(800, 800), (960, 960)], multiscale_mode='range', keep_ratio=True),
+				dict(type='Mosaic', center_ratio_range=(0.8, 1.2), img_scale=(640, 640), pad_val=0.0),
+				dict(type='Resize', img_scale=[(640, 640), (800, 800)], multiscale_mode='range', keep_ratio=True),
 			],
 			[
 				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
-				dict(type='Resize', img_scale=[(640, 640), (960, 960)], multiscale_mode='range', keep_ratio=True),
+				dict(type='Resize', img_scale=[(640, 640), (800, 800)], multiscale_mode='range', keep_ratio=True),
 			],
 			[
-				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
-				dict(type='Resize', img_scale=[(640, 640), (960, 960)], multiscale_mode='range', keep_ratio=True),
+				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.8, 0.8), allow_negative_crop = True),
+				dict(type='Resize', img_scale=[(640, 640), (800, 800)], multiscale_mode='range', keep_ratio=True),
 			]
 		]
 	),
@@ -152,7 +157,7 @@ train_pipeline = [
 		update_pad_shape=False,
 		skip_img_without_anno=False),	
 	dict(type='Normalize', **img_norm_cfg),
-	dict(type='LoadRPDV2Annotations', num_classes=45),
+	dict(type='LoadRPDV2Annotations', num_classes=80),
 	dict(type='RPDV2FormatBundle'),
 	dict(type='Collect', keys=['img', 'gt_bboxes', 'gt_labels', 'gt_sem_map', 'gt_sem_weights']),
 ]
