@@ -65,7 +65,7 @@ model = dict(
 				n_groups=n_group_list[stage_idx],
 				ffn_act_cfg=dict(type='ReLU', inplace=True),
 				loss_bbox=dict(type='L1Loss', loss_weight=5.0),
-				loss_iou=dict(type='CIoULoss', loss_weight=2.0),
+				loss_iou=dict(type='GIoULoss', loss_weight=2.0),
 				loss_cls=dict(
 					type='FocalLoss',
 					use_sigmoid=True,
@@ -88,7 +88,7 @@ model = dict(
 					type='HungarianAssigner',
 					cls_cost=dict(type='FocalLossCost', weight=2.0),
 					reg_cost=dict(type='BBoxL1Cost', weight=5.0),
-					iou_cost=dict(type='IoUCost', iou_mode='ciou', weight=2.0)),
+					iou_cost=dict(type='IoUCost', iou_mode='giou', weight=2.0)),
 				sampler=dict(type='PseudoSampler'),
 				pos_weight=1) for _ in range(num_stages)
 		]),
