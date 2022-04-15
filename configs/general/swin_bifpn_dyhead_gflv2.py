@@ -34,12 +34,7 @@ model = dict(
 			separable_conv=True,
 			epsilon=0.0001,
 		),
-		dict(
-			type='DyHead',
-			in_channels=256,
-			out_channels=256,
-			num_convs=6,
-			with_cp=True)
+		dict(type='DyHead', in_channels=256, out_channels=256, num_blocks=4)
 	],
 	bbox_head=dict(
 		type='GFLHead',
