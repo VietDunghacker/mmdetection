@@ -17,6 +17,7 @@ model = dict(
 		drop_path_rate=0.3,
 		patch_norm=True,
 		out_indices=(1, 2, 3),
+		frozen_stages=3,
 		with_cp=True,
 		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
 	neck=[
