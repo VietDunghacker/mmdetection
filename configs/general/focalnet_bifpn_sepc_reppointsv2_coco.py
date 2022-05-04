@@ -26,6 +26,7 @@ model = dict(
 			strides=[8, 16, 32],
 			num_layers=1,
 			weight_method='fast_attn',
+			norm_cfg=dict(type='GN', num_groups=32, requires_grad=True),
 			act_cfg='silu',
 			separable_conv=True,
 			epsilon=0.0001
