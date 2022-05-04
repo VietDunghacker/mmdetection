@@ -51,6 +51,7 @@ class ClassAwareSampler(Sampler):
 		self.empty_gt = list(self.empty_gt)
 		for i in sorted(category_freq.keys()):
 			self.cw.append(1. / category_freq[i])
+		assert(len(self.cw) == len(self.dataset.CLASSES))
 		self.cw = np.array(self.cw)
 		self.orig_cw = copy.deepcopy(self.cw)
 		self.cw /= sum(self.cw)
