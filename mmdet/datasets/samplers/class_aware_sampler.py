@@ -48,6 +48,7 @@ class ClassAwareSampler(Sampler):
 				for cat_id in cat_ids:
 					if cat_id in self.dataset.cat_ids:
 						category_freq[self.dataset.cat2label[cat_id]] += 1
+		print(category_freq)
 		self.empty_gt = list(self.empty_gt)
 		for i in sorted(category_freq.keys()):
 			self.cw.append(1. / category_freq[i])
