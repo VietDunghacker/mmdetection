@@ -90,7 +90,7 @@ albu_train_transforms = [
 	dict(type='ColorJitter', brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2),
 	dict(type='RGBShift', r_shift_limit=20, g_shift_limit=20, b_shift_limit=20),
 	dict(type='HueSaturationValue', hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20),
-	dict(type='RandomRotate90'),
+	#dict(type='RandomRotate90'),
 	dict(
 		type='OneOf',
 		transforms=[
@@ -113,10 +113,6 @@ train_pipeline = [
 		policies = [
 			[
 				dict(type='Mosaic', center_ratio_range=(0.9, 1.1), img_scale=(960, 960), pad_val=0.0),
-				dict(type='Resize', img_scale=[(800, 800), (960, 960)], multiscale_mode='range', keep_ratio=True),
-			],
-			[
-				dict(type='Mosaic', center_ratio_range=(0.8, 1.2), img_scale=(960, 960), pad_val=0.0),
 				dict(type='Resize', img_scale=[(800, 800), (960, 960)], multiscale_mode='range', keep_ratio=True),
 			],
 			[
