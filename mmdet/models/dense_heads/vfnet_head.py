@@ -692,7 +692,6 @@ class VFNetHead(ATSSHead, FCOSHead):
 	@force_fp32(apply_to=('cls_scores', 'bbox_preds', 'bbox_preds_refine'))
 	def get_bboxes(self,
 				   cls_scores,
-				   bbox_preds,
 				   bbox_preds_refine,
 				   img_metas,
 				   cfg=None,
@@ -722,11 +721,11 @@ class VFNetHead(ATSSHead, FCOSHead):
 				(n,) tensor where each item is the predicted class label of
 				the corresponding box.
 		"""
-		assert len(cls_scores) == len(bbox_preds) == len(bbox_preds_refine)
+		assert len(cls_scores) == len(bbox_preds_refine)
 		num_levels = len(cls_scores)
 
 		featmap_sizes = [featmap.size()[-2:] for featmap in cls_scores]
-		mlvl_points = self.get_points(featmap_sizes, bbox_preds[0].dtype, bbox_preds[0].device)
+		mlvl_points = self.get_points(featmap_sizes, bbox_preds_refine[0].dtype, bbox_preds_refine[0].device)
 		result_list = []
 		for img_id in range(len(img_metas)):
 			cls_score_list = [cls_scores[i][img_id].detach() for i in range(num_levels)]
