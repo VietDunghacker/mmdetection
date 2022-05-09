@@ -288,4 +288,4 @@ class BiFPN(BaseModule):
 		for layer in self.layers:
 			outputs = layer(outputs)
 
-		return (p3, p4, p5, p6, p7)
+		return outputs
