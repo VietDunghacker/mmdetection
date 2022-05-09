@@ -108,9 +108,6 @@ def multiclass_nms(multi_bboxes,
 	else:
 		bboxes = multi_bboxes
 
-	print(multi_scores)
-	print(scores)
-
 	bboxes = bboxes.reshape(-1, 4)
 	scores = scores.reshape(-1)
 	labels = labels.reshape(-1)

@@ -5,6 +5,7 @@ import torch
 from mmcv.ops import batched_nms
 from mmcv.runner import BaseModule, force_fp32
 
+from mmdet.core import multiclass_nms
 from mmdet.core.utils import filter_scores_and_topk, select_single_mlvl
 
 
@@ -273,8 +274,7 @@ class BaseDenseHead(BaseModule, metaclass=ABCMeta):
 				det_bboxes = torch.cat([mlvl_bboxes, mlvl_scores[:, None]], -1)
 				return det_bboxes, mlvl_labels
 
-			det_bboxes, keep_idxs = batched_nms(mlvl_bboxes, mlvl_scores,
-												mlvl_labels, cfg.nms)
+			det_bboxes, keep_idxs = multiclass_nms(mlvl_bboxes, mlvl_scores, cfg.score_thr, cfg.nms, cfg.max_per_img)
 			det_bboxes = det_bboxes[:cfg.max_per_img]
 			det_labels = mlvl_labels[keep_idxs][:cfg.max_per_img]
 			return det_bboxes, det_labels
