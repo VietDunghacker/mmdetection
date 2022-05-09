@@ -689,6 +689,57 @@ class VFNetHead(ATSSHead, FCOSHead):
 				(x.reshape(-1), y.reshape(-1)), dim=-1) + stride // 2
 		return points
 
+	@force_fp32(apply_to=('cls_scores', 'bbox_preds', 'bbox_preds_refine'))
+	def get_bboxes(self,
+				   cls_scores,
+				   bbox_preds,
+				   bbox_preds_refine,
+				   img_metas,
+				   cfg=None,
+				   rescale=None,
+				   with_nms=True):
+		"""Transform network outputs for a batch into bbox predictions.
+		Args:
+			cls_scores (list[Tensor]): Box iou-aware scores for each scale
+				level with shape (N, num_points * num_classes, H, W).
+			bbox_preds (list[Tensor]): Box offsets for each scale
+				level with shape (N, num_points * 4, H, W).
+			bbox_preds_refine (list[Tensor]): Refined Box offsets for
+				each scale level with shape (N, num_points * 4, H, W).
+			img_metas (list[dict]): Meta information of each image, e.g.,
+				image size, scaling factor, etc.
+			cfg (mmcv.Config): Test / postprocessing configuration,
+				if None, test_cfg would be used. Default: None.
+			rescale (bool): If True, return boxes in original image space.
+				Default: False.
+			with_nms (bool): If True, do nms before returning boxes.
+				Default: True.
+		Returns:
+			list[tuple[Tensor, Tensor]]: Each item in result_list is 2-tuple.
+				The first item is an (n, 5) tensor, where the first 4 columns
+				are bounding box positions (tl_x, tl_y, br_x, br_y) and the
+				5-th column is a score between 0 and 1. The second item is a
+				(n,) tensor where each item is the predicted class label of
+				the corresponding box.
+		"""
+		assert len(cls_scores) == len(bbox_preds) == len(bbox_preds_refine)
+		num_levels = len(cls_scores)
+
+		featmap_sizes = [featmap.size()[-2:] for featmap in cls_scores]
+		mlvl_points = self.get_points(featmap_sizes, bbox_preds[0].dtype, bbox_preds[0].device)
+		result_list = []
+		for img_id in range(len(img_metas)):
+			cls_score_list = [cls_scores[i][img_id].detach() for i in range(num_levels)]
+			bbox_pred_list = [bbox_preds_refine[i][img_id].detach() for i in range(num_levels)]
+			img_shape = img_metas[img_id]['img_shape']
+			scale_factor = img_metas[img_id]['scale_factor']
+			det_bboxes = self._get_bboxes_single(cls_score_list,
+												 bbox_pred_list, mlvl_points,
+												 img_shape, scale_factor, cfg,
+												 rescale, with_nms)
+			result_list.append(det_bboxes)
+		return result_list
+
 	def _get_bboxes_single(self,
 						   cls_scores,
 						   bbox_preds,
@@ -759,3 +810,4 @@ class VFNetHead(ATSSHead, FCOSHead):
 			return det_bboxes, det_labels
 		else:
 			return mlvl_bboxes, mlvl_scores
+
