@@ -10,7 +10,7 @@ from mmcv.runner import force_fp32
 
 from mmdet.core import (MlvlPointGenerator, bbox_overlaps, build_assigner,
 						build_prior_generator, build_sampler, multi_apply,
-						reduce_mean)
+						reduce_mean, multiclass_nms, distance2bbox)
 from ..builder import HEADS, build_loss
 from .atss_head import ATSSHead
 from .fcos_head import FCOSHead
@@ -688,3 +688,74 @@ class VFNetHead(ATSSHead, FCOSHead):
 			points = torch.stack(
 				(x.reshape(-1), y.reshape(-1)), dim=-1) + stride // 2
 		return points
+
+	def _get_bboxes_single(self,
+						   cls_scores,
+						   bbox_preds,
+						   mlvl_points,
+						   img_shape,
+						   scale_factor,
+						   cfg,
+						   rescale=False,
+						   with_nms=True):
+		"""Transform outputs for a single batch item into bbox predictions.
+		Args:
+			cls_scores (list[Tensor]): Box iou-aware scores for a single scale
+				level with shape (num_points * num_classes, H, W).
+			bbox_preds (list[Tensor]): Box offsets for a single scale
+				level with shape (num_points * 4, H, W).
+			mlvl_points (list[Tensor]): Box reference for a single scale level
+				with shape (num_total_points, 4).
+			img_shape (tuple[int]): Shape of the input image,
+				(height, width, 3).
+			scale_factor (ndarray): Scale factor of the image arrange as
+				(w_scale, h_scale, w_scale, h_scale).
+			cfg (mmcv.Config | None): Test / postprocessing configuration,
+				if None, test_cfg would be used.
+			rescale (bool): If True, return boxes in original image space.
+				Default: False.
+			with_nms (bool): If True, do nms before returning boxes.
+				Default: True.
+		Returns:
+			tuple(Tensor):
+				det_bboxes (Tensor): BBox predictions in shape (n, 5), where
+					the first 4 columns are bounding box positions
+					(tl_x, tl_y, br_x, br_y) and the 5-th column is a score
+					between 0 and 1.
+				det_labels (Tensor): A (n,) tensor where each item is the
+					predicted class label of the corresponding box.
+		"""
+		cfg = self.test_cfg if cfg is None else cfg
+		assert len(cls_scores) == len(bbox_preds) == len(mlvl_points)
+		mlvl_bboxes = []
+		mlvl_scores = []
+		for cls_score, bbox_pred, points in zip(cls_scores, bbox_preds,
+												mlvl_points):
+			assert cls_score.size()[-2:] == bbox_pred.size()[-2:]
+			scores = cls_score.permute(1, 2, 0).reshape(
+				-1, self.cls_out_channels).contiguous().sigmoid()
+			bbox_pred = bbox_pred.permute(1, 2, 0).reshape(-1, 4).contiguous()
+
+			nms_pre = cfg.get('nms_pre', -1)
+			if 0 < nms_pre < scores.shape[0]:
+				max_scores, _ = scores.max(dim=1)
+				_, topk_inds = max_scores.topk(nms_pre)
+				points = points[topk_inds, :]
+				bbox_pred = bbox_pred[topk_inds, :]
+				scores = scores[topk_inds, :]
+			bboxes = distance2bbox(points, bbox_pred, max_shape=img_shape)
+			mlvl_bboxes.append(bboxes)
+			mlvl_scores.append(scores)
+		mlvl_bboxes = torch.cat(mlvl_bboxes)
+		if rescale:
+			mlvl_bboxes /= mlvl_bboxes.new_tensor(scale_factor)
+		mlvl_scores = torch.cat(mlvl_scores)
+		padding = mlvl_scores.new_zeros(mlvl_scores.shape[0], 1)
+		# remind that we set FG labels to [0, num_class-1] since mmdet v2.0
+		# BG cat_id: num_class
+		mlvl_scores = torch.cat([mlvl_scores, padding], dim=1)
+		if with_nms:
+			det_bboxes, det_labels = multiclass_nms(mlvl_bboxes, mlvl_scores, cfg.score_thr, cfg.nms, cfg.max_per_img)
+			return det_bboxes, det_labels
+		else:
+			return mlvl_bboxes, mlvl_scores
