@@ -306,10 +306,8 @@ class PyCenterNetHead(AnchorFreeHead):
 		hem_offset_out = torch.cat([hem_tl_offset_out, hem_br_offset_out, hem_ct_offset_out], dim=1)
 
 		# initialize 
-		pts_tl_out_init = self.reppoints_tl_pts_init_out(
-							self.relu(self.reppoints_tl_pts_init_conv(tl_pts_feat)))
-		pts_br_out_init = self.reppoints_br_pts_init_out(
-							self.relu(self.reppoints_br_pts_init_conv(br_pts_feat)))
+		pts_tl_out_init = self.reppoints_tl_pts_init_out(self.relu(self.reppoints_tl_pts_init_conv(tl_pts_feat)))
+		pts_br_out_init = self.reppoints_br_pts_init_out(self.relu(self.reppoints_br_pts_init_conv(br_pts_feat)))
 		# refine and classify
 		pts_tl_out_init_grad_mul = (1 - self.gradient_mul) * pts_tl_out_init.detach() + self.gradient_mul * pts_tl_out_init
 		pts_br_out_init_grad_mul = (1 - self.gradient_mul) * pts_br_out_init.detach() + self.gradient_mul * pts_br_out_init
@@ -1190,7 +1188,7 @@ class PyCenterNetHead(AnchorFreeHead):
 			bboxes = det_bboxes.new_zeros((0, 5))
 			labels = det_bboxes.new_zeros((0,), dtype=torch.long)
 		else:
-			dets, keep = batched_nms(det_bboxes, det_scores, det_labels, cfg.nms)
+			dets, keep = batched_nms(det_bboxes.float(), det_scores.float(), det_labels, cfg.nms)
 			if cfg.max_per_img > 0:
 				bboxes = dets[:cfg.max_per_img]
 				keep   = keep[:cfg.max_per_img]
@@ -1278,26 +1276,17 @@ class PyCenterNetHead(AnchorFreeHead):
 
 		bboxes_center_x = (bboxes[..., 0] + bboxes[..., 2]) / 2
 		bboxes_center_y = (bboxes[..., 1] + bboxes[..., 3]) / 2
-		rcentral[..., 0] = bboxes_center_x - mu * (bboxes[..., 2] -
-													bboxes[..., 0]) / 2
-		rcentral[..., 1] = bboxes_center_y - mu * (bboxes[..., 3] -
-													bboxes[..., 1]) / 2
-		rcentral[..., 2] = bboxes_center_x + mu * (bboxes[..., 2] -
-													bboxes[..., 0]) / 2
-		rcentral[..., 3] = bboxes_center_y + mu * (bboxes[..., 3] -
-													bboxes[..., 1]) / 2
-		area_rcentral = ((rcentral[..., 2] - rcentral[..., 0]) *
-							(rcentral[..., 3] - rcentral[..., 1])).abs()
+		rcentral[..., 0] = bboxes_center_x - mu * (bboxes[..., 2] - bboxes[..., 0]) / 2
+		rcentral[..., 1] = bboxes_center_y - mu * (bboxes[..., 3] - bboxes[..., 1]) / 2
+		rcentral[..., 2] = bboxes_center_x + mu * (bboxes[..., 2] - bboxes[..., 0]) / 2
+		rcentral[..., 3] = bboxes_center_y + mu * (bboxes[..., 3] - bboxes[..., 1]) / 2
+		area_rcentral = ((rcentral[..., 2] - rcentral[..., 0]) * (rcentral[..., 3] - rcentral[..., 1])).abs()
 		dists = area_ct_bboxes / area_rcentral
 
-		tl_ctx_inds = (ct_bboxes[..., 0] <= rcentral[..., 0]) | (
-			ct_bboxes[..., 0] >= rcentral[..., 2])
-		tl_cty_inds = (ct_bboxes[..., 1] <= rcentral[..., 1]) | (
-			ct_bboxes[..., 1] >= rcentral[..., 3])
-		br_ctx_inds = (ct_bboxes[..., 2] <= rcentral[..., 0]) | (
-			ct_bboxes[..., 2] >= rcentral[..., 2])
-		br_cty_inds = (ct_bboxes[..., 3] <= rcentral[..., 1]) | (
-			ct_bboxes[..., 3] >= rcentral[..., 3])
+		tl_ctx_inds = (ct_bboxes[..., 0] <= rcentral[..., 0]) | (ct_bboxes[..., 0] >= rcentral[..., 2])
+		tl_cty_inds = (ct_bboxes[..., 1] <= rcentral[..., 1]) | (ct_bboxes[..., 1] >= rcentral[..., 3])
+		br_ctx_inds = (ct_bboxes[..., 2] <= rcentral[..., 0]) | (ct_bboxes[..., 2] >= rcentral[..., 2])
+		br_cty_inds = (ct_bboxes[..., 3] <= rcentral[..., 1]) | (ct_bboxes[..., 3] >= rcentral[..., 3])
 
 		# reject boxes based on distances
 		dist_inds = dists > distance_threshold
