@@ -263,18 +263,19 @@ class PyCenterNetHead(AnchorFreeHead):
 
 	def forward_single(self, x):
 		""" Forward feature map of a single FPN level."""
-		dcn_base_offset = self.dcn_base_offset.type_as(x)
-
 		if isinstance(x, list):
 			tl_cls_feat = x[0]
 			br_cls_feat = x[0]
 			tl_pts_feat = x[1]
 			br_pts_feat = x[1]
+			dcn_base_offset = self.dcn_base_offset.type_as(x[0])
 		else:
 			tl_cls_feat = x
 			br_cls_feat = x
 			tl_pts_feat = x
 			br_pts_feat = x
+
+			dcn_base_offset = self.dcn_base_offset.type_as(x)
 		
 		for tl_cls_conv in self.tl_cls_convs:
 			tl_cls_feat = tl_cls_conv(tl_cls_feat)
