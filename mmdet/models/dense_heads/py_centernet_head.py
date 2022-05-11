@@ -323,10 +323,8 @@ class PyCenterNetHead(AnchorFreeHead):
 		pts_br_out_init = self.pycenter_br_pts_init_out(
 							self.relu(self.pycenter_br_pts_init_conv(br_pts_feat)))
 		# refine and classify
-		pts_tl_out_init_grad_mul = (1 - self.gradient_mul
-								   ) * pts_tl_out_init.detach() + self.gradient_mul * pts_tl_out_init
-		pts_br_out_init_grad_mul = (1 - self.gradient_mul
-								   ) * pts_br_out_init.detach() + self.gradient_mul * pts_br_out_init
+		pts_tl_out_init_grad_mul = (1 - self.gradient_mul) * pts_tl_out_init.detach() + self.gradient_mul * pts_tl_out_init
+		pts_br_out_init_grad_mul = (1 - self.gradient_mul) * pts_br_out_init.detach() + self.gradient_mul * pts_br_out_init
 		dcn_tl_offset = pts_tl_out_init_grad_mul - dcn_base_offset
 		dcn_br_offset = pts_br_out_init_grad_mul - dcn_base_offset
 

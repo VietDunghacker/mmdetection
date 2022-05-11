@@ -52,7 +52,7 @@ class BiCornerPool(BaseModule):
 			act_cfg=None)
 
 		self.conv1 = ConvModule(in_channels, out_channels, 1, norm_cfg=norm_cfg, act_cfg=None)
-		self.conv2 = ConvModule(in_channels, out_channels, conv2_kernel_size, padding=1, norm_cfg=norm_cfg)
+		self.conv2 = ConvModule(in_channels, out_channels, conv2_kernel_size, padding=(conv2_kernel_size - 1) // 2, norm_cfg=norm_cfg)
 
 		self.direction1_pool = CornerPool(directions[0])
 		self.direction2_pool = CornerPool(directions[1])
