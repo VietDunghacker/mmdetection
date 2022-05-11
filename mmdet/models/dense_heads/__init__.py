@@ -28,6 +28,7 @@ from .oat_head import OATHead
 from .paa_head import PAAHead
 from .pisa_retinanet_head import PISARetinaHead
 from .pisa_ssd_head import PISASSDHead
+from .py_centernet_head import PyCenterNetHead
 from .qfl_head import QFLHead
 from .query_generator import InitialQueryGenerator
 from .rank_based_paa_head import RankBasedPAAHead
@@ -57,5 +58,5 @@ __all__ = [
 	'AutoAssignHead', 'DETRHead', 'YOLOFHead', 'DeformableDETRHead',
 	'CenterNetHead', 'YOLOXHead', 'RepPointsV2Head',
 	'BVRHead', 'KeypointHead', 'TOODHead', "OATHead", 'QFLHead', 'RankBasedPAAHead',
-	'DDODHead', 'CenterRPNHead', 'InitialQueryGenerator'
+	'DDODHead', 'CenterRPNHead', 'InitialQueryGenerator', 'PyCenterNetHead'
 ]

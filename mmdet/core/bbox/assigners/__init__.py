@@ -11,6 +11,7 @@ from .max_iou_assigner import MaxIoUAssigner
 from .point_assigner import PointAssigner
 from .point_assigner_v2 import PointAssignerV2
 from .point_hm_assigner import PointHMAssigner
+from .point_hm_assigner_v2 import PointHMAssignerV2
 from .point_kpt_assigner import PointKptAssigner
 from .region_assigner import RegionAssigner
 from .sim_ota_assigner import SimOTAAssigner
@@ -23,6 +24,6 @@ __all__ = [
     'PointAssigner', 'ATSSAssigner', 'CenterRegionAssigner', 'GridAssigner',
     'HungarianAssigner', 'RegionAssigner', 'UniformAssigner', 'SimOTAAssigner',
     'PointKptAssigner', 'PointAssignerV2', 'PointHMAssigner', 'CentroidAssigner', 'ATSSCostAssigner',
-    'TaskAlignedAssigner', 'TaskAlignedAssignResult'
+    'TaskAlignedAssigner', 'TaskAlignedAssignResult', 'PointHMAssignerV2'
 ]
 
