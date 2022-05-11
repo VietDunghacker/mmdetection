@@ -7,6 +7,7 @@ from mmcv.cnn import ConvModule, bias_init_with_prob, normal_init
 
 from mmdet.core import (PointGenerator, build_assigner, build_sampler,
 						images_to_levels, multi_apply, multiclass_nms, unmap)
+from mmdet.models.utils import BRPool, TLPool
 from mmcv.ops.nms import batched_nms
 from mmcv.ops import DeformConv2d, ModulatedDeformConv2dPack
 from mmcv.runner import force_fp32
@@ -155,8 +156,8 @@ class PyCenterNetHead(AnchorFreeHead):
 			self.shared_convs.append(ConvModule(self.feat_channels, self.feat_channels, 3, stride=1, padding=1, conv_cfg=self.conv_cfg, norm_cfg=self.norm_cfg))
 
 
-		self.hem_tl = BiCornerPool(self.feat_channels, ['top', 'left'], self.corner_dim, self.feat_channels, conv2_kernel_size=1, norm_cfg=dict(type='GN', num_groups=32, requires_grad=True))
-		self.hem_br = BiCornerPool(self.feat_channels, ['bottom', 'right'], self.corner_dim, self.feat_channels, conv2_kernel_size=1, norm_cfg=dict(type='GN', num_groups=32, requires_grad=True))
+		self.hem_tl = TLPool(self.feat_channels, self.conv_cfg, self.norm_cfg, first_kernel_size=self.first_kernel_size, kernel_size=self.kernel_size, corner_dim=self.corner_dim)
+		self.hem_br = BRPool(self.feat_channels, self.conv_cfg, self.norm_cfg,  first_kernel_size=self.first_kernel_size, kernel_size=self.kernel_size, corner_dim=self.corner_dim)
 		self.hem_ct = ConvModule(self.feat_channels, self.feat_channels, 3, stride=1, padding=1, conv_cfg=self.conv_cfg, norm_cfg=self.norm_cfg)
 
 		pts_out_dim = 2 * self.num_points
@@ -165,9 +166,7 @@ class PyCenterNetHead(AnchorFreeHead):
 		self.reppoints_tl_cls_conv = DeformConv2d(cls_in_channels, self.point_feat_channels, self.dcn_kernel, 1, self.dcn_pad)
 		self.reppoints_tl_cls_out = nn.Conv2d(self.point_feat_channels, self.cls_out_channels, 1, 1, 0)
 
-		self.reppoints_br_cls_conv = DeformConv2d(cls_in_channels,
-											 self.point_feat_channels,
-											 self.dcn_kernel, 1, self.dcn_pad)
+		self.reppoints_br_cls_conv = DeformConv2d(cls_in_channels, self.point_feat_channels, self.dcn_kernel, 1, self.dcn_pad)
 		self.reppoints_br_cls_out = nn.Conv2d(self.point_feat_channels, self.cls_out_channels, 1, 1, 0)
 
 		self.reppoints_tl_pts_init_conv = nn.Conv2d(self.feat_channels, self.point_feat_channels, 3, 1, 1)
@@ -177,10 +176,7 @@ class PyCenterNetHead(AnchorFreeHead):
 		self.reppoints_br_pts_init_out = nn.Conv2d(self.point_feat_channels,
 												  pts_out_dim, 1, 1, 0)
 		pts_in_channels = self.feat_channels + 9
-		self.reppoints_tl_pts_refine_conv = DeformConv2d(pts_in_channels,
-													  self.point_feat_channels,
-													  self.dcn_kernel, 1,
-													  self.dcn_pad)
+		self.reppoints_tl_pts_refine_conv = DeformConv2d(pts_in_channels, self.point_feat_channels, self.dcn_kernel, 1, self.dcn_pad)
 		self.reppoints_tl_pts_refine_out = nn.Conv2d(self.point_feat_channels, pts_out_dim, 1, 1, 0)
 
 		self.reppoints_br_pts_refine_conv = DeformConv2d(pts_in_channels, self.point_feat_channels, self.dcn_kernel, 1, self.dcn_pad)
@@ -194,12 +190,7 @@ class PyCenterNetHead(AnchorFreeHead):
 		self.reppoints_hem_ct_offset_out = nn.Conv2d(self.feat_channels, 2, 3, 1, 1)
 
 		self.reppoints_sem_out = nn.Conv2d(self.feat_channels, self.cls_out_channels, 1, 1, 0)
-		self.reppoints_sem_embedding = ConvModule(
-			self.feat_channels,
-			self.feat_channels,
-			1,
-			conv_cfg=self.conv_cfg,
-			norm_cfg=self.norm_cfg)
+		self.reppoints_sem_embedding = ConvModule(self.feat_channels, self.feat_channels, 1, conv_cfg=self.conv_cfg, norm_cfg=self.norm_cfg)
 
 	def init_weights(self):
 		"""Initialize weights of the head."""
@@ -331,17 +322,12 @@ class PyCenterNetHead(AnchorFreeHead):
 		tl_pts_feat = torch.cat([tl_pts_feat, hem_feat], dim=1)
 		br_pts_feat = torch.cat([br_pts_feat, hem_feat], dim=1)
 
-		tl_cls_out = self.reppoints_tl_cls_out(self.relu(
-					  self.reppoints_tl_cls_conv(tl_cls_feat, dcn_tl_offset)))
-		br_cls_out = self.reppoints_br_cls_out(self.relu(
-					  self.reppoints_br_cls_conv(br_cls_feat, dcn_br_offset)))
-		pts_tl_out_refine = self.reppoints_tl_pts_refine_out(self.relu(
-					  self.reppoints_tl_pts_refine_conv(tl_pts_feat, dcn_tl_offset)))
-		pts_br_out_refine = self.reppoints_br_pts_refine_out(self.relu(
-					  self.reppoints_br_pts_refine_conv(br_pts_feat, dcn_br_offset)))
+		tl_cls_out = self.reppoints_tl_cls_out(self.relu(self.reppoints_tl_cls_conv(tl_cls_feat, dcn_tl_offset)))
+		br_cls_out = self.reppoints_br_cls_out(self.relu(self.reppoints_br_cls_conv(br_cls_feat, dcn_br_offset)))
+		pts_tl_out_refine = self.reppoints_tl_pts_refine_out(self.relu(self.reppoints_tl_pts_refine_conv(tl_pts_feat, dcn_tl_offset)))
+		pts_br_out_refine = self.reppoints_br_pts_refine_out(self.relu(self.reppoints_br_pts_refine_conv(br_pts_feat, dcn_br_offset)))
 
-		return (tl_cls_out, br_cls_out, pts_tl_out_init, pts_br_out_init, 
-				pts_tl_out_refine, pts_br_out_refine, hem_score_out, hem_offset_out, sem_scores_out)
+		return (tl_cls_out, br_cls_out, pts_tl_out_init, pts_br_out_init, pts_tl_out_refine, pts_br_out_refine, hem_score_out, hem_offset_out, sem_scores_out)
 
 	def get_points(self, featmap_sizes, img_metas):
 		"""Get points according to feature map sizes.
@@ -1195,16 +1181,10 @@ class PyCenterNetHead(AnchorFreeHead):
 		mlvl_tl_scores = torch.cat([mlvl_tl_scores, tl_padding], dim=1)
 		mlvl_br_scores = torch.cat([mlvl_br_scores, br_padding], dim=1)
 		
-		det_tl_bboxes, det_tl_labels = multiclass_nms(mlvl_tl_bboxes, mlvl_tl_scores,
-													  cfg.score_thr, cfg.nms,
-													  cfg.max_per_img)
-		det_br_bboxes, det_br_labels = multiclass_nms(mlvl_br_bboxes, mlvl_br_scores,
-													  cfg.score_thr, cfg.nms,
-													  cfg.max_per_img)
+		det_tl_bboxes, det_tl_labels = multiclass_nms(mlvl_tl_bboxes, mlvl_tl_scores, cfg.score_thr, cfg.nms, cfg.max_per_img)
+		det_br_bboxes, det_br_labels = multiclass_nms(mlvl_br_bboxes, mlvl_br_scores, cfg.score_thr, cfg.nms, cfg.max_per_img)
 													  
-		det_bboxes, det_scores, det_labels = self.decode(det_tl_bboxes, det_tl_labels,
-														 det_br_bboxes, det_br_labels,
-														 distance_threshold = dis_thr)
+		det_bboxes, det_scores, det_labels = self.decode(det_tl_bboxes, det_tl_labels, det_br_bboxes, det_br_labels, distance_threshold = dis_thr)
 		
 		if det_bboxes.numel() == 0:
 			bboxes = det_bboxes.new_zeros((0, 5))
@@ -1241,8 +1221,7 @@ class PyCenterNetHead(AnchorFreeHead):
 	
 		return tl_gt_list, br_gt_list
 	
-	def decode(self, det_tl_bboxes, det_tl_labels, det_br_bboxes, det_br_labels,
-			   distance_threshold = 0.5):
+	def decode(self, det_tl_bboxes, det_tl_labels, det_br_bboxes, det_br_labels, distance_threshold = 0.5):
 		tl_xs   = det_tl_bboxes[:, 0]
 		tl_ys   = det_tl_bboxes[:, 1]
 		tl_ctxs = det_tl_bboxes[:, 2]
