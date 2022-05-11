@@ -2,23 +2,23 @@ _base_ = [
 	'../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py'
 ]
 model = dict(
-	type='GFL',
+	type='PyCenterNetDetector',
 	backbone=dict(
-		type='SwinTransformerOriginal',
-		embed_dims=192,
+		type='SwinTransformer',
+		embed_dims=128,
 		depths=[2, 2, 18, 2],
-		num_heads=[6, 12, 24, 48],
-		window_size=12,
+		num_heads=[4, 8, 16, 32],
+		window_size=7,
 		mlp_ratio=4,
 		qkv_bias=True,
 		qk_scale=None,
 		drop_rate=0.,
 		attn_drop_rate=0.,
-		drop_path_rate=0.2,
+		drop_path_rate=0.3,
 		patch_norm=True,
 		out_indices=(1, 2, 3),
-		use_checkpoint=True,
-		pretrained='https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_large_patch4_window12_384_22k.pth'),
+		with_cp=True,
+		init_cfg=dict(type='Pretrained', checkpoint='/gdrive/My Drive/checkpoints/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
 	neck=[
 		dict(
 			type='BiFPN',

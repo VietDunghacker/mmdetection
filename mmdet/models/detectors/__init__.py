@@ -26,6 +26,7 @@ from .paa import PAA
 from .panoptic_fpn import PanopticFPN
 from .panoptic_two_stage_segmentor import TwoStagePanopticSegmentor
 from .point_rend import PointRend
+from .pycenternet_detector import PyCenterNetDetector
 from .reppoints_detector import RepPointsDetector
 from .reppoints_v2_detector import RepPointsV2Detector
 from .retinanet import RetinaNet
@@ -51,5 +52,5 @@ __all__ = [
     'VFNet', 'DETR', 'TridentFasterRCNN', 'SparseRCNN', 'SCNet',
     'DeformableDETR', 'AutoAssign', 'YOLOF', 'CenterNet', 'YOLOX',
     'TwoStagePanopticSegmentor', 'PanopticFPN', 'RepPointsV2Detector', 'BVR',
-    'TOOD', 'OATNet', 'CenterNet2'
+    'TOOD', 'OATNet', 'CenterNet2', 'PyCenterNetDetector'
 ]
