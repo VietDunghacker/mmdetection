@@ -1175,8 +1175,8 @@ class PyCenterNetHead(AnchorFreeHead):
 		mlvl_tl_scores = torch.cat([mlvl_tl_scores, tl_padding], dim=1)
 		mlvl_br_scores = torch.cat([mlvl_br_scores, br_padding], dim=1)
 		
-		det_tl_bboxes, det_tl_labels = multiclass_nms(mlvl_tl_bboxes, mlvl_tl_scores, cfg.score_thr, cfg.nms, cfg.max_per_img)
-		det_br_bboxes, det_br_labels = multiclass_nms(mlvl_br_bboxes, mlvl_br_scores, cfg.score_thr, cfg.nms, cfg.max_per_img)
+		det_tl_bboxes, det_tl_labels = multiclass_nms(mlvl_tl_bboxes.float(), mlvl_tl_scores.float(), cfg.score_thr, cfg.nms, cfg.max_per_img)
+		det_br_bboxes, det_br_labels = multiclass_nms(mlvl_br_bboxes.float(), mlvl_br_scores.float(), cfg.score_thr, cfg.nms, cfg.max_per_img)
 													  
 		det_bboxes, det_scores, det_labels = self.decode(det_tl_bboxes, det_tl_labels, det_br_bboxes, det_br_labels, distance_threshold = dis_thr)
 		
@@ -1184,7 +1184,7 @@ class PyCenterNetHead(AnchorFreeHead):
 			bboxes = det_bboxes.new_zeros((0, 5))
 			labels = det_bboxes.new_zeros((0,), dtype=torch.long)
 		else:
-			dets, keep = batched_nms(det_bboxes.float(), det_scores.float(), det_labels.int(), cfg.nms)
+			dets, keep = batched_nms(det_bboxes.float(), det_scores.float(), det_labels, cfg.nms)
 			if cfg.max_per_img > 0:
 				bboxes = dets[:cfg.max_per_img]
 				keep   = keep[:cfg.max_per_img]
