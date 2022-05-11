@@ -162,42 +162,39 @@ class PyCenterNetHead(AnchorFreeHead):
 		pts_out_dim = 2 * self.num_points
 
 		cls_in_channels = self.feat_channels + 9
-		self.pycenter_tl_cls_conv = DeformConv2d(cls_in_channels, self.point_feat_channels, self.dcn_kernel, 1, self.dcn_pad)
-		self.pycenter_tl_cls_out = nn.Conv2d(self.point_feat_channels, self.cls_out_channels, 1, 1, 0)
+		self.reppoints_tl_cls_conv = DeformConv2d(cls_in_channels, self.point_feat_channels, self.dcn_kernel, 1, self.dcn_pad)
+		self.reppoints_tl_cls_out = nn.Conv2d(self.point_feat_channels, self.cls_out_channels, 1, 1, 0)
 
-		self.pycenter_br_cls_conv = DeformConv2d(cls_in_channels,
+		self.reppoints_br_cls_conv = DeformConv2d(cls_in_channels,
 											 self.point_feat_channels,
 											 self.dcn_kernel, 1, self.dcn_pad)
-		self.pycenter_br_cls_out = nn.Conv2d(self.point_feat_channels, self.cls_out_channels, 1, 1, 0)
+		self.reppoints_br_cls_out = nn.Conv2d(self.point_feat_channels, self.cls_out_channels, 1, 1, 0)
 
-		self.pycenter_tl_pts_init_conv = nn.Conv2d(self.feat_channels, self.point_feat_channels, 3, 1, 1)
-		self.pycenter_tl_pts_init_out = nn.Conv2d(self.point_feat_channels, pts_out_dim, 1, 1, 0)
+		self.reppoints_tl_pts_init_conv = nn.Conv2d(self.feat_channels, self.point_feat_channels, 3, 1, 1)
+		self.reppoints_tl_pts_init_out = nn.Conv2d(self.point_feat_channels, pts_out_dim, 1, 1, 0)
 		
-		self.pycenter_br_pts_init_conv = nn.Conv2d(self.feat_channels, self.point_feat_channels, 3, 1, 1)
-		self.pycenter_br_pts_init_out = nn.Conv2d(self.point_feat_channels,
+		self.reppoints_br_pts_init_conv = nn.Conv2d(self.feat_channels, self.point_feat_channels, 3, 1, 1)
+		self.reppoints_br_pts_init_out = nn.Conv2d(self.point_feat_channels,
 												  pts_out_dim, 1, 1, 0)
 		pts_in_channels = self.feat_channels + 9
-		self.pycenter_tl_pts_refine_conv = DeformConv2d(pts_in_channels,
+		self.reppoints_tl_pts_refine_conv = DeformConv2d(pts_in_channels,
 													  self.point_feat_channels,
 													  self.dcn_kernel, 1,
 													  self.dcn_pad)
-		self.pycenter_tl_pts_refine_out = nn.Conv2d(self.point_feat_channels, pts_out_dim, 1, 1, 0)
+		self.reppoints_tl_pts_refine_out = nn.Conv2d(self.point_feat_channels, pts_out_dim, 1, 1, 0)
 
-		self.pycenter_br_pts_refine_conv = DeformConv2d(pts_in_channels,
-													  self.point_feat_channels,
-													  self.dcn_kernel, 1,
-													  self.dcn_pad)
-		self.pycenter_br_pts_refine_out = nn.Conv2d(self.point_feat_channels, pts_out_dim, 1, 1, 0)
+		self.reppoints_br_pts_refine_conv = DeformConv2d(pts_in_channels, self.point_feat_channels, self.dcn_kernel, 1, self.dcn_pad)
+		self.reppoints_br_pts_refine_out = nn.Conv2d(self.point_feat_channels, pts_out_dim, 1, 1, 0)
 
-		self.pycenter_hem_tl_score_out = nn.Conv2d(self.feat_channels, 1, 3, 1, 1)
-		self.pycenter_hem_br_score_out = nn.Conv2d(self.feat_channels, 1, 3, 1, 1)
-		self.pycenter_hem_ct_score_out = nn.Conv2d(self.feat_channels, 1, 3, 1, 1)
-		self.pycenter_hem_tl_offset_out = nn.Conv2d(self.feat_channels, 2, 3, 1, 1)
-		self.pycenter_hem_br_offset_out = nn.Conv2d(self.feat_channels, 2, 3, 1, 1)
-		self.pycenter_hem_ct_offset_out = nn.Conv2d(self.feat_channels, 2, 3, 1, 1)
+		self.reppoints_hem_tl_score_out = nn.Conv2d(self.feat_channels, 1, 3, 1, 1)
+		self.reppoints_hem_br_score_out = nn.Conv2d(self.feat_channels, 1, 3, 1, 1)
+		self.reppoints_hem_ct_score_out = nn.Conv2d(self.feat_channels, 1, 3, 1, 1)
+		self.reppoints_hem_tl_offset_out = nn.Conv2d(self.feat_channels, 2, 3, 1, 1)
+		self.reppoints_hem_br_offset_out = nn.Conv2d(self.feat_channels, 2, 3, 1, 1)
+		self.reppoints_hem_ct_offset_out = nn.Conv2d(self.feat_channels, 2, 3, 1, 1)
 
-		self.pycenter_sem_out = nn.Conv2d(self.feat_channels, self.cls_out_channels, 1, 1, 0)
-		self.pycenter_sem_embedding = ConvModule(
+		self.reppoints_sem_out = nn.Conv2d(self.feat_channels, self.cls_out_channels, 1, 1, 0)
+		self.reppoints_sem_embedding = ConvModule(
 			self.feat_channels,
 			self.feat_channels,
 			1,
@@ -217,26 +214,26 @@ class PyCenterNetHead(AnchorFreeHead):
 		for m in self.shared_convs:
 			normal_init(m.conv, std=0.01)
 		bias_cls = bias_init_with_prob(0.01)
-		normal_init(self.pycenter_tl_cls_conv, std=0.01)
-		normal_init(self.pycenter_tl_cls_out, std=0.01, bias=bias_cls)
-		normal_init(self.pycenter_br_cls_conv, std=0.01)
-		normal_init(self.pycenter_br_cls_out, std=0.01, bias=bias_cls)
+		normal_init(self.reppoints_tl_cls_conv, std=0.01)
+		normal_init(self.reppoints_tl_cls_out, std=0.01, bias=bias_cls)
+		normal_init(self.reppoints_br_cls_conv, std=0.01)
+		normal_init(self.reppoints_br_cls_out, std=0.01, bias=bias_cls)
 
-		normal_init(self.pycenter_tl_pts_init_conv, std=0.01)
-		normal_init(self.pycenter_tl_pts_init_out, std=0.01)
-		normal_init(self.pycenter_br_pts_init_conv, std=0.01)
-		normal_init(self.pycenter_br_pts_init_out, std=0.01)
-		normal_init(self.pycenter_tl_pts_refine_conv, std=0.01)
-		normal_init(self.pycenter_tl_pts_refine_out, std=0.01)
-		normal_init(self.pycenter_br_pts_refine_conv, std=0.01)
-		normal_init(self.pycenter_br_pts_refine_out, std=0.01)
-		normal_init(self.pycenter_hem_tl_score_out, std=0.01, bias=bias_cls)
-		normal_init(self.pycenter_hem_tl_offset_out, std=0.01)
-		normal_init(self.pycenter_hem_br_score_out, std=0.01, bias=bias_cls)
-		normal_init(self.pycenter_hem_br_offset_out, std=0.01)
-		normal_init(self.pycenter_hem_ct_score_out, std=0.01, bias=bias_cls)
-		normal_init(self.pycenter_hem_ct_offset_out, std=0.01)
-		normal_init(self.pycenter_sem_out, std=0.01, bias=bias_cls)
+		normal_init(self.reppoints_tl_pts_init_conv, std=0.01)
+		normal_init(self.reppoints_tl_pts_init_out, std=0.01)
+		normal_init(self.reppoints_br_pts_init_conv, std=0.01)
+		normal_init(self.reppoints_br_pts_init_out, std=0.01)
+		normal_init(self.reppoints_tl_pts_refine_conv, std=0.01)
+		normal_init(self.reppoints_tl_pts_refine_out, std=0.01)
+		normal_init(self.reppoints_br_pts_refine_conv, std=0.01)
+		normal_init(self.reppoints_br_pts_refine_out, std=0.01)
+		normal_init(self.reppoints_hem_tl_score_out, std=0.01, bias=bias_cls)
+		normal_init(self.reppoints_hem_tl_offset_out, std=0.01)
+		normal_init(self.reppoints_hem_br_score_out, std=0.01, bias=bias_cls)
+		normal_init(self.reppoints_hem_br_offset_out, std=0.01)
+		normal_init(self.reppoints_hem_ct_score_out, std=0.01, bias=bias_cls)
+		normal_init(self.reppoints_hem_ct_offset_out, std=0.01)
+		normal_init(self.reppoints_sem_out, std=0.01, bias=bias_cls)
 
 	def points2bbox(self, pts, y_first=True):
 		"""Converting the points set into bounding box.
@@ -293,8 +290,8 @@ class PyCenterNetHead(AnchorFreeHead):
 		sem_feat = shared_feat
 		hem_feat = shared_feat
 
-		sem_scores_out = self.pycenter_sem_out(sem_feat)
-		sem_feat = self.pycenter_sem_embedding(sem_feat)
+		sem_scores_out = self.reppoints_sem_out(sem_feat)
+		sem_feat = self.reppoints_sem_embedding(sem_feat)
 
 		tl_cls_feat = tl_cls_feat + sem_feat
 		br_cls_feat = br_cls_feat + sem_feat
@@ -307,21 +304,21 @@ class PyCenterNetHead(AnchorFreeHead):
 		hem_br_feat = self.hem_br(hem_feat)
 		hem_ct_feat = self.hem_ct(hem_feat)
 
-		hem_tl_score_out = self.pycenter_hem_tl_score_out(hem_tl_feat)
-		hem_tl_offset_out = self.pycenter_hem_tl_offset_out(hem_tl_feat)
-		hem_br_score_out = self.pycenter_hem_br_score_out(hem_br_feat)
-		hem_br_offset_out = self.pycenter_hem_br_offset_out(hem_br_feat)
-		hem_ct_score_out = self.pycenter_hem_ct_score_out(hem_ct_feat)
-		hem_ct_offset_out = self.pycenter_hem_ct_offset_out(hem_ct_feat)
+		hem_tl_score_out = self.reppoints_hem_tl_score_out(hem_tl_feat)
+		hem_tl_offset_out = self.reppoints_hem_tl_offset_out(hem_tl_feat)
+		hem_br_score_out = self.reppoints_hem_br_score_out(hem_br_feat)
+		hem_br_offset_out = self.reppoints_hem_br_offset_out(hem_br_feat)
+		hem_ct_score_out = self.reppoints_hem_ct_score_out(hem_ct_feat)
+		hem_ct_offset_out = self.reppoints_hem_ct_offset_out(hem_ct_feat)
 
 		hem_score_out = torch.cat([hem_tl_score_out, hem_br_score_out, hem_ct_score_out], dim=1)
 		hem_offset_out = torch.cat([hem_tl_offset_out, hem_br_offset_out, hem_ct_offset_out], dim=1)
 
 		# initialize 
-		pts_tl_out_init = self.pycenter_tl_pts_init_out(
-							self.relu(self.pycenter_tl_pts_init_conv(tl_pts_feat)))
-		pts_br_out_init = self.pycenter_br_pts_init_out(
-							self.relu(self.pycenter_br_pts_init_conv(br_pts_feat)))
+		pts_tl_out_init = self.reppoints_tl_pts_init_out(
+							self.relu(self.reppoints_tl_pts_init_conv(tl_pts_feat)))
+		pts_br_out_init = self.reppoints_br_pts_init_out(
+							self.relu(self.reppoints_br_pts_init_conv(br_pts_feat)))
 		# refine and classify
 		pts_tl_out_init_grad_mul = (1 - self.gradient_mul) * pts_tl_out_init.detach() + self.gradient_mul * pts_tl_out_init
 		pts_br_out_init_grad_mul = (1 - self.gradient_mul) * pts_br_out_init.detach() + self.gradient_mul * pts_br_out_init
@@ -334,14 +331,14 @@ class PyCenterNetHead(AnchorFreeHead):
 		tl_pts_feat = torch.cat([tl_pts_feat, hem_feat], dim=1)
 		br_pts_feat = torch.cat([br_pts_feat, hem_feat], dim=1)
 
-		tl_cls_out = self.pycenter_tl_cls_out(self.relu(
-					  self.pycenter_tl_cls_conv(tl_cls_feat, dcn_tl_offset)))
-		br_cls_out = self.pycenter_br_cls_out(self.relu(
-					  self.pycenter_br_cls_conv(br_cls_feat, dcn_br_offset)))
-		pts_tl_out_refine = self.pycenter_tl_pts_refine_out(self.relu(
-					  self.pycenter_tl_pts_refine_conv(tl_pts_feat, dcn_tl_offset)))
-		pts_br_out_refine = self.pycenter_br_pts_refine_out(self.relu(
-					  self.pycenter_br_pts_refine_conv(br_pts_feat, dcn_br_offset)))
+		tl_cls_out = self.reppoints_tl_cls_out(self.relu(
+					  self.reppoints_tl_cls_conv(tl_cls_feat, dcn_tl_offset)))
+		br_cls_out = self.reppoints_br_cls_out(self.relu(
+					  self.reppoints_br_cls_conv(br_cls_feat, dcn_br_offset)))
+		pts_tl_out_refine = self.reppoints_tl_pts_refine_out(self.relu(
+					  self.reppoints_tl_pts_refine_conv(tl_pts_feat, dcn_tl_offset)))
+		pts_br_out_refine = self.reppoints_br_pts_refine_out(self.relu(
+					  self.reppoints_br_pts_refine_conv(br_pts_feat, dcn_br_offset)))
 
 		return (tl_cls_out, br_cls_out, pts_tl_out_init, pts_br_out_init, 
 				pts_tl_out_refine, pts_br_out_refine, hem_score_out, hem_offset_out, sem_scores_out)
