@@ -1061,8 +1061,7 @@ class PyCenterNetHead(AnchorFreeHead):
 			score_map = score_map.sigmoid()
 			score_map_original = score_map.clone()
 
-			score_map, indices = F.max_pool2d_with_indices(score_map.unsqueeze(0), kernel_size=ks, 
-														   stride=1, padding=(ks - 1) // 2)
+			score_map, indices = F.max_pool2d_with_indices(score_map.unsqueeze(0), kernel_size=ks, stride=1, padding=(ks - 1) // 2)
 
 			indices = indices.squeeze(0).squeeze(0)
 
@@ -1092,10 +1091,7 @@ class PyCenterNetHead(AnchorFreeHead):
 		mlvl_tl_scores = []
 		mlvl_br_scores = []
 		dis_thr = cfg.get('distance_threshold', -1)
-		for i_lvl, (tl_cls_score, br_cls_score, tl_bbox_pred, br_bbox_pred,
-					points) in enumerate(zip(tl_cls_scores, br_cls_scores,
-											 tl_bbox_preds, br_bbox_preds,
-											 mlvl_points)):
+		for i_lvl, (tl_cls_score, br_cls_score, tl_bbox_pred, br_bbox_pred, points) in enumerate(zip(tl_cls_scores, br_cls_scores, tl_bbox_preds, br_bbox_preds, mlvl_points)):
 			assert tl_cls_score.size()[-2:] == tl_bbox_pred.size()[-2:]
 			tl_scores = tl_cls_score.permute(1, 2, 0).reshape(-1, self.cls_out_channels).sigmoid()
 			br_scores = br_cls_score.permute(1, 2, 0).reshape(-1, self.cls_out_channels).sigmoid()
@@ -1188,7 +1184,7 @@ class PyCenterNetHead(AnchorFreeHead):
 			bboxes = det_bboxes.new_zeros((0, 5))
 			labels = det_bboxes.new_zeros((0,), dtype=torch.long)
 		else:
-			dets, keep = batched_nms(det_bboxes.float(), det_scores.float(), det_labels, cfg.nms)
+			dets, keep = batched_nms(det_bboxes.float(), det_scores.float(), det_labels.int(), cfg.nms)
 			if cfg.max_per_img > 0:
 				bboxes = dets[:cfg.max_per_img]
 				keep   = keep[:cfg.max_per_img]
@@ -1197,9 +1193,7 @@ class PyCenterNetHead(AnchorFreeHead):
 
 	def get_num_level_proposals_inside(self, num_level_proposals, inside_flags):
 		split_inside_flags = torch.split(inside_flags, num_level_proposals)
-		num_level_proposals_inside = [
-			int(flags.sum()) for flags in split_inside_flags
-		]
+		num_level_proposals_inside = [int(flags.sum()) for flags in split_inside_flags]
 		return num_level_proposals_inside
 
 	def process_gt(self, gt_bboxes_list):
