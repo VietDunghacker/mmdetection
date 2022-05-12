@@ -106,11 +106,11 @@ def multiclass_nms(multi_bboxes,
 	if multi_bboxes.shape[1] > 4:
 		bboxes = multi_bboxes.view(multi_scores.size(0), -1, 4)[range(multi_scores.size(0)), labels]
 	else:
-		bboxes = multi_bboxes
+		bboxes = multi_bboxes'''
 
 	bboxes = bboxes.reshape(-1, 4)
 	scores = scores.reshape(-1)
-	labels = labels.reshape(-1)'''
+	labels = labels.reshape(-1)
 
 	if not torch.onnx.is_in_onnx_export():
 		# NonZero not supported  in TensorRT
