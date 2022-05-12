@@ -249,6 +249,7 @@ class PyCenterNetHead(AnchorFreeHead):
 	def forward(self, feats):
 		return multi_apply(self.forward_single, feats)
 
+	@force_fp32()
 	def forward_single(self, x):
 		""" Forward feature map of a single FPN level."""
 		if isinstance(x, list):
