@@ -1076,7 +1076,7 @@ class PyCenterNetHead(AnchorFreeHead):
 
 			select_indices = indices[y_round.to(torch.long), x_round.to(torch.long)]
 			new_x = select_indices % W
-			new_y = torch.div(select_indices, W, rounding_mode='floor')
+			new_y = select_indices // W
 
 			score_map_squeeze = score_map_original.squeeze(0)
 			score = score_map_squeeze[new_y, new_x]
