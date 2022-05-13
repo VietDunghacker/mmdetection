@@ -55,8 +55,7 @@ class PointAssignerV2(BaseAssigner):
 				assigned_labels = points.new_full((num_points, ),
 												  -1,
 												  dtype=torch.long)
-			return AssignResult(
-				num_gts, assigned_gt_inds, None, labels=assigned_labels)
+			return AssignResult(num_gts, assigned_gt_inds, None, labels=assigned_labels)
 
 		points_xy = points[:, :2]
 		points_stride = points[:, 2]
@@ -67,8 +66,7 @@ class PointAssignerV2(BaseAssigner):
 		gt_bboxes_xy = (gt_bboxes[:, :2] + gt_bboxes[:, 2:]) / 2
 		gt_bboxes_wh = (gt_bboxes[:, 2:] - gt_bboxes[:, :2]).clamp(min=1e-6)
 		scale = self.scale
-		gt_bboxes_lvl = ((torch.log2(gt_bboxes_wh[:, 0] / scale) +
-						  torch.log2(gt_bboxes_wh[:, 1] / scale)) / 2).int()
+		gt_bboxes_lvl = ((torch.log2(gt_bboxes_wh[:, 0] / scale) + torch.log2(gt_bboxes_wh[:, 1] / scale)) / 2).int()
 		gt_bboxes_lvl = torch.clamp(gt_bboxes_lvl, min=lvl_min, max=lvl_max)
 
 		distances = ((points_xy[:, None, :] - gt_bboxes_xy[None, :, :]) / gt_bboxes_wh[None, :, :]).norm(dim=2)

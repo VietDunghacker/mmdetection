@@ -85,8 +85,7 @@ class WindowMSA(BaseModule):
 				Wh*Ww, Wh*Ww), value should be between (-inf, 0].
 		"""
 		B, N, C = x.shape
-		qkv = self.qkv(x).reshape(B, N, 3, self.num_heads,
-								  C // self.num_heads).permute(2, 0, 3, 1, 4)
+		qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
 		# make torchscript happy (cannot use tensor as tuple)
 		q, k, v = qkv[0], qkv[1], qkv[2]
 

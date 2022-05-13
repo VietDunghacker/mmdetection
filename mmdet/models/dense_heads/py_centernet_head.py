@@ -1185,6 +1185,10 @@ class PyCenterNetHead(AnchorFreeHead):
 			bboxes = det_bboxes.new_zeros((0, 5))
 			labels = det_bboxes.new_zeros((0,), dtype=torch.long)
 		else:
+			det_bboxes, keep = batched_nms(det_bboxes.float(), det_scores.float(), det_labels, dict(type="nms", iou_thr=1.0), True)
+			det_scores = det_scores[keep]
+			det_labels = det_labels[keep]
+
 			dets, keep = batched_nms(det_bboxes.float(), det_scores.float(), det_labels, cfg.nms)
 			if cfg.max_per_img > 0:
 				bboxes = dets[:cfg.max_per_img]
