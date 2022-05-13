@@ -138,10 +138,8 @@ train_pipeline = [
 	),
 	dict(
 		type='CutOut',
-		n_holes=(5, 10),
-		cutout_shape=[(4, 4), (4, 8), (8, 4), (8, 8),
-					  (16, 8), (8, 16), (16, 16), (16, 32), (32, 16), (32, 32),
-					  (32, 48), (48, 32), (48, 48)]),
+		n_holes=(5, 25),
+		cutout_shape=[(4, 4), (4, 8), (8, 4), (8, 8), (16, 8), (8, 16), (16, 16), (16, 32), (32, 16), (32, 32)]),
 	dict(type='RandomFlip', flip_ratio=0.5),
 	dict(type='Pad', size_divisor=32),
 	dict(
