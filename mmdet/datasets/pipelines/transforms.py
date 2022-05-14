@@ -2653,7 +2653,7 @@ class RandomMaskFace:
 		img = results['img']
 
 		boxes, scores = mtcnn.detect(img)
-		if boxes:
+		if boxes is not None:
 			boxes = [boxes[i] for i in range(len(boxes)) if scores[i] >= 0.9]
 		else:
 			boxes = []
