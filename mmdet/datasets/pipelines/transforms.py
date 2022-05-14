@@ -2683,7 +2683,6 @@ class RandomMaskFace:
 					img[y1 : y2, x1 : x2] = np.random.randint(0, 255, (y2 - y1, x2 - x1, 3))
 
 					del boxes[erase_idx]
-					break
 
 			remain_idx = [i for i in range(len(results['gt_bboxes'])) if not i in remove_idxs]
 			print(remove_idxs)
