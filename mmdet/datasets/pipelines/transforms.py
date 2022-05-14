@@ -2685,6 +2685,9 @@ class RandomMaskFace:
 
 					del boxes[erase_idx]
 
+			print(remove_idxs)
+			print(results['gt_bboxes'])
+
 			remain_idx = [i for i in range(len(results['gt_bboxes'])) if not i in remove_idxs]
 			print(remain_idx)
 
