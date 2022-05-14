@@ -28,7 +28,7 @@ except ImportError:
 
 from facenet_pytorch import MTCNN
 
-mtcnn = MTCNN(thresholds= [0.7, 0.7, 0.8] ,keep_all=True, device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu'))
+mtcnn = MTCNN(thresholds= [0.7, 0.7, 0.8] ,keep_all=True, device = 'cpu')
 
 @PIPELINES.register_module()
 class Resize:
