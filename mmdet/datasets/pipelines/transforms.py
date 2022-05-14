@@ -2675,11 +2675,11 @@ class RandomMaskFace:
 					y_limit = person[1] + (person[3] - person[1]) * 0.9
 
 					x1, y1 = (random.randint(max(0, face[0] - face_width / 10), face[0]), random.randint(max(0, face[1] - face_height / 10), face[1]))
-					x2, y2 = min(x1 + face_width, x_limit), min(y1 + face_height, y_limit)
+					x2, y2 = random.randint(min(x1 + face_width * 0.9, x_limit), face[2]), random.randint(min(y1 + face_height * 0.9, y_limit), face[3])
 
 					x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
 
-					img[y1 : y2, x1 : x2] = img[y1 : y2, x1 : x2] // 5
+					img[y1 : y2, x1 : x2] = img[y1 : y2, x1 : x2] // 10
 
 					del boxes[erase_idx]
 
