@@ -2673,7 +2673,7 @@ class RandomMaskFace:
 						x_limit = person[0] + (person[2] - person[0]) * 2 / 3
 						y_limit = person[1] + (person[3] - person[1]) * 2 / 3
 
-						x1, y1 = (max(0, face[0] - face_width / 3), max(0, face[1] - face_height / 3))
+						x1, y1 = (max(0, face[0] - face_width / 5), max(0, face[1] - face_height / 5))
 						x2, y2 = min(x1 + face_width, x_limit), min(y1 + face_height, y_limit)
 
 						x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
