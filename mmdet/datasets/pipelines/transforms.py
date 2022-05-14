@@ -2650,57 +2650,58 @@ class RandomMaskFace:
 		self.mask_face_prob = mask_face_prob
 
 	def __call__(self, results):
-		img = results['img']
-		h, w = img.shape[:2]
+		if random.random() < self.mask_face_prob:
+			img = results['img']
+			h, w = img.shape[:2]
 
-		boxes, scores = mtcnn.detect(img)
-		if boxes is not None:
-			boxes = [boxes[i] for i in range(len(boxes)) if scores[i] >= 0.9]
+			boxes, scores = mtcnn.detect(img)
+			if boxes is not None:
+				boxes = [boxes[i] for i in range(len(boxes)) if scores[i] >= 0.9]
 
-			new_boxes = []
-			for box in boxes:
-				new_boxes.append((max(box[0], 0), max(box[1], 0), min(box[0], w), min(box[1], h)))
-			boxes = new_boxes
-			
-		else:
-			boxes = []
+				new_boxes = []
+				for box in boxes:
+					new_boxes.append((max(box[0], 0), max(box[1], 0), min(box[0], w), min(box[1], h)))
+				boxes = new_boxes
+				
+			else:
+				boxes = []
 
-		if len(boxes) and len(results['gt_bboxes']) and random.random() < self.mask_face_prob:
-			remove_idxs = []
-			for idx, person in enumerate(results['gt_bboxes']):
-				erase_idx = self.find_valid_face(person, boxes)
+			if len(boxes) and len(results['gt_bboxes']):
+				remove_idxs = []
+				for idx, person in enumerate(results['gt_bboxes']):
+					erase_idx = self.find_valid_face(person, boxes)
 
-				if erase_idx >= 0:
-					face = boxes[erase_idx]
+					if erase_idx >= 0:
+						face = boxes[erase_idx]
 
-					remove_idxs.append(idx)
+						remove_idxs.append(idx)
 
-					face_width = face[2] - face[0]
-					face_height = face[3] - face[1]
+						face_width = face[2] - face[0]
+						face_height = face[3] - face[1]
 
-					x_limit = person[0] + (person[2] - person[0]) * 0.9
-					y_limit = person[1] + (person[3] - person[1]) * 0.9
+						x_limit = person[0] + (person[2] - person[0]) * 0.9
+						y_limit = person[1] + (person[3] - person[1]) * 0.9
 
-					x1, y1 = (random.randint(max(0, face[0] - face_width / 10), face[0] + 1), random.randint(max(0, face[1] - face_height / 10), face[1] + 1))
-					x2, y2 = random.randint(min(x1 + face_width * 0.9, x_limit), face[2] + 1), random.randint(min(y1 + face_height * 0.9, y_limit), face[3] + 1)
+						x1, y1 = (random.randint(max(0, face[0] - face_width / 10), face[0] + 1), random.randint(max(0, face[1] - face_height / 10), face[1] + 1))
+						x2, y2 = random.randint(min(x1 + face_width * 0.9, x_limit), face[2] + 1), random.randint(min(y1 + face_height * 0.9, y_limit), face[3] + 1)
 
-					x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+						x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
 
-					mask = np.random.rand(y2 - y1, x2 - x1) >= 0.25
-					cropped_region = img[y1 : y2, x1 : x2]
-					random_color = np.random.randint(0, 256, (y2 - y1, x2 - x1, 3))
-					cropped_region[mask] = random_color[mask]
+						mask = np.random.rand(y2 - y1, x2 - x1) >= 0.25
+						cropped_region = img[y1 : y2, x1 : x2]
+						random_color = np.random.randint(0, 256, (y2 - y1, x2 - x1, 3))
+						cropped_region[mask] = random_color[mask]
 
-					img[y1 : y2, x1 : x2] = cropped_region
+						img[y1 : y2, x1 : x2] = cropped_region
 
-					del boxes[erase_idx]
+						del boxes[erase_idx]
 
-			remain_idx = [i for i in range(len(results['gt_bboxes'])) if not i in remove_idxs]
+				remain_idx = [i for i in range(len(results['gt_bboxes'])) if not i in remove_idxs]
 
-			for key in ['gt_bboxes', 'gt_labels']:
-				results[key] = results[key][remain_idx]
+				for key in ['gt_bboxes', 'gt_labels']:
+					results[key] = results[key][remain_idx]
 
-			results['img'] = img
+				results['img'] = img
 		return results
 
 	def find_valid_face(self, person, faces):
