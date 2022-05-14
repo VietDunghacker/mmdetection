@@ -2679,7 +2679,7 @@ class RandomMaskFace:
 
 					x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
 
-					mask = np.random.rand(y2 - y1, x2 - x1)
+					mask = np.random.rand(y2 - y1, x2 - x1) >= 0.5
 					cropped_region = img[y1 : y2, x1 : x2]
 					random_color = np.random.randint(0, 255, (y2 - y1, x2 - x1, 3))
 					cropped_region[mask] = random_color[mask]
