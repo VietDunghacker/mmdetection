@@ -18,10 +18,8 @@ def gaussian2D(radius, sigma=1, dtype=torch.float32, device='cpu'):
 		h (Tensor): Gaussian kernel with a
 			``(2 * radius + 1) * (2 * radius + 1)`` shape.
 	"""
-	x = torch.arange(
-		-radius, radius + 1, dtype=dtype, device=device).view(1, -1)
-	y = torch.arange(
-		-radius, radius + 1, dtype=dtype, device=device).view(-1, 1)
+	x = torch.arange(-radius, radius + 1, dtype=dtype, device=device).view(1, -1)
+	y = torch.arange(-radius, radius + 1, dtype=dtype, device=device).view(-1, 1)
 
 	h = (-(x * x + y * y) / (2 * sigma * sigma)).exp()
 
@@ -43,8 +41,7 @@ def gen_gaussian_target(heatmap, center, radius, k=1):
 		out_heatmap (Tensor): Updated heatmap covered by gaussian kernel.
 	"""
 	diameter = 2 * radius + 1
-	gaussian_kernel = gaussian2D(
-		radius, sigma=diameter / 6, dtype=heatmap.dtype, device=heatmap.device)
+	gaussian_kernel = gaussian2D(radius, sigma=diameter / 6, dtype=heatmap.dtype, device=heatmap.device)
 
 	x, y = center
 
