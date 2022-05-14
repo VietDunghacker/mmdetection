@@ -2651,7 +2651,6 @@ class RandomMaskFace:
 
 	def __call__(self, results):
 		img = results['img']
-		img = cv2.imread('/content/data/CelebrityDataset/train_images/Image_000036385.jpg')
 
 		boxes, scores = mtcnn.detect(img)
 		if boxes is not None:
