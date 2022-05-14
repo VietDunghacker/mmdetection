@@ -2674,14 +2674,14 @@ class RandomMaskFace:
 					x_limit = person[0] + (person[2] - person[0]) * 0.9
 					y_limit = person[1] + (person[3] - person[1]) * 0.9
 
-					x1, y1 = (random.randint(max(0, face[0] - face_width / 10), face[0]), random.randint(max(0, face[1] - face_height / 10), face[1]))
-					x2, y2 = random.randint(min(x1 + face_width * 0.9, x_limit), face[2]), random.randint(min(y1 + face_height * 0.9, y_limit), face[3])
+					x1, y1 = (random.randint(max(0, face[0] - face_width / 10), face[0] + 1), random.randint(max(0, face[1] - face_height / 10), face[1] + 1))
+					x2, y2 = random.randint(min(x1 + face_width * 0.9, x_limit), face[2] + 1), random.randint(min(y1 + face_height * 0.9, y_limit), face[3] + 1)
 
 					x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
 
 					mask = np.random.rand(y2 - y1, x2 - x1) >= 0.25
 					cropped_region = img[y1 : y2, x1 : x2]
-					random_color = np.random.randint(0, 255, (y2 - y1, x2 - x1, 3))
+					random_color = np.random.randint(0, 256, (y2 - y1, x2 - x1, 3))
 					cropped_region[mask] = random_color[mask]
 
 					img[y1 : y2, x1 : x2] = cropped_region
