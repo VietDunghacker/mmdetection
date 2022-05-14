@@ -2661,28 +2661,28 @@ class RandomMaskFace:
 		if len(boxes) and len(results['gt_bboxes']):
 			remove_idxs = []
 			for idx, person in enumerate(results['gt_bboxes']):
-				erase_idx = -1
-				for face_idx, face in enumerate(boxes):
-					if self.valid_face(person, face) and random.random() < self.mask_face_prob:
-						remove_idxs.append(idx)
-						erase_idx = face_idx
+				erase_idx = self.find_valid_face(person, boxes)
 
-						face_width = face[2] - face[0]
-						face_height = face[3] - face[1]
+				if erase_idx >= 0 and random.random() < self.mask_face_prob:
+					face = boxes[erase_idx]
 
-						x_limit = person[0] + (person[2] - person[0]) * 2 / 3
-						y_limit = person[1] + (person[3] - person[1]) * 2 / 3
+					remove_idxs.append(idx)
 
-						x1, y1 = (max(0, face[0] - face_width / 10), max(0, face[1] - face_height / 10))
-						x2, y2 = min(x1 + face_width, x_limit), min(y1 + face_height, y_limit)
+					face_width = face[2] - face[0]
+					face_height = face[3] - face[1]
 
-						x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+					x_limit = person[0] + (person[2] - person[0]) * 2 / 3
+					y_limit = person[1] + (person[3] - person[1]) * 2 / 3
 
-						img[y1 : y2, x1 : x2] = random.randint(0, 255)
+					x1, y1 = (max(0, face[0] - face_width / 10), max(0, face[1] - face_height / 10))
+					x2, y2 = min(x1 + face_width, x_limit), min(y1 + face_height, y_limit)
 
-						break
+					x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
 
-				if erase_idx >= 0:
+					img[y1 : y2, x1 : x2] = random.randint(0, 255)
+
+					break
+
 					del boxes[erase_idx]
 
 			remain_idx = [i for i in range(len(results['gt_bboxes'])) if not i in remove_idxs]
