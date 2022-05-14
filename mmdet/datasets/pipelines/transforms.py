@@ -2698,7 +2698,7 @@ class RandomMaskFace:
 		return results
 
 	def find_valid_face(self, person, faces):
-		valid_faces = [self.valid_face(person, face) for face in faces]:
+		valid_faces = [self.valid_face(person, face) for face in faces]
 
 		largest_area = 0
 		return_idx = -1
