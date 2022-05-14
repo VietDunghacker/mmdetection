@@ -2697,8 +2697,23 @@ class RandomMaskFace:
 
 		return results
 
+	def find_valid_face(self, person, faces):
+		valid_faces = [self.valid_face(person, face) for face in faces]:
+
+		largest_area = 0
+		return_idx = -1
+
+		for idx, (face, valid) in enumerate(zip(faces, valid_faces)):
+			if valid:
+				face_area = (face[3] - face[1]) * (face[2] - face[0])
+				if face_area > largest_area:
+					largest_area = face_area
+					return_idx = idx
+
+		return return_idx
+
 	def valid_face(self, person, face):
-		return face[0] >= person[0] - 5 and face[1] >= person[1] - 5 and face[2] <= person[2] + 5 and face[3] <= person[3] + 5
+		return face[0] >= person[0] - 5 and face[1] >= person[1] - 5 and face[2] <= person[2] + 5 and face[3] <= person[3] + 5 and abs(face[3] - face[1]) <= (person[3] - person[1]) / 10
 
 	def __repr__(self):
 		repr_str = self.__class__.__name__
