@@ -2651,10 +2651,12 @@ class RandomMaskFace:
 
 	def __call__(self, results):
 		img = results['img']
+		h, w = img.shape[:2]
 
 		boxes, scores = mtcnn.detect(img)
 		if boxes is not None:
 			boxes = [boxes[i] for i in range(len(boxes)) if scores[i] >= 0.9]
+			
 		else:
 			boxes = []
 
@@ -2665,6 +2667,7 @@ class RandomMaskFace:
 
 				if erase_idx >= 0 and random.random() < self.mask_face_prob:
 					face = boxes[erase_idx]
+					face = max(face[0], 0), max(face[1], 0), min(face[0], w), min(face[1], h)
 
 					remove_idxs.append(idx)
 
