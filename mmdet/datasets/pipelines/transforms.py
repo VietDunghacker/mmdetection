@@ -2662,7 +2662,6 @@ class RandomMaskFace:
 			remove_idxs = []
 			for idx, person in enumerate(results['gt_bboxes']):
 				erase_idx = self.find_valid_face(person, boxes)
-				print(person, boxes)
 
 				if erase_idx >= 0 and random.random() < self.mask_face_prob:
 					face = boxes[erase_idx]
@@ -2685,15 +2684,11 @@ class RandomMaskFace:
 					del boxes[erase_idx]
 
 			remain_idx = [i for i in range(len(results['gt_bboxes'])) if not i in remove_idxs]
-			print(remove_idxs)
 
 			for key in ['gt_bboxes', 'gt_labels']:
 				results[key] = results[key][remain_idx]
-				print(key, results[key])
 
-			cv2.imwrite('test.jpg', img)
-			assert False
-
+		results['img'] = img
 		return results
 
 	def find_valid_face(self, person, faces):
