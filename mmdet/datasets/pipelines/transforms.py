@@ -2685,16 +2685,12 @@ class RandomMaskFace:
 
 					del boxes[erase_idx]
 
-			print(remove_idxs)
-			print(results['gt_bboxes'])
-
 			remain_idx = [i for i in range(len(results['gt_bboxes'])) if not i in remove_idxs]
 			print(remain_idx)
 
-			for key in results.get('bbox_fields', []):
-				print(key)
+			for key in ['gt_bboxes', 'gt_labels']:
 				results[key] = results[key][remain_idx]
-				print(results[key])
+				print(key, results[key])
 
 			cv2.imwrite('test.jpg', img)
 			assert False
