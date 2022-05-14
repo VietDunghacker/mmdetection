@@ -2679,7 +2679,7 @@ class RandomMaskFace:
 
 					x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
 
-					img[y1 : y2, x1 : x2] = random.randint(0, 255)
+					img[y1 : y2, x1 : x2] = np.random.randint(0, 255, (y2 - y1, x2 - x1))
 
 					del boxes[erase_idx]
 					break
