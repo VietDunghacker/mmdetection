@@ -2681,9 +2681,8 @@ class RandomMaskFace:
 
 					img[y1 : y2, x1 : x2] = random.randint(0, 255)
 
-					break
-
 					del boxes[erase_idx]
+					break
 
 			remain_idx = [i for i in range(len(results['gt_bboxes'])) if not i in remove_idxs]
 			print(remain_idx)
@@ -2713,7 +2712,7 @@ class RandomMaskFace:
 		return return_idx
 
 	def valid_face(self, person, face):
-		return face[0] >= person[0] - 5 and face[1] >= person[1] - 5 and face[2] <= person[2] + 5 and face[3] <= person[3] + 5 and abs(face[3] - face[1]) <= (person[3] - person[1]) / 10
+		return face[0] >= person[0] - 5 and face[1] >= person[1] - 5 and face[2] <= person[2] + 5 and face[3] <= person[3] + 5 and abs(face[1] - person[1]) <= (person[3] - person[1]) / 5
 
 	def __repr__(self):
 		repr_str = self.__class__.__name__
