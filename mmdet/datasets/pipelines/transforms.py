@@ -2665,12 +2665,12 @@ class RandomMaskFace:
 		else:
 			boxes = []
 
-		if len(boxes) and len(results['gt_bboxes']):
+		if len(boxes) and len(results['gt_bboxes']) and random.random() < self.mask_face_prob:
 			remove_idxs = []
 			for idx, person in enumerate(results['gt_bboxes']):
 				erase_idx = self.find_valid_face(person, boxes)
 
-				if erase_idx >= 0 and random.random() < self.mask_face_prob:
+				if erase_idx >= 0:
 					face = boxes[erase_idx]
 
 					remove_idxs.append(idx)
