@@ -2691,7 +2691,7 @@ class RandomMaskFace:
 				results[key] = results[key][remain_idx]
 				print(key, results[key])
 
-			cv2.imwrite(img, 'test.jpg')
+			cv2.imwrite('test.jpg', img)
 			assert False
 
 		return results
