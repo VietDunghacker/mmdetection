@@ -2663,7 +2663,7 @@ class RandomMaskFace:
 			for idx, person in enumerate(results['gt_bboxes']):
 				erase_idx = -1
 				for face_idx, face in enumerate(boxes):
-					if self.valid_face(person, face) and random.random() > mask_face_prob:
+					if self.valid_face(person, face) and random.random() > self.mask_face_prob:
 						remove_idxs.append(idx)
 						erase_idx = face_idx
 
