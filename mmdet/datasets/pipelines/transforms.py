@@ -2,6 +2,7 @@
 import copy
 import inspect
 import math
+import torch
 
 import cv2
 import mmcv
@@ -25,6 +26,13 @@ except ImportError:
 	albumentations = None
 	Compose = None
 
+try:
+	from facenet_pytorch import MTCNN
+except ImportError:
+	!pip instal facenet_pytorch
+	from facenet_pytorch import MTCNN
+
+mtcnn = MTCNN(thresholds= [0.7, 0.7, 0.8] ,keep_all=True, device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu'))
 
 @PIPELINES.register_module()
 class Resize:
@@ -2638,4 +2646,59 @@ class YOLOXHSVRandomAug:
 		repr_str += f'(hue_delta={self.hue_delta}, '
 		repr_str += f'saturation_delta={self.saturation_delta}, '
 		repr_str += f'value_delta={self.value_delta})'
+		return repr_str
+
+@PIPELINES.register_module()
+class RandomMaskFace:
+	def __init__(self, mask_face_prob=0.5):
+		self.mask_face_prob = mask_face_prob
+
+	def __call__(self, results):
+		img = results['img']
+
+		boxes, scores = mtcnn.detect(img)
+		if boxes:
+			boxes = [boxes[i] for i in range(len(boxes)) if scores[i] >= 0.9]
+		else:
+			boxes = []
+
+		if len(boxes) and len(results['gt_bboxes']):
+			remove_idxs = []
+			for idx, person in enumerate(results['gt_bboxes']):
+				erase_idx = -1
+				for face_idx, face in enumerate(boxes):
+					if self.valid_face(person, face) and random.random() > mask_face_prob:
+						remove_idxs.append(idx)
+						erase_idx = face_idx
+
+						face_width = face[2] - face[0]
+						face_height = face[3] - face[1]
+
+						x1, y1 = (max(0, face[0] - face_width / 3), max(0, face[1] - face_height / 3))
+						x2, y2 = x1 + face_width, y1 + face_height
+
+						img[y1 : y2, x1 : x2] = 0
+
+						break
+
+				if erase_idx >= 0:
+					del boxes[erase_idx]
+
+			remain_idx = [i for i in range(len(results['gt_bboxes'])) if not i in remove_idxs]
+
+			for key in results.get('bbox_fields', []):
+				results[key] = results[key][remain_idx]
+				print(key, results[key])
+
+			cv2.imwrite(img, 'test.jpg')
+			assert False
+
+		return results
+
+	def valid_face(self, person, face):
+		return face[0] >= person[0] - 5 and face[1] >= person[1] - 5 and face[2] <= person[2] + 5 and face[3] <= person[3] + 5
+
+	def __repr__(self):
+		repr_str = self.__class__.__name__
+		repr_str += f'(mask_face_prob={self.mask_face_prob}), '
 		return repr_str
