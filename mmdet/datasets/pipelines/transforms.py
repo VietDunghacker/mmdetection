@@ -2692,8 +2692,9 @@ class RandomMaskFace:
 			print(remain_idx)
 
 			for key in results.get('bbox_fields', []):
+				print(key)
 				results[key] = results[key][remain_idx]
-				print(key, results[key])
+				print(results[key])
 
 			cv2.imwrite('test.jpg', img)
 			assert False
