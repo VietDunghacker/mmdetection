@@ -2670,7 +2670,6 @@ class RandomMaskFace:
 				remove_idxs = []
 				for idx, person in enumerate(results['gt_bboxes']):
 					erase_idx = self.find_valid_face(person, boxes)
-					print(erase_idx)
 
 					if erase_idx >= 0:
 						face = boxes[erase_idx]
@@ -2710,6 +2709,7 @@ class RandomMaskFace:
 
 	def find_valid_face(self, person, faces):
 		valid_faces = [self.valid_face(person, face) for face in faces]
+		print(valid_faces)
 
 		largest_area = 0
 		return_idx = -1
