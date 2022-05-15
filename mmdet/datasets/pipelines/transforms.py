@@ -2660,7 +2660,7 @@ class RandomMaskFace:
 
 				new_boxes = []
 				for box in boxes:
-					new_boxes.append((max(box[0], 0), max(box[1], 0), min(box[0], w), min(box[1], h)))
+					new_boxes.append((max(box[0], 0), max(box[1], 0), min(box[2], w), min(box[3], h)))
 				boxes = new_boxes
 				
 			else:
@@ -2709,7 +2709,6 @@ class RandomMaskFace:
 
 	def find_valid_face(self, person, faces):
 		valid_faces = [self.valid_face(person, face) for face in faces]
-		print(valid_faces)
 
 		largest_area = 0
 		return_idx = -1
