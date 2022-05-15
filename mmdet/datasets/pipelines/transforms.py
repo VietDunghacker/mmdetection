@@ -2702,13 +2702,10 @@ class RandomMaskFace:
 					results[key] = results[key][remain_idx]
 
 				results['img'] = img
-				cv2.imwrite("test.jpg", img)
-				assert False
 		return results
 
 	def find_valid_face(self, person, faces):
 		valid_faces = [self.valid_face(person, face) for face in faces]
-		print(valid_faces)
 
 		largest_area = 0
 		return_idx = -1
