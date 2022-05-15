@@ -2697,7 +2697,6 @@ class RandomMaskFace:
 						del boxes[erase_idx]
 
 				remain_idx = [i for i in range(len(results['gt_bboxes'])) if not i in remove_idxs]
-				print(remain_idx)
 
 				for key in ['gt_bboxes', 'gt_labels']:
 					results[key] = results[key][remain_idx]
@@ -2709,6 +2708,7 @@ class RandomMaskFace:
 
 	def find_valid_face(self, person, faces):
 		valid_faces = [self.valid_face(person, face) for face in faces]
+		print(valid_faces)
 
 		largest_area = 0
 		return_idx = -1
