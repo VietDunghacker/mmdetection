@@ -2723,7 +2723,7 @@ class RandomMaskFace:
 		return return_idx
 
 	def valid_face(self, person, face):
-		return face[0] >= person[0] - 5 and face[1] >= person[1] - 5 and face[2] <= person[2] + 5 and face[3] <= person[3] + 5 and abs(face[1] - person[1]) <= (person[3] - person[1]) / 5 and face[2] - face[0] >= 32 and face[3] - face[1] >= 32
+		return face[0] >= person[0] - 5 and face[1] >= person[1] - 5 and face[2] <= person[2] + 5 and face[3] <= person[3] + 5 and abs(face[1] - person[1]) <= (person[3] - person[1]) / 5
 
 	def __repr__(self):
 		repr_str = self.__class__.__name__
