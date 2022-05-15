@@ -687,11 +687,9 @@ class PyCenterNetHead(AnchorFreeHead):
 
 		loss_cls = 0
 
-		loss_cls += self.loss_tl_cls(
-			tl_cls_score, tl_labels, tl_label_weights, avg_factor=tl_num_total_samples_refine)
+		loss_cls += self.loss_tl_cls(tl_cls_score, tl_labels, tl_label_weights, avg_factor=tl_num_total_samples_refine)
 
-		loss_cls += self.loss_br_cls(
-			br_cls_score, br_labels, br_label_weights, avg_factor=br_num_total_samples_refine)
+		loss_cls += self.loss_br_cls(br_cls_score, br_labels, br_label_weights, avg_factor=br_num_total_samples_refine)
 
 		loss_cls /= 2.0
 
