@@ -2687,9 +2687,9 @@ class RandomMaskFace:
 
 						x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
 
-						mask = np.random.rand(y2 - y1, x2 - x1) >= 0.2
+						mask = np.random.rand(y2 - y1, x2 - x1) >= 0.05
 						cropped_region = img[y1 : y2, x1 : x2]
-						random_color = cv2.blur(cropped_region, (10, 10))
+						random_color = np.random.randint(0, 256, (y2 - y1, x2 - x1, 3))
 						cropped_region[mask] = random_color[mask]
 
 						img[y1 : y2, x1 : x2] = cropped_region
@@ -2724,7 +2724,7 @@ class RandomMaskFace:
 		return return_idx
 
 	def valid_face(self, person, face):
-		return face[0] >= person[0] - 5 and face[1] >= person[1] - 5 and face[2] <= person[2] + 5 and face[3] <= person[3] + 5 and abs(face[1] - person[1]) <= (person[3] - person[1]) / 5 and face[2] - face[0] >= 32 and face[3] - face[1] >= 32
+		return face[0] >= person[0] - 5 and face[1] >= person[1] - 5 and face[2] <= person[2] + 5 and face[3] <= person[3] + 5 and abs(face[1] - person[1]) <= (person[3] - person[1]) / 5
 
 	def __repr__(self):
 		repr_str = self.__class__.__name__
