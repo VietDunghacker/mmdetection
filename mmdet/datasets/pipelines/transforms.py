@@ -2706,7 +2706,7 @@ class RandomMaskFace:
 					results[key] = results[key][remain_idx]
 
 				if len(remain_idx) == 0:
-					img = img[y_cropped : img.shape[0]]
+					img = img[int(y_cropped) : img.shape[0]]
 
 				print(results['gt_bboxes'])
 
