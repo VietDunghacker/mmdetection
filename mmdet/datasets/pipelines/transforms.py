@@ -2705,14 +2705,10 @@ class RandomMaskFace:
 				for key in ['gt_bboxes', 'gt_labels']:
 					results[key] = results[key][remain_idx]
 
-				if len(remain_idx) == 0:
+				if len(remain_idx) == 0 and random.random() < 0.5:
 					img = img[int(y_cropped) : img.shape[0]]
 
-				print(results['gt_bboxes'])
-
 				results['img'] = img
-				cv2.imwrite("test.jpg", img)
-				assert False
 		return results
 
 	def find_valid_face(self, person, faces):
