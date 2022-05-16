@@ -135,6 +135,10 @@ train_pipeline = [
 				dict(type='Resize', img_scale=[(800, 800), (960, 960)], multiscale_mode='range', keep_ratio=True),
 			],
 			[
+				dict(type='Mosaic', center_ratio_range=(0.95, 1.05), img_scale=(960, 960), pad_val=0.0),
+				dict(type='Resize', img_scale=[(800, 800), (960, 960)], multiscale_mode='range', keep_ratio=True),
+			],
+			[
 				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.95, 0.95), allow_negative_crop = True),
 				dict(type='Resize', img_scale=[(640, 640), (960, 960)], multiscale_mode='range', keep_ratio=True),
 			],
