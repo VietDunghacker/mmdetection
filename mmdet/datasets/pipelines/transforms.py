@@ -2654,6 +2654,8 @@ class RandomMaskFace:
 			img = results['img']
 			h, w = img.shape[:2]
 
+			y_cropped = 0
+
 			boxes, scores = mtcnn.detect(img)
 			if boxes is not None:
 				boxes = [boxes[i] for i in range(len(boxes)) if scores[i] >= 0.9]
@@ -2673,6 +2675,8 @@ class RandomMaskFace:
 
 					if erase_idx >= 0:
 						face = boxes[erase_idx]
+
+						y_cropped = max(y_cropped, face[3])
 
 						remove_idxs.append(idx)
 
@@ -2700,6 +2704,9 @@ class RandomMaskFace:
 
 				for key in ['gt_bboxes', 'gt_labels']:
 					results[key] = results[key][remain_idx]
+
+				if len(remain_idx) == 0:
+					img = img[y_cropped : img.shape[0]]
 
 				print(results['gt_bboxes'])
 
