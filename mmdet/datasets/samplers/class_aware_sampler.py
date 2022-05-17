@@ -56,6 +56,8 @@ class ClassAwareSampler(Sampler):
 		self.orig_cw = copy.deepcopy(self.cw)
 		self.cw /= sum(self.cw)
 
+		self.cw[8] = 100
+
 		print("Number of negative samples: {}".format(len(self.empty_gt)))
 
 		num_columns = min(6, len(self.cw)  * 2)
