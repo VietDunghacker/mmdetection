@@ -56,8 +56,6 @@ class ClassAwareSampler(Sampler):
 		self.orig_cw = copy.deepcopy(self.cw)
 		self.cw /= sum(self.cw)
 
-		self.cw[8] = 100
-
 		print("Number of negative samples: {}".format(len(self.empty_gt)))
 
 		num_columns = min(6, len(self.cw)  * 2)
@@ -87,14 +85,14 @@ class ClassAwareSampler(Sampler):
 			#ret = [1.0] * len(self.dataset)
 			for idx in range(len(self.dataset)):
 				cat_ids = self.dataset.get_cat_ids(idx)
-				t = sum([self.cw[self.dataset.cat2label[cat_id]] for cat_id in cat_ids if cat_id in self.dataset.cat_ids])
+				t = max([self.cw[self.dataset.cat2label[cat_id]] for cat_id in cat_ids if cat_id in self.dataset.cat_ids])
 				if len(cat_ids) == 0:
 					t = 1e-6
 				ret.append(t)
 		else:
 			for idx in range(len(self.dataset)):
 				cat_ids = self.dataset.get_cat_ids(idx)
-				ret.append(sum([self.cw[cat_id] for cat_id in cat_ids if cat_id in self.dataset.cat_ids]) + 1e-6)
+				ret.append(max([self.cw[cat_id] for cat_id in cat_ids if cat_id in self.dataset.cat_ids]) + 1e-6)
 		return torch.tensor(ret).float()
 
 	def __len__(self):

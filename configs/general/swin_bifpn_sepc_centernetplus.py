@@ -116,25 +116,14 @@ albu_train_transforms = [
 			dict(type='ToGray', p = 1.0)
 		],
 		p=0.1),
-	dict(
-		type='OneOf',
-		transforms=[
-			dict(type='MedianBlur', blur_limit=3, p=1.0),
-			dict(type='Blur', blur_limit=3, p=1.0),
-		],
-		p=0.1)
 ]
 
 train_pipeline = [
 	dict(type = 'FocusBoundingBox'),
-	dict(type = 'RandomMaskFace', mask_face_prob=1),
+	dict(type = 'RandomMaskFace', mask_face_prob=0.25),
 	dict(
 		type = 'AutoAugment',
 		policies = [
-			[
-				dict(type='Mosaic', center_ratio_range=(0.95, 1.05), img_scale=(960, 960), pad_val=0.0),
-				dict(type='Resize', img_scale=[(800, 800), (960, 960)], multiscale_mode='range', keep_ratio=True),
-			],
 			[
 				dict(type='Mosaic', center_ratio_range=(0.95, 1.05), img_scale=(960, 960), pad_val=0.0),
 				dict(type='Resize', img_scale=[(800, 800), (960, 960)], multiscale_mode='range', keep_ratio=True),
