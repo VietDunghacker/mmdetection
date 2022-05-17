@@ -2709,7 +2709,6 @@ class RandomMaskFace:
 					img = img[int(y_cropped) : img.shape[0]]
 
 					results['img_shape'] = img.shape
-					results['pad_shape'] = img.shape
 
 				results['img'] = img
 		return results
@@ -2766,7 +2765,6 @@ class FocusBoundingBox:
 		results['gt_bboxes'] -= [crop_x1, crop_y1, crop_x1, crop_y1]
 
 		results['img_shape'] = img.shape
-		results['pad_shape'] = img.shape
 		results['img'] = img
 
 		print(results['gt_bboxes'])
