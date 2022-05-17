@@ -2705,7 +2705,7 @@ class RandomMaskFace:
 				for key in ['gt_bboxes', 'gt_labels']:
 					results[key] = results[key][remain_idx]
 
-				if len(remain_idx) == 0 and random.random() < 0.5:
+				if len(remain_idx) == 0 and random.random() < 0.5 and y_cropped < img.shape[0] * 0.75:
 					img = img[int(y_cropped) : img.shape[0]]
 
 				results['img'] = img
@@ -2727,7 +2727,7 @@ class RandomMaskFace:
 		return return_idx
 
 	def valid_face(self, person, face):
-		return face[0] >= person[0] - 5 and face[1] >= person[1] - 5 and face[2] <= person[2] + 5 and face[3] <= person[3] + 5 and abs(face[1] - person[1]) <= (person[3] - person[1]) / 5
+		return face[0] >= person[0] - 5 and face[1] >= person[1] - 5 and face[2] <= person[2] + 5 and face[3] <= person[3] + 5 and abs(face[1] - person[1]) <= (person[3] - person[1]) / 5 and face[3] - face[1] >= 10 and face[2] - face[0] >= 10
 
 	def __repr__(self):
 		repr_str = self.__class__.__name__
