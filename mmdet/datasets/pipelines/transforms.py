@@ -2745,15 +2745,15 @@ class FocusBoundingBox:
 		img = results['img']
 
 		h, w = img.shape[:2]
-		xmin, ymin, xmax, ymax = 0, 0, w, h
+		xmin, ymin, xmax, ymax = w, h, 0, 0
 		crop_x1, crop_y1, crop_x2, crop_y2 = 0, 0, 0, 0
 
 		for box in results['gt_bboxes']:
 			x1, y1, x2, y2 = box
-			xmin = max(xmin, x1)
-			ymin = max(ymin, y1)
-			xmax = min(xmax, x2)
-			ymax = min(ymax, y2)
+			xmin = min(xmin, x1)
+			ymin = min(ymin, y1)
+			xmax = max(xmax, x2)
+			ymax = max(ymax, y2)
 
 		crop_x1 = random.randint(0, xmin + 1)
 		crop_y1 = random.randint(0, ymin + 1)
