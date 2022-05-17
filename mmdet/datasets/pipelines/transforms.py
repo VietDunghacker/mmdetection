@@ -2762,16 +2762,11 @@ class FocusBoundingBox:
 
 		img = img[crop_y1:crop_y2, crop_x1:crop_x2]
 
-		print(results['gt_bboxes'])
-
 		results['gt_bboxes'] -= [crop_x1, crop_y1, crop_x1, crop_y1]
 
 		results['img_shape'] = img.shape
 		results['img'] = img
 
-		print(results['gt_bboxes'])
-		cv2.imwrite('test.jpg', img)
-		assert False
 		return results
 
 	def __repr__(self):
