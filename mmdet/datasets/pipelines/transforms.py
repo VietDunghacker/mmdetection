@@ -2708,6 +2708,9 @@ class RandomMaskFace:
 				if len(remain_idx) == 0 and random.random() < 0.5 and y_cropped < img.shape[0] * 0.75:
 					img = img[int(y_cropped) : img.shape[0]]
 
+					results['img_shape'] = img.shape
+					results['pad_shape'] = img.shape
+
 				results['img'] = img
 		return results
 
@@ -2732,4 +2735,45 @@ class RandomMaskFace:
 	def __repr__(self):
 		repr_str = self.__class__.__name__
 		repr_str += f'(mask_face_prob={self.mask_face_prob}), '
+		return repr_str
+
+@PIPELINES.register_module()
+class FocusBoundingBox:
+	def __init__(self):
+		pass
+
+	def __call__(self, results):
+		img = results['img']
+
+		h, w = img.shape[:2]
+		xmin, ymin, xmax, ymax = 0, 0, w, h
+		crop_x1, crop_y1, crop_x2, crop_y2 = 0, 0, 0, 0
+
+		for box in results['gt_bboxes']:
+			x1, y1, x2, y2 = box
+			xmin = max(xmin, x1)
+			ymin = max(ymin, y1)
+			xmax = min(xmax, x2)
+			ymax = min(ymax, y2)
+
+		crop_x1 = random.randint(0, xmin + 1)
+		crop_y1 = random.randint(0, ymin + 1)
+		crop_x2 = random.randint(xmax, w + 1)
+		crop_y2 = random.randint(ymax, h + 1)
+
+		img = img[crop_y1:crop_y2, crop_x1:crop_x2]
+
+		results['gt_bboxes'] -= [crop_x1, crop_y1, crop_x1, crop_y1]
+
+		results['img_shape'] = img.shape
+		results['pad_shape'] = img.shape
+		results['img'] = img
+
+		print(results['gt_bboxes'])
+		cv2.imwrite('test.jpg', img)
+		assert False
+		return results
+
+	def __repr__(self):
+		repr_str = self.__class__.__name__
 		return repr_str

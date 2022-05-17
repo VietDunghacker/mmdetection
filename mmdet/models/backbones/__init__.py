@@ -24,6 +24,7 @@ from .resnet import ResNet, ResNetV1d
 from .resnext import ResNeXt
 from .ssd_vgg import SSDVGG
 from .swin import SwinTransformer
+from .swin_transformer_v2 import SwinTransformerV2
 from .trident_resnet import TridentResNet
 from .uniformer import UniFormer
 from .xcit import XCiT
@@ -34,5 +35,5 @@ __all__ = [
     'DetectoRS_ResNeXt', 'Darknet', 'ResNeSt', 'TridentResNet', 'CSPDarknet',
     'SwinTransformer', 'EfficientNet', 'DLA', 'PyramidVisionTransformer', 'PyramidVisionTransformerV2',
     'CrossFormer_S', 'CrossFormer_B', 'CrossFormer_L', 'LIT', 'XCiT', 'CBResNet', 'CBRes2Net',
-    'CBSwinTransformer', 'CSWin', 'RepVGGplus', 'ConvNeXt', 'UniFormer', 'FocalNet'
+    'CBSwinTransformer', 'CSWin', 'RepVGGplus', 'ConvNeXt', 'UniFormer', 'FocalNet', 'SwinTransformerV2'
 ]
