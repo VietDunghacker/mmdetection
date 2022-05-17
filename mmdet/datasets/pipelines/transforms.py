@@ -2742,30 +2742,33 @@ class FocusBoundingBox:
 		pass
 
 	def __call__(self, results):
-		img = results['img']
+		if(len(results['gt_bboxes'] > 0)):
+			img = results['img']
 
-		h, w = img.shape[:2]
-		xmin, ymin, xmax, ymax = w, h, 0, 0
-		crop_x1, crop_y1, crop_x2, crop_y2 = 0, 0, 0, 0
+			h, w = img.shape[:2]
+			xmin, ymin, xmax, ymax = w, h, 0, 0
+			crop_x1, crop_y1, crop_x2, crop_y2 = 0, 0, 0, 0
 
-		for box in results['gt_bboxes']:
-			x1, y1, x2, y2 = box
-			xmin = min(xmin, x1)
-			ymin = min(ymin, y1)
-			xmax = max(xmax, x2)
-			ymax = max(ymax, y2)
+			for box in results['gt_bboxes']:
+				x1, y1, x2, y2 = box
+				xmin = min(xmin, x1)
+				ymin = min(ymin, y1)
+				xmax = max(xmax, x2)
+				ymax = max(ymax, y2)
 
-		crop_x1 = random.randint(0, xmin + 1)
-		crop_y1 = random.randint(0, ymin + 1)
-		crop_x2 = random.randint(xmax, w + 1)
-		crop_y2 = random.randint(ymax, h + 1)
+			assert xmin < xmax and ymin < ymax
 
-		img = img[crop_y1:crop_y2, crop_x1:crop_x2]
+			crop_x1 = random.randint(0, xmin + 1)
+			crop_y1 = random.randint(0, ymin + 1)
+			crop_x2 = random.randint(xmax, w + 1)
+			crop_y2 = random.randint(ymax, h + 1)
 
-		results['gt_bboxes'] -= [crop_x1, crop_y1, crop_x1, crop_y1]
+			img = img[crop_y1:crop_y2, crop_x1:crop_x2]
 
-		results['img_shape'] = img.shape
-		results['img'] = img
+			results['gt_bboxes'] -= [crop_x1, crop_y1, crop_x1, crop_y1]
+
+			results['img_shape'] = img.shape
+			results['img'] = img
 
 		return results
 
