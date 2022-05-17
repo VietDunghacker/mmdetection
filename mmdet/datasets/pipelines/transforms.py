@@ -2676,6 +2676,8 @@ class RandomMaskFace:
 					if erase_idx >= 0:
 						face = boxes[erase_idx]
 
+						print(person, face)
+
 						y_cropped = max(y_cropped, face[3])
 
 						remove_idxs.append(idx)
