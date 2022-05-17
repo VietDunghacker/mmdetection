@@ -2711,6 +2711,8 @@ class RandomMaskFace:
 					results['img_shape'] = img.shape
 
 				results['img'] = img
+				cv2.imwrite("test.jpg", img)
+				assert False
 		return results
 
 	def find_valid_face(self, person, faces):
