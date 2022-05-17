@@ -2707,7 +2707,7 @@ class RandomMaskFace:
 				for key in ['gt_bboxes', 'gt_labels']:
 					results[key] = results[key][remain_idx]
 
-				if len(remain_idx) == 0 and random.random() < 0.5 and y_cropped < img.shape[0] * 0.75:
+				if len(remain_idx) == 0 and random.random() < 0. and y_cropped < img.shape[0] * 0.75:
 					img = img[int(y_cropped) : img.shape[0]]
 
 					results['img_shape'] = img.shape
