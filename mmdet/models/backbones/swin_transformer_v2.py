@@ -337,7 +337,7 @@ class PatchMerging(nn.Module):
 		super().__init__()
 		self.dim = dim
 		self.reduction = nn.Linear(4 * dim, 2 * dim, bias=False)
-		self.norm = norm_layer(4 * dim)
+		self.norm = norm_layer(2 * dim)
 
 	def forward(self, x, H, W):
 		"""Forward function.
@@ -362,8 +362,8 @@ class PatchMerging(nn.Module):
 		x = torch.cat([x0, x1, x2, x3], -1)  # B H/2 W/2 4*C
 		x = x.view(B, -1, 4 * C)  # B H/2*W/2 4*C
 
-		x = self.norm(x)
 		x = self.reduction(x)
+		x = self.norm(x)
 
 		return x
 
@@ -642,8 +642,7 @@ class SwinTransformerV2(BaseModule):
 				attn_drop=attn_drop_rate,
 				drop_path=dpr[sum(depths[:i_layer]):sum(depths[:i_layer + 1])],
 				norm_layer=norm_layer,
-				downsample=PatchMerging if
-				(i_layer < self.num_layers - 1) else None,
+				downsample=PatchMerging if (i_layer < self.num_layers - 1) else None,
 				with_cp=with_cp,
 				pretrained_window_size=pretrained_window_size[i_layer])
 			self.layers.append(layer)
