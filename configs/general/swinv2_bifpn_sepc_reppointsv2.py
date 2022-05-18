@@ -4,21 +4,21 @@ _base_ = [
 model = dict(
 	type='RepPointsV2Detector',
 	backbone=dict(
-		type='SwinTransformer',
+		type='SwinTransformerV2',
 		embed_dims=128,
 		depths=[2, 2, 18, 2],
 		num_heads=[4, 8, 16, 32],
-		window_size=7,
+		window_size=16,
 		mlp_ratio=4,
 		qkv_bias=True,
 		qk_scale=None,
 		drop_rate=0.,
 		attn_drop_rate=0.,
-		drop_path_rate=0.3,
+		drop_path_rate=0.2,
 		patch_norm=True,
 		out_indices=(1, 2, 3),
 		with_cp=True,
-		init_cfg=dict(type='Pretrained', checkpoint='/gdrive/My Drive/checkpoints/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
+		init_cfg=dict(type='Pretrained', checkpoint='https://github.com/SwinTransformer/storage/releases/download/v2.0.0/swinv2_base_patch4_window12_192_22k.pth')),
 	neck=[
 		dict(
 			type='BiFPN',

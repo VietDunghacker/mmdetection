@@ -395,7 +395,7 @@ class BasicLayer(nn.Module):
 			Default: nn.LayerNorm
 		downsample (nn.Module | None, optional): Downsample layer at the end
 			of the layer. Default: None
-		use_checkpoint (bool): Whether to use checkpointing to save memory.
+		with_cp (bool): Whether to use checkpointing to save memory.
 			Default: False.
 	"""
 
@@ -412,13 +412,13 @@ class BasicLayer(nn.Module):
 				 drop_path=0.,
 				 norm_layer=nn.LayerNorm,
 				 downsample=None,
-				 use_checkpoint=False,
+				 with_cp=False,
 				 pretrained_window_size=0):
 		super().__init__()
 		self.window_size = window_size
 		self.shift_size = window_size // 2
 		self.depth = depth
-		self.use_checkpoint = use_checkpoint
+		self.with_cp = with_cp
 
 		# build blocks
 		self.blocks = nn.ModuleList([
@@ -478,7 +478,7 @@ class BasicLayer(nn.Module):
 
 		for blk in self.blocks:
 			blk.H, blk.W = H, W
-			if self.use_checkpoint and x.requires_grad:
+			if self.with_cp and x.requires_grad:
 				x = checkpoint.checkpoint(blk, x.type_as(attn_mask), attn_mask)
 			else:
 				x = blk(x, attn_mask)
@@ -571,7 +571,7 @@ class SwinTransformerV2(BaseModule):
 		out_indices (Sequence[int]): Output from which stages.
 		frozen_stages (int): Stages to be frozen (stop grad and set eval mode).
 			-1 means not freezing any parameters.
-		use_checkpoint (bool): Whether to use checkpointing to save memory.
+		with_cp (bool): Whether to use checkpointing to save memory.
 			Default: False.
 		pretrained (str, optional): model pretrained path. Default: None.
 		init_cfg (dict or list[dict], optional): Initialization config dict.
@@ -597,7 +597,7 @@ class SwinTransformerV2(BaseModule):
 				 patch_norm=True,
 				 out_indices=(0, 1, 2, 3),
 				 frozen_stages=-1,
-				 use_checkpoint=False,
+				 with_cp=False,
 				 pretrained_window_size=[0, 0, 0, 0],
 				 pretrained=None,
 				 init_cfg=None):
@@ -656,7 +656,7 @@ class SwinTransformerV2(BaseModule):
 				norm_layer=norm_layer,
 				downsample=PatchMerging if
 				(i_layer < self.num_layers - 1) else None,
-				use_checkpoint=use_checkpoint,
+				with_cp=with_cp,
 				pretrained_window_size=pretrained_window_size[i_layer])
 			self.layers.append(layer)
 
