@@ -107,6 +107,7 @@ class WindowAttention(nn.Module):
 		self.window_size = window_size  # Wh, Ww
 		self.num_heads = num_heads
 		self.pretrained_window_size = pretrained_window_size
+		print(pretrained_window_size)
 
 
 		self.logit_scale = nn.Parameter(torch.log(10 * torch.ones((num_heads, 1, 1))), requires_grad=True)
