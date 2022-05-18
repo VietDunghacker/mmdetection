@@ -88,8 +88,6 @@ class WindowAttention(nn.Module):
 		num_heads (int): Number of attention heads.
 		qkv_bias (bool, optional): If True, add a learnable bias to query, key,
 			value. Default: True
-		qk_scale (float | None, optional): Override default qk scale of
-			head_dim ** -0.5 if set
 		attn_drop (float, optional): Dropout ratio of attention weight.
 			Default: 0.0
 		proj_drop (float, optional): Dropout ratio of output. Default: 0.0
@@ -214,8 +212,6 @@ class SwinTransformerBlock(nn.Module):
 		mlp_ratio (float): Ratio of mlp hidden dim to embedding dim.
 		qkv_bias (bool, optional): If True, add a learnable bias to query, key,
 			value. Default: True
-		qk_scale (float | None, optional): Override default qk scale of
-			head_dim ** -0.5 if set.
 		drop (float, optional): Dropout rate. Default: 0.0
 		attn_drop (float, optional): Attention dropout rate. Default: 0.0
 		drop_path (float, optional): Stochastic depth rate. Default: 0.0
@@ -231,7 +227,6 @@ class SwinTransformerBlock(nn.Module):
 				 shift_size=0,
 				 mlp_ratio=4.,
 				 qkv_bias=True,
-				 qk_scale=None,
 				 drop=0.,
 				 attn_drop=0.,
 				 drop_path=0.,
@@ -253,7 +248,6 @@ class SwinTransformerBlock(nn.Module):
 			window_size=to_2tuple(self.window_size),
 			num_heads=num_heads,
 			qkv_bias=qkv_bias,
-			qk_scale=qk_scale,
 			attn_drop=attn_drop,
 			proj_drop=drop,
 			pretrained_window_size=to_2tuple(pretrained_window_size))
@@ -385,8 +379,6 @@ class BasicLayer(nn.Module):
 			Default: 4.
 		qkv_bias (bool, optional): If True, add a learnable bias to query, key,
 			value. Default: True
-		qk_scale (float | None, optional): Override default qk scale of
-			head_dim ** -0.5 if set.
 		drop (float, optional): Dropout rate. Default: 0.0
 		attn_drop (float, optional): Attention dropout rate. Default: 0.0
 		drop_path (float | tuple[float], optional): Stochastic depth rate.
@@ -406,7 +398,6 @@ class BasicLayer(nn.Module):
 				 window_size=7,
 				 mlp_ratio=4.,
 				 qkv_bias=True,
-				 qk_scale=None,
 				 drop=0.,
 				 attn_drop=0.,
 				 drop_path=0.,
@@ -429,7 +420,6 @@ class BasicLayer(nn.Module):
 				shift_size=0 if (i % 2 == 0) else window_size // 2,
 				mlp_ratio=mlp_ratio,
 				qkv_bias=qkv_bias,
-				qk_scale=qk_scale,
 				drop=drop,
 				attn_drop=attn_drop,
 				drop_path=drop_path[i]
@@ -588,7 +578,6 @@ class SwinTransformerV2(BaseModule):
 				 window_size=7,
 				 mlp_ratio=4.,
 				 qkv_bias=True,
-				 qk_scale=None,
 				 drop_rate=0.,
 				 attn_drop_rate=0.,
 				 drop_path_rate=0.2,
@@ -649,7 +638,6 @@ class SwinTransformerV2(BaseModule):
 				window_size=window_size,
 				mlp_ratio=mlp_ratio,
 				qkv_bias=qkv_bias,
-				qk_scale=qk_scale,
 				drop=drop_rate,
 				attn_drop=attn_drop_rate,
 				drop_path=dpr[sum(depths[:i_layer]):sum(depths[:i_layer + 1])],
