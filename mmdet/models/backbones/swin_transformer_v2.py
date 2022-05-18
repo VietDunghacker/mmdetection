@@ -107,8 +107,6 @@ class WindowAttention(nn.Module):
 		self.window_size = window_size  # Wh, Ww
 		self.num_heads = num_heads
 		self.pretrained_window_size = pretrained_window_size
-		print(pretrained_window_size)
-
 
 		self.logit_scale = nn.Parameter(torch.log(10 * torch.ones((num_heads, 1, 1))), requires_grad=True)
 
@@ -576,7 +574,7 @@ class SwinTransformerV2(BaseModule):
 				 embed_dim=96,
 				 depths=[2, 2, 6, 2],
 				 num_heads=[3, 6, 12, 24],
-				 window_size=7,
+				 window_sizes=[7, 7, 7, 7],
 				 mlp_ratio=4.,
 				 qkv_bias=True,
 				 drop_rate=0.,
@@ -588,7 +586,7 @@ class SwinTransformerV2(BaseModule):
 				 out_indices=(0, 1, 2, 3),
 				 frozen_stages=-1,
 				 with_cp=False,
-				 pretrained_window_size=[0, 0, 0, 0],
+				 pretrained_window_sizes=[0, 0, 0, 0],
 				 pretrained=None,
 				 init_cfg=None):
 		assert init_cfg is None, 'To prevent abnormal initialization ' \
@@ -636,7 +634,7 @@ class SwinTransformerV2(BaseModule):
 				dim=int(embed_dim * 2**i_layer),
 				depth=depths[i_layer],
 				num_heads=num_heads[i_layer],
-				window_size=window_size,
+				window_size=window_sizes[i_layer],
 				mlp_ratio=mlp_ratio,
 				qkv_bias=qkv_bias,
 				drop=drop_rate,
@@ -645,7 +643,7 @@ class SwinTransformerV2(BaseModule):
 				norm_layer=norm_layer,
 				downsample=PatchMerging if (i_layer < self.num_layers - 1) else None,
 				with_cp=with_cp,
-				pretrained_window_size=pretrained_window_size[i_layer])
+				pretrained_window_size=pretrained_window_sizes[i_layer])
 			self.layers.append(layer)
 
 		num_features = [int(embed_dim * 2**i) for i in range(self.num_layers)]
