@@ -16,21 +16,21 @@ n_group_list = [4, ] * num_stages
 model = dict(
 	type='SparseRCNN',
 	backbone=dict(
-		type='SwinTransformer',
-		embed_dims=128,
+		type='SwinTransformerV2',
+		embed_dim=128,
 		depths=[2, 2, 18, 2],
 		num_heads=[4, 8, 16, 32],
-		window_size=7,
+		window_sizes=[16, 16, 16, 8],
+		pretrained_window_sizes=[16, 16, 16, 8],
 		mlp_ratio=4,
 		qkv_bias=True,
-		qk_scale=None,
 		drop_rate=0.,
 		attn_drop_rate=0.,
-		drop_path_rate=0.3,
+		drop_path_rate=0.2,
 		patch_norm=True,
-		out_indices=(0, 1, 2, 3),
+		out_indices=(1, 2, 3),
 		with_cp=True,
-		init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
+		pretrained='https://github.com/SwinTransformer/storage/releases/download/v2.0.0/swinv2_base_patch4_window12to16_192to256_22kto1k_ft.pth'),
 	neck=dict(
 		type='ChannelMapping',
 		in_channels=[128, 256, 512, 1024],
@@ -103,7 +103,6 @@ albu_train_transforms = [
 	dict(type='ColorJitter', brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2),
 	dict(type='RGBShift', r_shift_limit=20, g_shift_limit=20, b_shift_limit=20),
 	dict(type='HueSaturationValue', hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20),
-	dict(type='RandomRotate90'),
 	dict(
 		type='OneOf',
 		transforms=[
@@ -121,33 +120,26 @@ albu_train_transforms = [
 ]
 
 train_pipeline = [
+	dict(type = 'FocusBoundingBox'),
 	dict(
 		type = 'AutoAugment',
 		policies = [
 			[
-				dict(type='Mosaic', center_ratio_range=(0.9, 1.1), img_scale=(960, 960), pad_val=0.0),
+				dict(type='Mosaic', center_ratio_range=(0.95, 1.05), img_scale=(960, 960), pad_val=0.0),
 				dict(type='Resize', img_scale=[(800, 800), (960, 960)], multiscale_mode='range', keep_ratio=True),
 			],
 			[
-				dict(type='Mosaic', center_ratio_range=(0.8, 1.2), img_scale=(960, 960), pad_val=0.0),
-				dict(type='Resize', img_scale=[(800, 800), (960, 960)], multiscale_mode='range', keep_ratio=True),
-			],
-			[
-				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
 				dict(type='Resize', img_scale=[(640, 640), (960, 960)], multiscale_mode='range', keep_ratio=True),
 			],
 			[
-				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
 				dict(type='Resize', img_scale=[(640, 640), (960, 960)], multiscale_mode='range', keep_ratio=True),
 			]
 		]
 	),
 	dict(
 		type='CutOut',
-		n_holes=(5, 10),
-		cutout_shape=[(4, 4), (4, 8), (8, 4), (8, 8),
-					  (16, 8), (8, 16), (16, 16), (16, 32), (32, 16), (32, 32),
-					  (32, 48), (48, 32), (48, 48)]),
+		n_holes=(5, 25),
+		cutout_shape=[(4, 4), (4, 8), (8, 4), (8, 8), (16, 8), (8, 16), (16, 16), (16, 32), (32, 16), (32, 32)]),
 	dict(type='RandomFlip', flip_ratio=0.5),
 	dict(
 		type='Albu',
