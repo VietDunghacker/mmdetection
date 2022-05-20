@@ -49,8 +49,7 @@ def make_sample_points(offset, num_group, xyzr):
 
 	roi_cc = xyzr[..., :2]
 	scale = 2.00 ** xyzr[..., 2:3]
-	ratio = 2.00 ** torch.cat([xyzr[..., 3:4] * -0.5,
-							   xyzr[..., 3:4] * 0.5], dim=-1)
+	ratio = 2.00 ** torch.cat([xyzr[..., 3:4] * -0.5, xyzr[..., 3:4] * 0.5], dim=-1)
 	roi_wh = scale * ratio
 
 	roi_lvl = xyzr[..., 2:3].view(B, L, 1, 1, 1)
@@ -134,8 +133,7 @@ class AdaptiveSamplingMixing(nn.Module):
 		)
 
 		if DEBUG:
-			torch.save(
-				sample_points_xyz, 'demo/sample_xy_{}.pth'.format(AdaptiveSamplingMixing.IND))
+			torch.save(sample_points_xyz, 'demo/sample_xy_{}.pth'.format(AdaptiveSamplingMixing.IND))
 
 		sampled_feature, _ = sampling_3d(sample_points_xyz, x,
 										 featmap_strides=featmap_strides,
@@ -143,8 +141,7 @@ class AdaptiveSamplingMixing(nn.Module):
 										 )
 
 		if DEBUG:
-			torch.save(
-				sampled_feature, 'demo/sample_feature_{}.pth'.format(AdaptiveSamplingMixing.IND))
+			torch.save(sampled_feature, 'demo/sample_feature_{}.pth'.format(AdaptiveSamplingMixing.IND))
 
 		query_feat = self.adaptive_mixing(sampled_feature, query_feat)
 		query_feat = self.norm(query_feat)

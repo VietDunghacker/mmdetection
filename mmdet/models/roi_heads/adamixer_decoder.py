@@ -57,13 +57,9 @@ class AdaMixerDecoder(CascadeRoIHead):
 		num_imgs = len(img_metas)
 		bbox_head = self.bbox_head[stage]
 
-		cls_score, delta_xyzr, query_content = bbox_head(img_feat, query_xyzr,
-														 query_content,
-														 featmap_strides=self.featmap_strides)
+		cls_score, delta_xyzr, query_content = bbox_head(img_feat, query_xyzr, query_content, featmap_strides=self.featmap_strides)
 
-		query_xyzr, decoded_bboxes = self.bbox_head[stage].refine_xyzr(
-			query_xyzr,
-			delta_xyzr)
+		query_xyzr, decoded_bboxes = self.bbox_head[stage].refine_xyzr(query_xyzr, delta_xyzr)
 
 		bboxes_list = [bboxes for bboxes in decoded_bboxes]
 
@@ -103,8 +99,7 @@ class AdaMixerDecoder(CascadeRoIHead):
 		all_stage_loss = {}
 
 		for stage in range(self.num_stages):
-			bbox_results = self._bbox_forward(stage, x, query_xyzr, query_content,
-											  img_metas)
+			bbox_results = self._bbox_forward(stage, x, query_xyzr, query_content, img_metas)
 			all_stage_bbox_results.append(bbox_results)
 			if gt_bboxes_ignore is None:
 				# TODO support ignore
@@ -120,13 +115,11 @@ class AdaMixerDecoder(CascadeRoIHead):
 				continue
 
 			for i in range(num_imgs):
-				normalize_bbox_ccwh = bbox_xyxy_to_cxcywh(bboxes_list[i] /
-														  imgs_whwh[i])
+				normalize_bbox_ccwh = bbox_xyxy_to_cxcywh(bboxes_list[i] / imgs_whwh[i])
 				assign_result = self.bbox_assigner[stage].assign(
 					normalize_bbox_ccwh, cls_pred_list[i], gt_bboxes[i],
 					gt_labels[i], img_metas[i])
-				sampling_result = self.bbox_sampler[stage].sample(
-					assign_result, bboxes_list[i], gt_bboxes[i])
+				sampling_result = self.bbox_sampler[stage].sample(assign_result, bboxes_list[i], gt_bboxes[i])
 				sampling_results.append(sampling_result)
 			bbox_targets = self.bbox_head[stage].get_targets(
 				sampling_results, gt_bboxes, gt_labels, self.train_cfg[stage],
