@@ -159,8 +159,7 @@ class AdaMixerDecoder(CascadeRoIHead):
 		num_imgs = len(img_metas)
 
 		for stage in range(self.num_stages):
-			bbox_results = self._bbox_forward(
-				stage, x, query_xyzr, query_content, img_metas)
+			bbox_results = self._bbox_forward(stage, x, query_xyzr, query_content, img_metas)
 			query_content = bbox_results['query_content']
 			cls_score = bbox_results['cls_score']
 			bboxes_list = bbox_results['detach_bboxes_list']
@@ -179,11 +178,17 @@ class AdaMixerDecoder(CascadeRoIHead):
 			cls_score_per_img = cls_score[img_id]
 			scores_per_img, topk_indices = cls_score_per_img.flatten(0, 1).topk(self.test_cfg.max_per_img, sorted=False)
 			labels_per_img = topk_indices % num_classes
-			bbox_pred_per_img = bboxes_list[img_id][topk_indices // num_classes]
+			bbox_pred_per_img = bboxes_list[img_id][torch.div(topk_indices, num_classes, rounding_mode='floor')]
 			if rescale:
 				scale_factor = img_metas[img_id]['scale_factor']
 				bbox_pred_per_img /= bbox_pred_per_img.new_tensor(scale_factor)
-			bbox_pred_per_img.clamp_(min=0)
+
+			img_shape = img_metas[img_id]['img_shape']
+			bbox_pred_per_img[:, 0].clamp_(min=0, max=img_shape[1])
+			bbox_pred_per_img[:, 1].clamp_(min=0, max=img_shape[0])
+			bbox_pred_per_img[:, 2].clamp_(min=0, max=img_shape[1])
+			bbox_pred_per_img[:, 3].clamp_(min=0, max=img_shape[0])
+
 			bboxes_per_img = torch.cat([bbox_pred_per_img, scores_per_img[:, None]], dim=1)
 			keep = bboxes_per_img[:, -1] > self.test_cfg.score_threshold
 			bboxes_per_img = bboxes_per_img[keep]
