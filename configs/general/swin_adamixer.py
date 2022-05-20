@@ -65,7 +65,7 @@ model = dict(
 				n_groups=n_group_list[stage_idx],
 				ffn_act_cfg=dict(type='ReLU', inplace=True),
 				loss_bbox=dict(type='L1Loss', loss_weight=5.0),
-				loss_iou=dict(type='GIoULoss', loss_weight=2.0),
+				loss_iou=dict(type='CIoULoss', loss_weight=2.0),
 				loss_cls=dict(
 					type='FocalLoss',
 					use_sigmoid=True,
@@ -88,7 +88,7 @@ model = dict(
 					type='HungarianAssigner',
 					cls_cost=dict(type='FocalLossCost', weight=2.0),
 					reg_cost=dict(type='BBoxL1Cost', weight=5.0),
-					iou_cost=dict(type='IoUCost', iou_mode='giou', weight=2.0)),
+					iou_cost=dict(type='IoUCost', iou_mode='ciou', weight=2.0)),
 				sampler=dict(type='PseudoSampler'),
 				pos_weight=1) for _ in range(num_stages)
 		]),
@@ -99,7 +99,7 @@ dataset_type = 'CocoDataset'
 data_root = '/content/data/'
 img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.455], to_rgb=True)
 albu_train_transforms = [
-	dict(type='ShiftScaleRotate', shift_limit=0.1, scale_limit=0.1, rotate_limit=1, interpolation=1, p=0.5, border_mode = 0),
+	dict(type='ShiftScaleRotate', shift_limit=0.0, scale_limit=0.1, rotate_limit=1, interpolation=1, p=0.5, border_mode = 0),
 	dict(type='ColorJitter', brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2),
 	dict(type='RGBShift', r_shift_limit=20, g_shift_limit=20, b_shift_limit=20),
 	dict(type='HueSaturationValue', hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20),
@@ -110,13 +110,6 @@ albu_train_transforms = [
 			dict(type='ToGray', p = 1.0)
 		],
 		p=0.1),
-	dict(
-		type='OneOf',
-		transforms=[
-			dict(type='MedianBlur', blur_limit=3, p=1.0),
-			dict(type='Blur', blur_limit=3, p=1.0),
-		],
-		p=0.1)
 ]
 
 train_pipeline = [
