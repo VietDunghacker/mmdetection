@@ -462,6 +462,7 @@ class CocoDataset(CustomDataset):
 			else:
 				cocoEval.evaluate()
 				cocoEval.accumulate()
+				cocoEval.accumulate_lrp()
 				cocoEval.summarize()
 				for key, val in cocoEval.stats.items():
 					if key.startswith('mAP'):
