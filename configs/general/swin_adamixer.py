@@ -67,7 +67,7 @@ model = dict(
 				loss_bbox=dict(type='L1Loss', loss_weight=5.0),
 				loss_iou=dict(type='CIoULoss', loss_weight=2.0),
 				#loss_cls=dict(type='FocalLoss', use_sigmoid=True, gamma=2.0, alpha=0.25, loss_weight=2.0),
-				loss_cls=dict(type='CrossEntropyLoss', use_sigmoid=False, class_weight=1, loss_weight=2.0)
+				loss_cls=dict(type='CrossEntropyLoss', use_sigmoid=False, class_weight=1, loss_weight=2.0),
 				# NOTE: The following argument is a placeholder to hack the code. No real effects for decoding or updating bounding boxes.
 				bbox_coder=dict(
 					type='DeltaXYWHBBoxCoder',
