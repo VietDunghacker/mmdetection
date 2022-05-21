@@ -170,7 +170,7 @@ class USBeval(COCOeval):
 			'dtIoUs': dtIoU,
 		}
 
-	def accumulate_lrp(self, p=None):
+	def accumulate(self, p=None):
 		'''
 		Accumulate per image evaluation results and
 		store the result in self.eval
@@ -324,13 +324,19 @@ class USBeval(COCOeval):
 						olrp_fn[k, a, m] = 1.
 						olrp[k, a, m] = 1.
 						lrp_opt_thr[k, a, m] = np.nan
-		self.eval.update({
+		self.eval = {
+			'params': p,
+			'counts': [T, R, K, A, M],
+			'date': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+			'precision': precision,
+			'recall':   recall,
+			'scores': scores,
 			'olrp_loc': olrp_loc,
 			'olrp_fp': olrp_fp,
 			'olrp_fn': olrp_fn,
 			'olrp': olrp,
 			'lrp_opt_thr': lrp_opt_thr,
-		})
+		}
 		toc = time.time()
 		print('DONE (t={:0.2f}s).'.format(toc - tic))
 
