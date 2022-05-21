@@ -480,7 +480,7 @@ class CocoDataset(CustomDataset):
 						# area range index 0: all area ranges
 						# max dets index -1: typically 100 per image
 						nm = self.coco.loadCats(catId)[0]
-=
+
 						olrp = cocoEval.eval['olrp'][idx, 0, -1]
 						olrp = olrp[olrp > -1]
 
