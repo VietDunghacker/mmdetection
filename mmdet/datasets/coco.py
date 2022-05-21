@@ -480,15 +480,17 @@ class CocoDataset(CustomDataset):
 						# area range index 0: all area ranges
 						# max dets index -1: typically 100 per image
 						nm = self.coco.loadCats(catId)[0]
-						precision = precisions[:, :, idx, 0, -1]
-						precision = precision[precision > -1]
-						if precision.size:
-							ap = np.mean(precision)
+=
+						olrp = cocoEval.eval['olrp'][idx, 0, -1]
+						olrp = olrp[olrp > -1]
+
+						if olrp.size:
+							ap = np.mean(olrp)
 						else:
 							ap = float('nan')
 						aps.append(ap)
 						results_per_category.append((f'{nm["name"]}', f'{float(ap):0.4f}'))
-					eval_results['AP_per_class'] = aps
+					eval_results['olrp_per_class'] = aps
 
 					num_columns = min(6, len(results_per_category) * 2)
 					results_flatten = list(
