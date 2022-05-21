@@ -235,10 +235,9 @@ class CrossEntropyLoss(nn.Module):
 			ignore_index = self.ignore_index
 
 		if self.class_weight is not None:
-			class_weight = cls_score.new_tensor(self.class_weight, device=cls_score.device)
+			class_weight = cls_score.new_tensor([self.class_weight] * cls_score.shape[-1], device=cls_score.device)
 		else:
 			class_weight = None
-		print(class_weight)
 		loss_cls = self.loss_weight * self.cls_criterion(
 			cls_score,
 			label,
