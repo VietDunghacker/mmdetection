@@ -66,8 +66,8 @@ model = dict(
 				ffn_act_cfg=dict(type='ReLU', inplace=True),
 				loss_bbox=dict(type='L1Loss', loss_weight=5.0),
 				loss_iou=dict(type='CIoULoss', loss_weight=2.0),
-				#loss_cls=dict(type='FocalLoss', use_sigmoid=True, gamma=2.0, alpha=0.25, loss_weight=2.0),
-				loss_cls=dict(type='CrossEntropyLoss', use_sigmoid=False, class_weight=1.0, loss_weight=2.0),
+				loss_cls=dict(type='FocalLoss', use_sigmoid=True, gamma=2.0, alpha=0.25, loss_weight=2.0),
+				#loss_cls=dict(type='CrossEntropyLoss', use_sigmoid=False, class_weight=1.0, loss_weight=2.0),
 				# NOTE: The following argument is a placeholder to hack the code. No real effects for decoding or updating bounding boxes.
 				bbox_coder=dict(
 					type='DeltaXYWHBBoxCoder',
@@ -82,7 +82,7 @@ model = dict(
 			dict(
 				assigner=dict(
 					type='HungarianAssigner',
-					cls_cost=dict(type='ClassificationCost', weight=2.0),
+					cls_cost=dict(type='FocalLossCost', weight=2.0),
 					reg_cost=dict(type='BBoxL1Cost', weight=5.0),
 					iou_cost=dict(type='IoUCost', iou_mode='ciou', weight=2.0)),
 				sampler=dict(type='PseudoSampler'),

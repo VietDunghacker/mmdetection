@@ -98,8 +98,7 @@ def binary_cross_entropy(pred,
 	# The default value of ignore_index is the same as F.cross_entropy
 	ignore_index = -100 if ignore_index is None else ignore_index
 	if pred.dim() != label.dim():
-		label, weight = _expand_onehot_labels(label, weight, pred.size(-1),
-											  ignore_index)
+		label, weight = _expand_onehot_labels(label, weight, pred.size(-1), ignore_index)
 
 	# weighted element-wise losses
 	if weight is not None:
