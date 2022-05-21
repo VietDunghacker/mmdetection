@@ -335,7 +335,7 @@ class USBeval(COCOeval):
 		print('DONE (t={:0.2f}s).'.format(toc - tic))
 
 
-	def _summarize(self, ap=1, iouThr=None, areaRng='all', maxDets=100):
+	def _summarize(self, ap=1, iouThr=None, areaRng='all', maxDets=100, lrp_type=None):
 		"""Compute and display a specific metric."""
 		p = self.params
 		iStr = (' {:<18} {} @[IoU={:<9} | area={:>11s} | maxDets={:>4d}] = {:0.4f}')
