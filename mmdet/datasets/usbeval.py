@@ -238,22 +238,16 @@ class USBeval(COCOeval):
 					inds = np.argsort(-dtScores, kind='mergesort')
 					dtScoresSorted = dtScores[inds]
 
-					dtm = np.concatenate(
-						[e['dtMatches'][:, 0:maxDet] for e in E], axis=1)[:,
-																		  inds]
-					dtIg = np.concatenate(
-						[e['dtIgnore'][:, 0:maxDet] for e in E], axis=1)[:,
-																		 inds]
-					dtIoU = np.concatenate(
-						[e['dtIoUs'][:, 0:maxDet] for e in E], axis=1)[:, inds]
+					dtm = np.concatenate([e['dtMatches'][:, 0:maxDet] for e in E], axis=1)[:, inds]
+					dtIg = np.concatenate([e['dtIgnore'][:, 0:maxDet] for e in E], axis=1)[:, inds]
+					dtIoU = np.concatenate([e['dtIoUs'][:, 0:maxDet] for e in E], axis=1)[:, inds]
 
 					gtIg = np.concatenate([e['gtIgnore'] for e in E])
 					npig = np.count_nonzero(gtIg == 0)
 					if npig == 0:
 						continue
 					tps = np.logical_and(dtm, np.logical_not(dtIg))
-					fps = np.logical_and(np.logical_not(dtm),
-										 np.logical_not(dtIg))
+					fps = np.logical_and(np.logical_not(dtm),mnp.logical_not(dtIg))
 
 					dtIoU = np.multiply(dtIoU, tps)
 					tp_sum = np.cumsum(tps, axis=1).astype(dtype=np.float)
@@ -406,7 +400,6 @@ class USBeval(COCOeval):
 			mean_s = -1
 		else:
 			mean_s = np.mean(s[s > -1])
-		print(titleStr, typeStr, iouStr, areaRng, maxDets, mean_s)
 		print(iStr.format(titleStr, typeStr, iouStr, areaRng, maxDets, mean_s))
 		return mean_s
 
@@ -442,13 +435,13 @@ class USBeval(COCOeval):
 				key = f'AR_{area_label_short}@{max_dets[2]}'
 				stats[key] = self._summarize(0, areaRng=area_label, maxDets=max_dets[2])
 
-		stats['oLRP'] = self._summarize(-1, iouThr=.5, areaRng='all', maxDets=max_dets, lrp_type='oLRP')
-		stats['oLRP_loc'] = self._summarize(-1, iouThr=.5, areaRng='all', maxDets=max_dets, lrp_type='oLRP_Localisation')
-		stats['oLRP_fp'] = self._summarize(-1, iouThr=.5, areaRng='all', maxDets=max_dets, lrp_type='oLRP_false_positive')
+		stats['oLRP'] = self._summarize(-1, iouThr=.5, areaRng='all', maxDets=max_dets[2], lrp_type='oLRP')
+		stats['oLRP_loc'] = self._summarize(-1, iouThr=.5, areaRng='all', maxDets=max_dets[2], lrp_type='oLRP_Localisation')
+		stats['oLRP_fp'] = self._summarize(-1, iouThr=.5, areaRng='all', maxDets=max_dets[2], lrp_type='oLRP_false_positive')
 		stats['oLRP_fn'] = self._summarize(-1, iouThr=.5, areaRng='all', maxDets=max_dets, lrp_type='oLRP_false_negative')
-		stats['oLRP_small'] = self._summarize(-1, iouThr=.5, areaRng='small', maxDets=max_dets, lrp_type='oLRP')
-		stats['oLRP_medium'] = self._summarize(-1, iouThr=.5, areaRng='medium', maxDets=max_dets, lrp_type='oLRP')
-		stats['oLRP_large'] = self._summarize(-1, iouThr=.5, areaRng='large', maxDets=max_dets,  lrp_type='oLRP')
+		stats['oLRP_small'] = self._summarize(-1, iouThr=.5, areaRng='small', maxDets=max_dets[2], lrp_type='oLRP')
+		stats['oLRP_medium'] = self._summarize(-1, iouThr=.5, areaRng='medium', maxDets=max_dets[2], lrp_type='oLRP')
+		stats['oLRP_large'] = self._summarize(-1, iouThr=.5, areaRng='large', maxDets=max_dets[2],  lrp_type='oLRP')
 
 		return stats
 
