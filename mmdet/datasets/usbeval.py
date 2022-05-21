@@ -247,7 +247,7 @@ class USBeval(COCOeval):
 					if npig == 0:
 						continue
 					tps = np.logical_and(dtm, np.logical_not(dtIg))
-					fps = np.logical_and(np.logical_not(dtm),mnp.logical_not(dtIg))
+					fps = np.logical_and(np.logical_not(dtm), np.logical_not(dtIg))
 
 					dtIoU = np.multiply(dtIoU, tps)
 					tp_sum = np.cumsum(tps, axis=1).astype(dtype=np.float)
