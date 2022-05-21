@@ -438,7 +438,7 @@ class USBeval(COCOeval):
 		stats['oLRP'] = self._summarize(-1, iouThr=.5, areaRng='all', maxDets=max_dets[2], lrp_type='oLRP')
 		stats['oLRP_loc'] = self._summarize(-1, iouThr=.5, areaRng='all', maxDets=max_dets[2], lrp_type='oLRP_Localisation')
 		stats['oLRP_fp'] = self._summarize(-1, iouThr=.5, areaRng='all', maxDets=max_dets[2], lrp_type='oLRP_false_positive')
-		stats['oLRP_fn'] = self._summarize(-1, iouThr=.5, areaRng='all', maxDets=max_dets, lrp_type='oLRP_false_negative')
+		stats['oLRP_fn'] = self._summarize(-1, iouThr=.5, areaRng='all', maxDets=max_dets[2], lrp_type='oLRP_false_negative')
 		stats['oLRP_small'] = self._summarize(-1, iouThr=.5, areaRng='small', maxDets=max_dets[2], lrp_type='oLRP')
 		stats['oLRP_medium'] = self._summarize(-1, iouThr=.5, areaRng='medium', maxDets=max_dets[2], lrp_type='oLRP')
 		stats['oLRP_large'] = self._summarize(-1, iouThr=.5, areaRng='large', maxDets=max_dets[2],  lrp_type='oLRP')
