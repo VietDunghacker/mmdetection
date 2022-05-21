@@ -434,13 +434,13 @@ class USBeval(COCOeval):
 				key = f'AR_{area_label_short}@{max_dets[2]}'
 				stats[key] = self._summarize(0, areaRng=area_label, maxDets=max_dets[2])
 
-		stats['oLRP'] = _summarize(-1, iouThr=.5, areaRng='all', maxDets=max_dets, lrp_type='oLRP')
-		stats['oLRP_loc'] = _summarize(-1, iouThr=.5, areaRng='all', maxDets=max_dets, lrp_type='oLRP_Localisation')
-		stats['oLRP_fp'] = _summarize(-1, iouThr=.5, areaRng='all', maxDets=max_dets, lrp_type='oLRP_false_positive')
-		stats['oLRP_fn'] = _summarize(-1, iouThr=.5, areaRng='all', maxDets=max_dets, lrp_type='oLRP_false_negative')
-		stats['oLRP_small'] = _summarize(-1, iouThr=.5, areaRng='small', maxDets=max_dets, lrp_type='oLRP')
-		stats['oLRP_medium'] = _summarize(-1, iouThr=.5, areaRng='medium', maxDets=max_dets, lrp_type='oLRP')
-		stats['oLRP_large'] = _summarize(-1, iouThr=.5, areaRng='large', maxDets=max_dets,  lrp_type='oLRP')
+		stats['oLRP'] = self._summarize(-1, iouThr=.5, areaRng='all', maxDets=max_dets, lrp_type='oLRP')
+		stats['oLRP_loc'] = self._summarize(-1, iouThr=.5, areaRng='all', maxDets=max_dets, lrp_type='oLRP_Localisation')
+		stats['oLRP_fp'] = self._summarize(-1, iouThr=.5, areaRng='all', maxDets=max_dets, lrp_type='oLRP_false_positive')
+		stats['oLRP_fn'] = self._summarize(-1, iouThr=.5, areaRng='all', maxDets=max_dets, lrp_type='oLRP_false_negative')
+		stats['oLRP_small'] = self._summarize(-1, iouThr=.5, areaRng='small', maxDets=max_dets, lrp_type='oLRP')
+		stats['oLRP_medium'] = self._summarize(-1, iouThr=.5, areaRng='medium', maxDets=max_dets, lrp_type='oLRP')
+		stats['oLRP_large'] = self._summarize(-1, iouThr=.5, areaRng='large', maxDets=max_dets,  lrp_type='oLRP')
 
 		return stats
 
