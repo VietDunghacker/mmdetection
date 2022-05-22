@@ -1,451 +1,415 @@
-import collections
+# Copyright (c) OpenMMLab. All rights reserved.
+import copy
 import math
-import re
 from functools import partial
-from typing import Optional, Sequence
-from mmcv.runner import BaseModule
 
 import torch
-from torch import nn
-from torch.nn import functional as F
-from torch.nn.modules.batchnorm import _BatchNorm
+import torch.nn as nn
+import torch.utils.checkpoint as cp
+from mmcv.cnn.bricks import ConvModule, DropPath
+from mmcv.runner import BaseModule, Sequential
 
 from ..builder import BACKBONES
-
-# Parameters for an individual model block
-BlockArgs = collections.namedtuple('BlockArgs', [
-	'kernel_size', 'num_repeat', 'input_filters', 'output_filters',
-	'expand_ratio', 'id_skip', 'stride', 'se_ratio'])
-BlockArgs.__new__.__defaults__ = (None,) * len(BlockArgs._fields)
+from ..utils import InvertedResidual, SELayer, make_divisible
 
 
-def round_filters(filters, width_coefficient, depth_divisor, min_depth):
-	""" Calculate and round number of filters based on depth multiplier. """
-	multiplier = width_coefficient
-	if not multiplier:
-		return filters
-	divisor = depth_divisor
-	min_depth = min_depth
-	filters *= multiplier
-	min_depth = min_depth or divisor
-	new_filters = max(min_depth, int(filters + divisor / 2) // divisor * divisor)
-	if new_filters < 0.9 * filters:  # prevent rounding by more than 10%
-		new_filters += divisor
-	return int(new_filters)
-
-
-def round_repeats(repeats, depth_coefficient):
-	""" Round number of filters based on depth multiplier. """
-	multiplier = depth_coefficient
-	if not multiplier:
-		return repeats
-	return int(math.ceil(multiplier * repeats))
-
-
-def drop_connect(inputs, p, training):
-	""" Drop connect. """
-	if not training: return inputs
-	batch_size = inputs.shape[0]
-	keep_prob = 1 - p
-	random_tensor = keep_prob
-	random_tensor += torch.rand([batch_size, 1, 1, 1], dtype=inputs.dtype, device=inputs.device)
-	binary_tensor = torch.floor(random_tensor)
-	output = inputs / keep_prob * binary_tensor
-	return output
-
-
-def get_same_padding_conv2d(image_size=None):
-	""" Chooses static padding if you have specified an image size, and dynamic padding otherwise.
-		Static padding is necessary for ONNX exporting of models. """
-	if image_size is None:
-		return Conv2dDynamicSamePadding
-	else:
-		return partial(Conv2dStaticSamePadding, image_size=image_size)
-
-
-class Conv2dDynamicSamePadding(nn.Conv2d):
-	""" 2D Convolutions like TensorFlow, for a dynamic image size """
-
-	def __init__(self, in_channels, out_channels, kernel_size, stride=1, dilation=1, groups=1, bias=True):
-		super().__init__(in_channels, out_channels, kernel_size, stride, 0, dilation, groups, bias)
-		self.stride = self.stride if len(self.stride) == 2 else [self.stride[0]] * 2
-
-	def forward(self, x):
-		ih, iw = x.size()[-2:]
-		kh, kw = self.weight.size()[-2:]
-		sh, sw = self.stride
-		oh, ow = math.ceil(ih / sh), math.ceil(iw / sw)
-		pad_h = max((oh - 1) * self.stride[0] + (kh - 1) * self.dilation[0] + 1 - ih, 0)
-		pad_w = max((ow - 1) * self.stride[1] + (kw - 1) * self.dilation[1] + 1 - iw, 0)
-		if pad_h > 0 or pad_w > 0:
-			x = F.pad(x, [pad_w // 2, pad_w - pad_w // 2, pad_h // 2, pad_h - pad_h // 2])
-		return F.conv2d(x, self.weight, self.bias, self.stride, self.padding, self.dilation, self.groups)
-
-
-class Conv2dStaticSamePadding(nn.Conv2d):
-	""" 2D Convolutions like TensorFlow, for a fixed image size"""
-
-	def __init__(self, in_channels, out_channels, kernel_size, image_size=None, **kwargs):
-		super().__init__(in_channels, out_channels, kernel_size, **kwargs)
-		self.stride = self.stride if len(self.stride) == 2 else [self.stride[0]] * 2
-
-		# Calculate padding based on image size and save it
-		assert image_size is not None
-		ih, iw = image_size if type(image_size) == list else [image_size, image_size]
-		kh, kw = self.weight.size()[-2:]
-		sh, sw = self.stride
-		oh, ow = math.ceil(ih / sh), math.ceil(iw / sw)
-		pad_h = max((oh - 1) * self.stride[0] + (kh - 1) * self.dilation[0] + 1 - ih, 0)
-		pad_w = max((ow - 1) * self.stride[1] + (kw - 1) * self.dilation[1] + 1 - iw, 0)
-		if pad_h > 0 or pad_w > 0:
-			self.static_padding = nn.ZeroPad2d((pad_w // 2, pad_w - pad_w // 2, pad_h // 2, pad_h - pad_h // 2))
-		else:
-			self.static_padding = Identity()
-
-	def forward(self, x):
-		x = self.static_padding(x)
-		x = F.conv2d(x, self.weight, self.bias, self.stride, self.padding, self.dilation, self.groups)
-		return x
-
-
-class Identity(nn.Module):
-	def __init__(self, ):
-		super(Identity, self).__init__()
-
-	def forward(self, input):
-		return input
-
-
-class BlockDecoder(object):
-	""" Block Decoder for readability, straight from the official TensorFlow repository """
-
-	@staticmethod
-	def _decode_block_string(block_string):
-		""" Gets a block through a string notation of arguments. """
-		assert isinstance(block_string, str)
-
-		ops = block_string.split('_')
-		options = {}
-		for op in ops:
-			splits = re.split(r'(\d.*)', op)
-			if len(splits) >= 2:
-				key, value = splits[:2]
-				options[key] = value
-
-		# Check stride
-		assert (('s' in options and len(options['s']) == 1) or
-				(len(options['s']) == 2 and options['s'][0] == options['s'][1]))
-
-		return BlockArgs(
-			kernel_size=int(options['k']),
-			num_repeat=int(options['r']),
-			input_filters=int(options['i']),
-			output_filters=int(options['o']),
-			expand_ratio=int(options['e']),
-			id_skip=('noskip' not in block_string),
-			se_ratio=float(options['se']) if 'se' in options else None,
-			stride=[int(options['s'][0])])
-
-	@staticmethod
-	def _encode_block_string(block):
-		"""Encodes a block to a string."""
-		args = [
-			'r%d' % block.num_repeat,
-			'k%d' % block.kernel_size,
-			's%d%d' % (block.strides[0], block.strides[1]),
-			'e%s' % block.expand_ratio,
-			'i%d' % block.input_filters,
-			'o%d' % block.output_filters
-		]
-		if 0 < block.se_ratio <= 1:
-			args.append('se%s' % block.se_ratio)
-		if block.id_skip is False:
-			args.append('noskip')
-		return '_'.join(args)
-
-	@staticmethod
-	def decode(string_list):
-		"""
-		Decodes a list of string notations to specify blocks inside the network.
-		:param string_list: a list of strings, each string is a notation of block
-		:return: a list of BlockArgs namedtuples of block args
-		"""
-		assert isinstance(string_list, list)
-		blocks_args = []
-		for block_string in string_list:
-			blocks_args.append(BlockDecoder._decode_block_string(block_string))
-		return blocks_args
-
-	@staticmethod
-	def encode(blocks_args):
-		"""
-		Encodes a list of BlockArgs to a list of strings.
-		:param blocks_args: a list of BlockArgs namedtuples of block args
-		:return: a list of strings, each string is a notation of block
-		"""
-		block_strings = []
-		for block in blocks_args:
-			block_strings.append(BlockDecoder._encode_block_string(block))
-		return block_strings
-
-
-url_map = {
-	'efficientnet-b0': 'http://storage.googleapis.com/public-models/efficientnet/efficientnet-b0-355c32eb.pth',
-	'efficientnet-b1': 'http://storage.googleapis.com/public-models/efficientnet/efficientnet-b1-f1951068.pth',
-	'efficientnet-b2': 'http://storage.googleapis.com/public-models/efficientnet/efficientnet-b2-8bb594d6.pth',
-	'efficientnet-b3': 'http://storage.googleapis.com/public-models/efficientnet/efficientnet-b3-5fb5a3c3.pth',
-	'efficientnet-b4': 'http://storage.googleapis.com/public-models/efficientnet/efficientnet-b4-6ed6700e.pth',
-	'efficientnet-b5': 'http://storage.googleapis.com/public-models/efficientnet/efficientnet-b5-b6417697.pth',
-	'efficientnet-b6': 'http://storage.googleapis.com/public-models/efficientnet/efficientnet-b6-c76e70fd.pth',
-	'efficientnet-b7': 'http://storage.googleapis.com/public-models/efficientnet/efficientnet-b7-dcc49843.pth',
-}
-
-
-class MBConvBlock(BaseModule):
-	"""
-	Mobile Inverted Residual Bottleneck Block
+class EdgeResidual(BaseModule):
+	"""Edge Residual Block.
 	Args:
-		block_args (namedtuple): BlockArgs, see above
-	Attributes:
-		has_se (bool): Whether the block contains a Squeeze and Excitation layer.
+		in_channels (int): The input channels of this module.
+		out_channels (int): The output channels of this module.
+		mid_channels (int): The input channels of the second convolution.
+		kernel_size (int): The kernel size of the first convolution.
+			Defaults to 3.
+		stride (int): The stride of the first convolution. Defaults to 1.
+		se_cfg (dict, optional): Config dict for se layer. Defaults to None,
+			which means no se layer.
+		with_residual (bool): Use residual connection. Defaults to True.
+		conv_cfg (dict, optional): Config dict for convolution layer.
+			Defaults to None, which means using conv2d.
+		norm_cfg (dict): Config dict for normalization layer.
+			Defaults to ``dict(type='BN')``.
+		act_cfg (dict): Config dict for activation layer.
+			Defaults to ``dict(type='ReLU')``.
+		drop_path_rate (float): stochastic depth rate. Defaults to 0.
+		with_cp (bool): Use checkpoint or not. Using checkpoint will save some
+			memory while slowing down the training speed. Defaults to False.
+		init_cfg (dict | list[dict], optional): Initialization config dict.
 	"""
 
 	def __init__(self,
-				 block_args,
-				 batch_norm_momentum,
-				 batch_norm_epsilon,
-				 image_size,
-				 init_cfg = None):
-		super(MBConvBlock, self).__init__(init_cfg = init_cfg)
-		self._block_args = block_args
-		self._bn_mom = 1 - batch_norm_momentum
-		self._bn_eps = batch_norm_epsilon
-		self.has_se = (self._block_args.se_ratio is not None) and (0 < self._block_args.se_ratio <= 1)
-		self.id_skip = block_args.id_skip  # skip connection and drop connect
+				 in_channels,
+				 out_channels,
+				 mid_channels,
+				 kernel_size=3,
+				 stride=1,
+				 se_cfg=None,
+				 with_residual=True,
+				 conv_cfg=None,
+				 norm_cfg=dict(type='BN'),
+				 act_cfg=dict(type='ReLU'),
+				 drop_path_rate=0.,
+				 with_cp=False,
+				 init_cfg=None,
+				 **kwargs):
+		super(EdgeResidual, self).__init__(init_cfg=init_cfg)
+		assert stride in [1, 2]
+		self.with_cp = with_cp
+		self.drop_path = DropPath(
+			drop_path_rate) if drop_path_rate > 0 else nn.Identity()
+		self.with_se = se_cfg is not None
+		self.with_residual = (
+			stride == 1 and in_channels == out_channels and with_residual)
 
-		# Get static or dynamic convolution depending on image size
-		Conv2d = get_same_padding_conv2d(image_size=image_size)
+		if self.with_se:
+			assert isinstance(se_cfg, dict)
 
-		# Expansion phase
-		inp = self._block_args.input_filters  # number of input channels
-		oup = self._block_args.input_filters * self._block_args.expand_ratio  # number of output channels
-		if self._block_args.expand_ratio != 1:
-			self._expand_conv = Conv2d(in_channels=inp, out_channels=oup, kernel_size=1, bias=False)
-			self._bn0 = nn.BatchNorm2d(num_features=oup, momentum=self._bn_mom, eps=self._bn_eps)
+		self.conv1 = ConvModule(
+			in_channels=in_channels,
+			out_channels=mid_channels,
+			kernel_size=kernel_size,
+			stride=1,
+			padding=kernel_size // 2,
+			conv_cfg=conv_cfg,
+			norm_cfg=norm_cfg,
+			act_cfg=act_cfg)
 
-		# Depthwise convolution phase
-		k = self._block_args.kernel_size
-		s = self._block_args.stride
-		self._depthwise_conv = Conv2d(
-			in_channels=oup, out_channels=oup, groups=oup,  # groups makes it depthwise
-			kernel_size=k, stride=s, bias=False)
-		self._bn1 = nn.BatchNorm2d(num_features=oup, momentum=self._bn_mom, eps=self._bn_eps)
+		if self.with_se:
+			self.se = SELayer(**se_cfg)
 
-		# Squeeze and Excitation layer, if desired
-		if self.has_se:
-			num_squeezed_channels = max(1, int(self._block_args.input_filters * self._block_args.se_ratio))
-			self._se_reduce = Conv2d(in_channels=oup, out_channels=num_squeezed_channels, kernel_size=1)
-			self._se_expand = Conv2d(in_channels=num_squeezed_channels, out_channels=oup, kernel_size=1)
+		self.conv2 = ConvModule(
+			in_channels=mid_channels,
+			out_channels=out_channels,
+			kernel_size=1,
+			stride=stride,
+			padding=0,
+			conv_cfg=conv_cfg,
+			norm_cfg=norm_cfg,
+			act_cfg=None)
 
-		# Output phase
-		final_oup = self._block_args.output_filters
-		self._project_conv = Conv2d(in_channels=oup, out_channels=final_oup, kernel_size=1, bias=False)
-		self._bn2 = nn.BatchNorm2d(num_features=final_oup, momentum=self._bn_mom, eps=self._bn_eps)
-		self._swish = nn.Silu()
+	def forward(self, x):
 
-	def forward(self, inputs, drop_connect_rate=None):
-		"""
-		:param inputs: input tensor
-		:param drop_connect_rate: drop connect rate (float, between 0 and 1)
-		:return: output of block
-		"""
+		def _inner_forward(x):
+			out = x
+			out = self.conv1(out)
 
-		# Expansion and Depthwise Convolution
-		x = inputs
-		if self._block_args.expand_ratio != 1:
-			x = self._swish(self._bn0(self._expand_conv(inputs)))
-		x = self._swish(self._bn1(self._depthwise_conv(x)))
+			if self.with_se:
+				out = self.se(out)
 
-		# Squeeze and Excitation
-		if self.has_se:
-			x_squeezed = F.adaptive_avg_pool2d(x, 1)
-			x_squeezed = self._se_expand(self._swish(self._se_reduce(x_squeezed)))
-			x = torch.sigmoid(x_squeezed) * x
+			out = self.conv2(out)
 
-		x = self._bn2(self._project_conv(x))
+			if self.with_residual:
+				return x + self.drop_path(out)
+			else:
+				return out
 
-		# Skip connection and drop connect
-		input_filters, output_filters = self._block_args.input_filters, self._block_args.output_filters
-		if self.id_skip and self._block_args.stride == 1 and input_filters == output_filters:
-			if drop_connect_rate:
-				x = drop_connect(x, p=drop_connect_rate, training=self.training)
-			x = x + inputs  # skip connection
-		return x
+		if self.with_cp and x.requires_grad:
+			out = cp.checkpoint(_inner_forward, x)
+		else:
+			out = _inner_forward(x)
 
-	def set_swish(self, memory_efficient=True):
-		"""Sets swish function as memory efficient (for training) or standard (for export)"""
-		self._swish = nn.Silu() if memory_efficient else Swish()
+		return out
+
+
+def model_scaling(layer_setting, arch_setting):
+	"""Scaling operation to the layer's parameters according to the
+	arch_setting."""
+	# scale width
+	new_layer_setting = copy.deepcopy(layer_setting)
+	for layer_cfg in new_layer_setting:
+		for block_cfg in layer_cfg:
+			block_cfg[1] = make_divisible(block_cfg[1] * arch_setting[0], 8)
+
+	# scale depth
+	split_layer_setting = [new_layer_setting[0]]
+	for layer_cfg in new_layer_setting[1:-1]:
+		tmp_index = [0]
+		for i in range(len(layer_cfg) - 1):
+			if layer_cfg[i + 1][1] != layer_cfg[i][1]:
+				tmp_index.append(i + 1)
+		tmp_index.append(len(layer_cfg))
+		for i in range(len(tmp_index) - 1):
+			split_layer_setting.append(layer_cfg[tmp_index[i]:tmp_index[i +
+																		1]])
+	split_layer_setting.append(new_layer_setting[-1])
+
+	num_of_layers = [len(layer_cfg) for layer_cfg in split_layer_setting[1:-1]]
+	new_layers = [
+		int(math.ceil(arch_setting[1] * num)) for num in num_of_layers
+	]
+
+	merge_layer_setting = [split_layer_setting[0]]
+	for i, layer_cfg in enumerate(split_layer_setting[1:-1]):
+		if new_layers[i] <= num_of_layers[i]:
+			tmp_layer_cfg = layer_cfg[:new_layers[i]]
+		else:
+			tmp_layer_cfg = copy.deepcopy(layer_cfg) + [layer_cfg[-1]] * (
+				new_layers[i] - num_of_layers[i])
+		if tmp_layer_cfg[0][3] == 1 and i != 0:
+			merge_layer_setting[-1] += tmp_layer_cfg.copy()
+		else:
+			merge_layer_setting.append(tmp_layer_cfg.copy())
+	merge_layer_setting.append(split_layer_setting[-1])
+
+	return merge_layer_setting
 
 
 @BACKBONES.register_module()
 class EfficientNet(BaseModule):
-	_PARAMS_DICT = {
-		# Coefficients:   width,depth,res,dropout
-		'efficientnet-b0': (1.0, 1.0, 224, 0.2),
-		'efficientnet-b1': (1.0, 1.1, 240, 0.2),
-		'efficientnet-b2': (1.1, 1.2, 260, 0.3),
-		'efficientnet-b3': (1.2, 1.4, 300, 0.3),
-		'efficientnet-b4': (1.4, 1.8, 380, 0.4),
-		'efficientnet-b5': (1.6, 2.2, 456, 0.4),
-		'efficientnet-b6': (1.8, 2.6, 528, 0.5),
-		'efficientnet-b7': (2.0, 3.1, 600, 0.5),
+	"""EfficientNet backbone.
+	Args:
+		arch (str): Architecture of efficientnet. Defaults to b0.
+		out_indices (Sequence[int]): Output from which stages.
+			Defaults to (6, ).
+		frozen_stages (int): Stages to be frozen (all param fixed).
+			Defaults to 0, which means not freezing any parameters.
+		conv_cfg (dict): Config dict for convolution layer.
+			Defaults to None, which means using conv2d.
+		norm_cfg (dict): Config dict for normalization layer.
+			Defaults to dict(type='BN').
+		act_cfg (dict): Config dict for activation layer.
+			Defaults to dict(type='Swish').
+		norm_eval (bool): Whether to set norm layers to eval mode, namely,
+			freeze running stats (mean and var). Note: Effect on Batch Norm
+			and its variants only. Defaults to False.
+		with_cp (bool): Use checkpoint or not. Using checkpoint will save some
+			memory while slowing down the training speed. Defaults to False.
+	"""
+
+	# Parameters to build layers.
+	# 'b' represents the architecture of normal EfficientNet family includes
+	# 'b0', 'b1', 'b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8'.
+	# 'e' represents the architecture of EfficientNet-EdgeTPU including 'es',
+	# 'em', 'el'.
+	# 6 parameters are needed to construct a layer, From left to right:
+	# - kernel_size: The kernel size of the block
+	# - out_channel: The number of out_channels of the block
+	# - se_ratio: The sequeeze ratio of SELayer.
+	# - stride: The stride of the block
+	# - expand_ratio: The expand_ratio of the mid_channels
+	# - block_type: -1: Not a block, 0: InvertedResidual, 1: EdgeResidual
+	layer_settings = {
+		'b': [[[3, 32, 0, 2, 0, -1]],
+			  [[3, 16, 4, 1, 1, 0]],
+			  [[3, 24, 4, 2, 6, 0],
+			   [3, 24, 4, 1, 6, 0]],
+			  [[5, 40, 4, 2, 6, 0],
+			   [5, 40, 4, 1, 6, 0]],
+			  [[3, 80, 4, 2, 6, 0],
+			   [3, 80, 4, 1, 6, 0],
+			   [3, 80, 4, 1, 6, 0],
+			   [5, 112, 4, 1, 6, 0],
+			   [5, 112, 4, 1, 6, 0],
+			   [5, 112, 4, 1, 6, 0]],
+			  [[5, 192, 4, 2, 6, 0],
+			   [5, 192, 4, 1, 6, 0],
+			   [5, 192, 4, 1, 6, 0],
+			   [5, 192, 4, 1, 6, 0],
+			   [3, 320, 4, 1, 6, 0]],
+			  [[1, 1280, 0, 1, 0, -1]]
+			  ],
+		'e': [[[3, 32, 0, 2, 0, -1]],
+			  [[3, 24, 0, 1, 3, 1]],
+			  [[3, 32, 0, 2, 8, 1],
+			   [3, 32, 0, 1, 8, 1]],
+			  [[3, 48, 0, 2, 8, 1],
+			   [3, 48, 0, 1, 8, 1],
+			   [3, 48, 0, 1, 8, 1],
+			   [3, 48, 0, 1, 8, 1]],
+			  [[5, 96, 0, 2, 8, 0],
+			   [5, 96, 0, 1, 8, 0],
+			   [5, 96, 0, 1, 8, 0],
+			   [5, 96, 0, 1, 8, 0],
+			   [5, 96, 0, 1, 8, 0],
+			   [5, 144, 0, 1, 8, 0],
+			   [5, 144, 0, 1, 8, 0],
+			   [5, 144, 0, 1, 8, 0],
+			   [5, 144, 0, 1, 8, 0]],
+			  [[5, 192, 0, 2, 8, 0],
+			   [5, 192, 0, 1, 8, 0]],
+			  [[1, 1280, 0, 1, 0, -1]]
+			  ]
+	}  # yapf: disable
+
+	# Parameters to build different kinds of architecture.
+	# From left to right: scaling factor for width, scaling factor for depth,
+	# resolution.
+	arch_settings = {
+		'b0': (1.0, 1.0, 224),
+		'b1': (1.0, 1.1, 240),
+		'b2': (1.1, 1.2, 260),
+		'b3': (1.2, 1.4, 300),
+		'b4': (1.4, 1.8, 380),
+		'b5': (1.6, 2.2, 456),
+		'b6': (1.8, 2.6, 528),
+		'b7': (2.0, 3.1, 600),
+		'b8': (2.2, 3.6, 672),
+		'es': (1.0, 1.0, 224),
+		'em': (1.0, 1.1, 240),
+		'el': (1.2, 1.4, 300)
 	}
 
 	def __init__(self,
-				 model_type: str,
-				 out_indices: Optional[Sequence[int]] = None,
-				 init_cfg = [
-					dict(type='Kaiming', layer='Conv2d'),
-					dict(
-						type='Constant',
-						val=1,
-						layer=['_BatchNorm', 'GroupNorm'])
-				]):
-		super(EfficientNet, self).__init__(init_cfg = init_cfg)
-		assert model_type in EfficientNet._PARAMS_DICT
-		assert 0 <= max(out_indices) <= 6 and 0 <= min(out_indices) <= 6
-		assert len(out_indices) > 0
-		width_coefficient, depth_coefficient, image_size, dropout_rate = EfficientNet._PARAMS_DICT[model_type]
-		self._model_name = model_type
+				 arch='b0',
+				 drop_path_rate=0.,
+				 out_indices=(6, ),
+				 frozen_stages=0,
+				 conv_cfg=dict(type='Conv2dAdaptivePadding'),
+				 norm_cfg=dict(type='BN', eps=1e-3),
+				 act_cfg=dict(type='Swish'),
+				 norm_eval=False,
+				 with_cp=False,
+				 init_cfg=[
+					 dict(type='Kaiming', layer='Conv2d'),
+					 dict(
+						 type='Constant',
+						 layer=['_BatchNorm', 'GroupNorm'],
+						 val=1)
+				 ]):
+		super(EfficientNet, self).__init__(init_cfg)
+		assert arch in self.arch_settings, \
+			f'"{arch}" is not one of the arch_settings ' \
+			f'({", ".join(self.arch_settings.keys())})'
+		self.arch_setting = self.arch_settings[arch]
+		self.layer_setting = self.layer_settings[arch[:1]]
+		for index in out_indices:
+			if index not in range(0, len(self.layer_setting)):
+				raise ValueError('the item in out_indices must in '
+								 f'range(0, {len(self.layer_setting)}). '
+								 f'But received {index}')
 
-		self._create(
-			blocks_args=BlockDecoder.decode([
-				'r1_k3_s11_e1_i32_o16_se0.25', 'r2_k3_s22_e6_i16_o24_se0.25',
-				'r2_k5_s22_e6_i24_o40_se0.25', 'r3_k3_s22_e6_i40_o80_se0.25',
-				'r3_k5_s11_e6_i80_o112_se0.25', 'r4_k5_s22_e6_i112_o192_se0.25',
-				'r1_k3_s11_e6_i192_o320_se0.25',
-			]),
-			batch_norm_momentum=0.99,
-			batch_norm_epsilon=1e-3,
-			dropout_rate=dropout_rate,
-			drop_connect_rate=0.2,
-			width_coefficient=width_coefficient,
-			depth_coefficient=depth_coefficient,
-			depth_divisor=8,
-			min_depth=None,
-			image_size=image_size,
-			out_indices=out_indices
-		)
-		self.set_swish(memory_efficient=True)
+		if frozen_stages not in range(len(self.layer_setting) + 1):
+			raise ValueError('frozen_stages must be in range(0, '
+							 f'{len(self.layer_setting) + 1}). '
+							 f'But received {frozen_stages}')
+		self.drop_path_rate = drop_path_rate
+		self.out_indices = out_indices
+		self.frozen_stages = frozen_stages
+		self.conv_cfg = conv_cfg
+		self.norm_cfg = norm_cfg
+		self.act_cfg = act_cfg
+		self.norm_eval = norm_eval
+		self.with_cp = with_cp
 
-	def _create(self,
-				blocks_args=None,
-				batch_norm_momentum=0.99,
-				batch_norm_epsilon=1e-3,
-				dropout_rate=0.2,
-				drop_connect_rate=0.2,
-				width_coefficient=None,
-				depth_coefficient=None,
-				depth_divisor=8,
-				min_depth=None,
-				image_size=None,
-				out_indices: Optional[Sequence[int]] = None):
-		super().__init__()
-		assert isinstance(blocks_args, list), 'blocks_args should be a list'
-		assert len(blocks_args) > 0, 'block args must be greater than 0'
-		self._blocks_args = blocks_args
-		self._batch_norm_momentum = batch_norm_momentum
-		self._batch_norm_epsilon = batch_norm_epsilon
-		self._dropout_rate = dropout_rate
-		self._drop_connect_rate = drop_connect_rate
-		self._width_coefficient = width_coefficient
-		self._depth_coefficient = depth_coefficient
-		self._depth_divisor = depth_divisor
-		self._min_depth = min_depth
-		self._image_size = image_size
-		self._out_indices = out_indices
+		self.layer_setting = model_scaling(self.layer_setting,
+										   self.arch_setting)
+		block_cfg_0 = self.layer_setting[0][0]
+		block_cfg_last = self.layer_setting[-1][0]
+		self.in_channels = make_divisible(block_cfg_0[1], 8)
+		self.out_channels = block_cfg_last[1]
+		self.layers = nn.ModuleList()
+		self.layers.append(
+			ConvModule(
+				in_channels=3,
+				out_channels=self.in_channels,
+				kernel_size=block_cfg_0[0],
+				stride=block_cfg_0[3],
+				padding=block_cfg_0[0] // 2,
+				conv_cfg=self.conv_cfg,
+				norm_cfg=self.norm_cfg,
+				act_cfg=self.act_cfg))
+		self.make_layer()
+		# Avoid building unused layers in mmdetection.
+		if len(self.layers) < max(self.out_indices) + 1:
+			self.layers.append(
+				ConvModule(
+					in_channels=self.in_channels,
+					out_channels=self.out_channels,
+					kernel_size=block_cfg_last[0],
+					stride=block_cfg_last[3],
+					padding=block_cfg_last[0] // 2,
+					conv_cfg=self.conv_cfg,
+					norm_cfg=self.norm_cfg,
+					act_cfg=self.act_cfg))
 
-		# Get static or dynamic convolution depending on image size
-		Conv2d = get_same_padding_conv2d(image_size=image_size)
+	def make_layer(self):
+		# Without the first and the final conv block.
+		layer_setting = self.layer_setting[1:-1]
 
-		# Batch norm parameters
-		bn_mom = 1 - batch_norm_momentum
-		bn_eps = batch_norm_epsilon
+		total_num_blocks = sum([len(x) for x in layer_setting])
+		block_idx = 0
+		dpr = [
+			x.item()
+			for x in torch.linspace(0, self.drop_path_rate, total_num_blocks)
+		]  # stochastic depth decay rule
 
-		# Stem
-		in_channels = 3  # rgb
-		out_channels = round_filters(32, width_coefficient=width_coefficient,
-									 depth_divisor=depth_divisor,
-									 min_depth=min_depth)  # number of output channels
-		self._conv_stem = Conv2d(in_channels, out_channels, kernel_size=3, stride=2, bias=False)
-		self._bn0 = nn.BatchNorm2d(num_features=out_channels, momentum=bn_mom, eps=bn_eps)
+		for i, layer_cfg in enumerate(layer_setting):
+			# Avoid building unused layers in mmdetection.
+			if i > max(self.out_indices) - 1:
+				break
+			layer = []
+			for i, block_cfg in enumerate(layer_cfg):
+				(kernel_size, out_channels, se_ratio, stride, expand_ratio,
+				 block_type) = block_cfg
 
-		# Build blocks
-		self._blocks = nn.ModuleList([])
-		self._block_id_2_out_id = {}
-		for out_id, block_args in enumerate(self._blocks_args):
+				mid_channels = int(self.in_channels * expand_ratio)
+				out_channels = make_divisible(out_channels, 8)
+				if se_ratio <= 0:
+					se_cfg = None
+				else:
+					# In mmdetection, the `divisor` is deleted to align
+					# the logic of SELayer with mmcls.
+					se_cfg = dict(
+						channels=mid_channels,
+						ratio=expand_ratio * se_ratio,
+						act_cfg=(self.act_cfg, dict(type='Sigmoid')))
+				if block_type == 1:  # edge tpu
+					if i > 0 and expand_ratio == 3:
+						with_residual = False
+						expand_ratio = 4
+					else:
+						with_residual = True
+					mid_channels = int(self.in_channels * expand_ratio)
+					if se_cfg is not None:
+						# In mmdetection, the `divisor` is deleted to align
+						# the logic of SELayer with mmcls.
+						se_cfg = dict(
+							channels=mid_channels,
+							ratio=se_ratio * expand_ratio,
+							act_cfg=(self.act_cfg, dict(type='Sigmoid')))
+					block = partial(EdgeResidual, with_residual=with_residual)
+				else:
+					block = InvertedResidual
+				layer.append(
+					block(
+						in_channels=self.in_channels,
+						out_channels=out_channels,
+						mid_channels=mid_channels,
+						kernel_size=kernel_size,
+						stride=stride,
+						se_cfg=se_cfg,
+						conv_cfg=self.conv_cfg,
+						norm_cfg=self.norm_cfg,
+						act_cfg=self.act_cfg,
+						drop_path_rate=dpr[block_idx],
+						with_cp=self.with_cp,
+						# In mmdetection, `with_expand_conv` is set to align
+						# the logic of InvertedResidual with mmcls.
+						with_expand_conv=(mid_channels != self.in_channels)))
+				self.in_channels = out_channels
+				block_idx += 1
+			self.layers.append(Sequential(*layer))
 
-			# Update block input and output filters based on depth multiplier.
-			block_args = block_args._replace(
-				input_filters=round_filters(block_args.input_filters, width_coefficient=width_coefficient,
-											depth_divisor=depth_divisor,
-											min_depth=min_depth),
-				output_filters=round_filters(block_args.output_filters, width_coefficient=width_coefficient,
-											 depth_divisor=depth_divisor,
-											 min_depth=min_depth),
-				num_repeat=round_repeats(block_args.num_repeat, depth_coefficient=depth_coefficient)
-			)
-
-			# The first block needs to take care of stride and filter size increase.
-			self._blocks.append(MBConvBlock(block_args,
-											batch_norm_momentum=batch_norm_momentum,
-											batch_norm_epsilon=batch_norm_epsilon,
-											image_size=image_size))
-			if block_args.num_repeat > 1:
-				block_args = block_args._replace(input_filters=block_args.output_filters, stride=1)
-			for _ in range(block_args.num_repeat - 1):
-				self._blocks.append(MBConvBlock(block_args,
-												batch_norm_momentum=batch_norm_momentum,
-												batch_norm_epsilon=batch_norm_epsilon,
-												image_size=image_size))
-			self._block_id_2_out_id[len(self._blocks)] = out_id
-
-		# Head
-		in_channels = block_args.output_filters  # output of final block
-		out_channels = round_filters(1280, width_coefficient=width_coefficient,
-									 depth_divisor=depth_divisor,
-									 min_depth=min_depth)
-		self._conv_head = Conv2d(in_channels, out_channels, kernel_size=1, bias=False)
-		self._bn1 = nn.BatchNorm2d(num_features=out_channels, momentum=bn_mom, eps=bn_eps)
-
-		self._swish = nn.Silu()
-
-	def set_swish(self, memory_efficient=True):
-		"""Sets swish function as memory efficient (for training) or standard (for export)"""
-		self._swish = nn.Silu() if memory_efficient else Swish()
-		for block in self._blocks:
-			block.set_swish(memory_efficient)
-
-	def forward(self, inputs):
-		""" Returns output of the final convolution layer """
-
-		# Stem
-		x = self._swish(self._bn0(self._conv_stem(inputs)))
-
-		# Blocks
+	def forward(self, x):
 		outs = []
-		for idx, block in enumerate(self._blocks):
-			drop_connect_rate = self._drop_connect_rate
-			if drop_connect_rate:
-				drop_connect_rate *= float(idx) / len(self._blocks)
-
-			x = block(x, drop_connect_rate=drop_connect_rate)
-			if idx in self._block_id_2_out_id and self._block_id_2_out_id[idx] in self._out_indices:
+		for i, layer in enumerate(self.layers):
+			x = layer(x)
+			if i in self.out_indices:
 				outs.append(x)
 
-		# Head
-		x = self._swish(self._bn1(self._conv_head(x)))
-		outs.append(x)
+		return tuple(outs)
 
-		return x if self._out_indices is None else tuple(outs)
+	def _freeze_stages(self):
+		for i in range(self.frozen_stages):
+			m = self.layers[i]
+			m.eval()
+			for param in m.parameters():
+				param.requires_grad = False
 
+	def train(self, mode=True):
+		super(EfficientNet, self).train(mode)
+		self._freeze_stages()
+		if mode and self.norm_eval:
+			for m in self.modules():
+				if isinstance(m, nn.BatchNorm2d):
+					m.eval()
