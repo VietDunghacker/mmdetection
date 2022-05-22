@@ -176,8 +176,8 @@ data = dict(
 optimizer = dict(
 	_delete_ = True,
 	type='SGD',
-	lr=0.01,
-	momentum=0.937,
+	lr=0.0032,
+	momentum=0.843,
 	weight_decay=0.000036)
 optimizer_config = dict(grad_clip=None)
 log_config = dict(interval = 10)
