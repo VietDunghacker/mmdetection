@@ -11,6 +11,7 @@ model = dict(
 		frozen_stages=-1,
 		norm_cfg=dict(type='BN', requires_grad=True, eps=1e-3, momentum=0.01),
 		norm_eval=False,
+		with_cp=True,
 		init_cfg=dict(type='Pretrained', prefix='backbone', checkpoint='https://download.openmmlab.com/mmclassification/v0/efficientnet/efficientnet-b7_3rdparty_8xb32-aa-advprop_in1k_20220119-c6dbff10.pth')),
 	neck=[
 		dict(
