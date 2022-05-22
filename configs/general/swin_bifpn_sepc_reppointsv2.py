@@ -99,7 +99,7 @@ model = dict(
 # data setting
 img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 albu_train_transforms = [
-	dict(type='ShiftScaleRotate', shift_limit=0.1, scale_limit=0.1, rotate_limit=1, interpolation=1, p=0.5, border_mode = 0),
+	dict(type='ShiftScaleRotate', shift_limit=0., scale_limit=0.1, rotate_limit=1, interpolation=1, p=0.5, border_mode = 0),
 	dict(type='ColorJitter', brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2),
 	dict(type='RGBShift', r_shift_limit=20, g_shift_limit=20, b_shift_limit=20),
 	dict(type='HueSaturationValue', hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20),
@@ -121,7 +121,7 @@ albu_train_transforms = [
 
 train_pipeline = [
 	dict(type = 'FocusBoundingBox'),
-	dict(type = 'RandomMaskFace', mask_face_prob=0.25),
+	#dict(type = 'RandomMaskFace', mask_face_prob=0.25),
 	dict(
 		type = 'AutoAugment',
 		policies = [
