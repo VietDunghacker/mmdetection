@@ -178,7 +178,7 @@ optimizer = dict(
 	type='SGD',
 	lr=0.0032,
 	momentum=0.843,
-	weight_decay=0.000036)
+	weight_decay=0.00036)
 optimizer_config = dict(grad_clip=None)
 log_config = dict(interval = 10)
 # learning policy
