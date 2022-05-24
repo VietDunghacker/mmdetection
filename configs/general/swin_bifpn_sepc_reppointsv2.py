@@ -18,6 +18,7 @@ model = dict(
 		patch_norm=True,
 		out_indices=(1, 2, 3),
 		with_cp=True,
+		frozen_stages=4,
 		init_cfg=dict(type='Pretrained', checkpoint='/gdrive/My Drive/checkpoints/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
 	neck=[
 		dict(
