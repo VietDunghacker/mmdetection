@@ -92,7 +92,7 @@ def multiclass_nms(multi_bboxes,
 	iou_thr = nms_cfg['iou_threshold']
 	num_classes = multi_scores.size(1) - 1
 	# exclude background category
-	
+	'''
 	if multi_bboxes.shape[1] > 4:
 		bboxes = multi_bboxes.view(multi_scores.size(0), -1, 4)
 	else:
@@ -108,7 +108,7 @@ def multiclass_nms(multi_bboxes,
 		bboxes = multi_bboxes.view(multi_scores.size(0), -1, 4)[range(multi_scores.size(0)), labels]
 	else:
 		bboxes = multi_bboxes
-	'''
+	
 	bboxes = bboxes.reshape(-1, 4)
 	scores = scores.reshape(-1)
 	labels = labels.reshape(-1)
