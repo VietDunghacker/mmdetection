@@ -85,7 +85,6 @@ albu_train_transforms = [
 	dict(type='ColorJitter', brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2),
 	dict(type='RGBShift', r_shift_limit=20, g_shift_limit=20, b_shift_limit=20),
 	dict(type='HueSaturationValue', hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20),
-	dict(type='RandomRotate90'),
 	dict(
 		type='OneOf',
 		transforms=[
@@ -93,43 +92,30 @@ albu_train_transforms = [
 			dict(type='ToGray', p = 1.0)
 		],
 		p=0.1),
-	dict(
-		type='OneOf',
-		transforms=[
-			dict(type='MedianBlur', blur_limit=3, p=1.0),
-			dict(type='Blur', blur_limit=3, p=1.0),
-		],
-		p=0.1)
 ]
 
 train_pipeline = [
+	dict(type = 'FocusBoundingBox'),
+	dict(type = 'RandomMaskFace', mask_face_prob=0.25),	
 	dict(
 		type = 'AutoAugment',
 		policies = [
 			[
-				dict(type='Mosaic', center_ratio_range=(0.9, 1.1), img_scale=(960, 960), pad_val=0.0),
+				dict(type='Mosaic', center_ratio_range=(0.95, 1.05), img_scale=(960, 960), pad_val=0.0),
 				dict(type='Resize', img_scale=[(800, 800), (960, 960)], multiscale_mode='range', keep_ratio=True),
 			],
 			[
-				dict(type='Mosaic', center_ratio_range=(0.8, 1.2), img_scale=(960, 960), pad_val=0.0),
-				dict(type='Resize', img_scale=[(800, 800), (960, 960)], multiscale_mode='range', keep_ratio=True),
-			],
-			[
-				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
 				dict(type='Resize', img_scale=[(640, 640), (960, 960)], multiscale_mode='range', keep_ratio=True),
 			],
 			[
-				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
 				dict(type='Resize', img_scale=[(640, 640), (960, 960)], multiscale_mode='range', keep_ratio=True),
 			]
 		]
 	),
 	dict(
 		type='CutOut',
-		n_holes=(5, 10),
-		cutout_shape=[(4, 4), (4, 8), (8, 4), (8, 8),
-					  (16, 8), (8, 16), (16, 16), (16, 32), (32, 16), (32, 32),
-					  (32, 48), (48, 32), (48, 48)]),
+		n_holes=(5, 25),
+		cutout_shape=[(4, 4), (4, 8), (8, 4), (8, 8), (16, 8), (8, 16), (16, 16), (16, 32), (32, 16), (32, 32)]),
 	dict(type='RandomFlip', flip_ratio=0.5),
 	dict(
 		type='Albu',
