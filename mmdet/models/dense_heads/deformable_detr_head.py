@@ -317,5 +317,7 @@ class DeformableDETRHead(DETRHead):
 			keep = bboxes[:, -1] > self.test_cfg.score_threshold
 			bboxes = bboxes[keep]
 			labels = labels[keep]
+
+			bboxes, labels = self._bboxes_nms(bboxes, labels, self.test_cfg)
 			result_list.append((bboxes, labels))
 		return result_list
