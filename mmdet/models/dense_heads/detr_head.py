@@ -648,8 +648,8 @@ class DETRHead(AnchorFreeHead):
 			det_labels = indexes % self.num_classes
 			bbox_index = indexes // self.num_classes
 			bbox_pred = bbox_pred[bbox_index]
-
-			'''scores, det_labels = cls_score.max(-1)
+			'''
+			scores, det_labels = cls_score.max(-1)
 			scores = scores.reshape(-1)
 			det_labels = det_labels.reshape(-1)
 		else:
