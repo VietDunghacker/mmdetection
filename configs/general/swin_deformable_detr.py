@@ -89,7 +89,6 @@ albu_train_transforms = [
 	dict(type='RandomBrightnessContrast', brightness_limit=0.1, contrast_limit=0.1),
 	dict(type='RGBShift', r_shift_limit=10, g_shift_limit=10, b_shift_limit=10),
 	dict(type='HueSaturationValue', hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20),
-	dict(type='RandomRotate90'),
 	dict(
 		type='OneOf',
 		transforms=[
