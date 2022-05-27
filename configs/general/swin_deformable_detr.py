@@ -1,7 +1,7 @@
 _base_ = [
 	'../_base_/default_runtime.py'
 ]
-max_per_img = 300
+max_per_img = 64
 model = dict(
 	type='DeformableDETR',
 	backbone=dict(
@@ -78,7 +78,7 @@ model = dict(
 	test_cfg=dict(
 		max_per_img=max_per_img,
 		score_threshold = 0.05,
-		nms = dict(type='soft_nms', iou_threshold=0.6)))
+		nms = dict(type='nms', iou_threshold=0.6)))
 
 # data setting
 dataset_type = 'CocoDataset'
