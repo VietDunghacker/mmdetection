@@ -65,7 +65,7 @@ model = dict(
 		loss_bbox=dict(type='CIoULoss', loss_weight=2.0),
 	),
 	train_cfg = dict(
-		initial_iter=500,
+		initial_iter=0,
 		initial_assigner=dict(type='ATSSAssigner', topk=9),
 		assigner=dict(type='TaskAlignedAssigner', topk=13),
 		alpha=1,
@@ -109,7 +109,7 @@ albu_train_transforms = [
 
 train_pipeline = [
 	dict(type = 'FocusBoundingBox'),
-	#dict(type = 'RandomMaskFace', mask_face_prob=0.25),	
+	dict(type = 'RandomMaskFace', mask_face_prob=0.25),	
 	dict(
 		type = 'AutoAugment',
 		policies = [
