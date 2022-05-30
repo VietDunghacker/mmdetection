@@ -94,9 +94,9 @@ dataset_type = 'CocoDataset'
 data_root = '/content/data/'
 img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.455], to_rgb=True)
 albu_train_transforms = [
-	dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.1, rotate_limit=1, interpolation=1, p=0.5, border_mode = 0),
-	dict(type='RandomBrightnessContrast', brightness_limit=0.1, contrast_limit=0.1),
-	dict(type='RGBShift', r_shift_limit=10, g_shift_limit=10, b_shift_limit=10),
+	dict(type='ShiftScaleRotate', shift_limit=0.0, scale_limit=0.1, rotate_limit=1, interpolation=1, p=0.5, border_mode = 0),
+	dict(type='ColorJitter', brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2),
+	dict(type='RGBShift', r_shift_limit=20, g_shift_limit=20, b_shift_limit=20),
 	dict(type='HueSaturationValue', hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20),
 	dict(
 		type='OneOf',
@@ -105,91 +105,37 @@ albu_train_transforms = [
 			dict(type='ToGray', p = 1.0)
 		],
 		p=0.1),
+	dict(
+		type='OneOf',
+		transforms=[
+			dict(type='MedianBlur', blur_limit=3, p=1.0),
+			dict(type='Blur', blur_limit=3, p=1.0),
+		],
+		p=0.1)
 ]
 
 train_pipeline = [
+	dict(type = 'FocusBoundingBox'),
+	#dict(type = 'RandomMaskFace', mask_face_prob=0.25),	
 	dict(
 		type = 'AutoAugment',
 		policies = [
 			[
-				dict(type='Mosaic', center_ratio_range=(0.9, 1.1), img_scale=(960, 960), pad_val=0.0),
+				dict(type='Mosaic', center_ratio_range=(0.95, 1.05), img_scale=(960, 960), pad_val=0.0),
 				dict(type='Resize', img_scale=[(800, 800), (960, 960)], multiscale_mode='range', keep_ratio=True),
 			],
 			[
-				dict(type='Mosaic', center_ratio_range=(0.8, 1.2), img_scale=(960, 960), pad_val=0.0),
-				dict(type='Resize', img_scale=[(800, 800), (960, 960)], multiscale_mode='range', keep_ratio=True),
-			],
-			[
-				dict(type='Resize', img_scale=(960, 960), keep_ratio=True),
-				dict(type='Pad', size_divisor=960),
-				dict(
-					type='Albu',
-					transforms=[
-						dict(type = "Crop", x_min = 0, y_min = 480, x_max = 960, y_max = 960),
-						dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.1, rotate_limit=45, interpolation=1, p=0.5, border_mode = 0)],
-					bbox_params=dict(
-						type='BboxParams',
-						format='pascal_voc',
-						label_fields=['gt_labels'],
-						min_visibility=0.8,
-						filter_lost_elements=True),
-					keymap={
-						'img': 'image',
-						'gt_bboxes': 'bboxes'
-					},
-					update_pad_shape=False,
-					skip_img_without_anno=False),
-				dict(type='Resize', img_scale=[(640, 640), (960, 960)], multiscale_mode='range', keep_ratio=True, override=True),
-			],
-			[
-				dict(type='Resize', img_scale=(960, 960), keep_ratio=True),
-				dict(type='Pad', size_divisor=960),
-				dict(
-					type='Albu',
-					transforms=[
-						dict(
-							type = "OneOf",
-							transforms=[
-								dict(type = "Crop", x_min = 0, y_min = i, x_max = 960, y_max = 960) for i in range(480, 720, 10)
-								],
-							p=1.0),
-						dict(type='ShiftScaleRotate', shift_limit=0.0625, scale_limit=0.1, rotate_limit=45, interpolation=1, p=0.5, border_mode = 0),					
-						],
-					bbox_params=dict(
-						type='BboxParams',
-						format='pascal_voc',
-						label_fields=['gt_labels'],
-						min_visibility=0.8,
-						filter_lost_elements=True),
-					keymap={
-						'img': 'image',
-						'gt_bboxes': 'bboxes'
-					},
-					update_pad_shape=False,
-					skip_img_without_anno=False),
-				dict(type = 'Pad', size_divisor = 960),
-				dict(
-					type='MixUp',
-					img_scale=(960, 960),
-					ratio_range=(1.0, 1.0),
-					pad_val=0.0),
-			],
-			[
-				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
 				dict(type='Resize', img_scale=[(640, 640), (960, 960)], multiscale_mode='range', keep_ratio=True),
 			],
 			[
-				dict(type='RandomCrop', crop_type='relative_range', crop_size=(0.9, 0.9), allow_negative_crop = True),
 				dict(type='Resize', img_scale=[(640, 640), (960, 960)], multiscale_mode='range', keep_ratio=True),
 			]
 		]
 	),
 	dict(
 		type='CutOut',
-		n_holes=(5, 10),
-		cutout_shape=[(4, 4), (4, 8), (8, 4), (8, 8),
-					  (16, 8), (8, 16), (16, 16), (16, 32), (32, 16), (32, 32),
-					  (32, 48), (48, 32), (48, 48)]),
+		n_holes=(5, 25),
+		cutout_shape=[(4, 4), (4, 8), (8, 4), (8, 8), (16, 8), (8, 16), (16, 16), (16, 32), (32, 16), (32, 32)]),
 	dict(type='RandomFlip', flip_ratio=0.5),
 	dict(
 		type='Albu',
