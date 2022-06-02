@@ -105,13 +105,6 @@ albu_train_transforms = [
 			dict(type='ToGray', p = 1.0)
 		],
 		p=0.1),
-	dict(
-		type='OneOf',
-		transforms=[
-			dict(type='MedianBlur', blur_limit=3, p=1.0),
-			dict(type='Blur', blur_limit=3, p=1.0),
-		],
-		p=0.1)
 ]
 
 train_pipeline = [
