@@ -12,7 +12,7 @@ model = dict(
 		layer_scale_init_value=1.0,
 		out_indices=[1, 2, 3],
 		with_cp=True,
-		init_cfg=dict(type='Pretrained', checkpoint='/gdrive/My Drive/checkpoints/convnext_base_22k_224.pth'),
+		init_cfg=dict(type='Pretrained', checkpoint='https://dl.fbaipublicfiles.com/convnext/convnext_base_22k_1k_224.pth'),
 	),
 	neck=[
 		dict(
