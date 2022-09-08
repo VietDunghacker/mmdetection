@@ -218,4 +218,6 @@ class GNFPN(BaseModule):
 						outs.append(self.fpn_convs[i](F.relu(outs[-1])))
 					else:
 						outs.append(self.fpn_convs[i](outs[-1]))
+		for out in outs:
+			print(out.shape)
 		return tuple(outs)
