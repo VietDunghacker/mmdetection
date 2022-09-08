@@ -14,7 +14,7 @@ model = dict(
 			'partial(gnconv, order=5, s=1/3, h=7, w=4, gflayer=GlobalLocalFilter)',
 		],
 		drop_path_rate=0.7,
-		out_indices=[0, 1, 2, 3],
+		out_indices=[1, 2, 3],
 		with_cp=True,
 		pretrained='/gdrive/My Drive/checkpoints/hornet_base_gf.pth'
 	),
