@@ -160,11 +160,11 @@ class HorNet(BaseModule):
 				 gnconv=gnconv, block=Block, out_indices=[0, 1, 2, 3],
 				 pretrained=None,
 				 with_cp=False,
-                 init_cfg=None
+				 init_cfg=None
 				 ):
-        assert init_cfg is None, 'To prevent abnormal initialization ' \
-                                 'behavior, init_cfg is not allowed to be set'
-        super().__init__(init_cfg)
+		assert init_cfg is None, 'To prevent abnormal initialization ' \
+								 'behavior, init_cfg is not allowed to be set'
+		super().__init__(init_cfg)
 
 		self.out_indices = out_indices
 		self.pretrained = pretrained
