@@ -135,8 +135,6 @@ class GNFPN(BaseModule):
 			self.lateral_convs.append(l_conv)
 			self.fpn_convs.append(fpn_conv)
 
-		assert(False)
-
 		# add extra conv layers (e.g., RetinaNet)
 		extra_levels = num_outs - self.backbone_end_level + self.start_level
 		if self.add_extra_convs and extra_levels >= 1:
@@ -164,8 +162,7 @@ class GNFPN(BaseModule):
 						act_cfg=act_cfg,
 						inplace=False)
 				)
-				extra_fpn_conv = nn.Sequential(extra_fpn_conv)
-				self.fpn_convs.append(extra_fpn_conv)
+				self.fpn_convs.extend(extra_fpn_conv)
 
 
 	@auto_fp16()
