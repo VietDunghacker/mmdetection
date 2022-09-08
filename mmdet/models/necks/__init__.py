@@ -10,6 +10,7 @@ from .fpg import FPG
 from .fcn import FCNHead
 from .fpn import FPN
 from .fpn_carafe import FPN_CARAFE
+from .gn_fpn import GNFPN
 from .hrfpn import HRFPN
 from .identity_fpn import ChannelMapping
 from .nas_fpn import NASFPN
@@ -28,7 +29,7 @@ from .yolox_pafpn import YOLOXPAFPN
 
 __all__ = [
     'FPN', 'BFP', 'ChannelMapper', 'HRFPN', 'NASFPN', 'FPN_CARAFE', 'PAFPN',
-    'NASFCOS_FPN', 'RFP', 'YOLOV3Neck', 'FPG', 'DilatedEncoder',
+    'NASFCOS_FPN', 'RFP', 'YOLOV3Neck', 'FPG', 'DilatedEncoder', 'GNFPN',
     'CTResNetNeck', 'SSDNeck', 'YOLOXPAFPN', 'FCNHead', 'SEPC', 'PAFPNX', 'DyHead', 'BiFPN',
     'OPA_FPN', 'TPN', 'CBFPN', 'CBPAFPNX', 'CBBiFPN', 'CBSEPC', 'UPerHead', 'ChannelMapping'
 ]

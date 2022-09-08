@@ -4,22 +4,20 @@ _base_ = [
 model = dict(
 	type='RepPointsV2Detector',
 	backbone=dict(
-		type='SwinTransformer',
-		embed_dims=128,
-		depths=[2, 2, 18, 2],
-		num_heads=[4, 8, 16, 32],
-		window_size=7,
-		mlp_ratio=4,
-		qkv_bias=True,
-		qk_scale=None,
-		drop_rate=0.,
-		attn_drop_rate=0.,
-		drop_path_rate=0.3,
-		patch_norm=True,
-		out_indices=(1, 2, 3),
+		type='HorNet',
+		depths=[2, 3, 18, 2], 
+		base_dim=128,
+		gnconv=[
+			'partial(gnconv, order=2, s=1/3)',
+			'partial(gnconv, order=3, s=1/3)',
+			'partial(gnconv, order=4, s=1/3, h=14, w=8, gflayer=GlobalLocalFilter)',
+			'partial(gnconv, order=5, s=1/3, h=7, w=4, gflayer=GlobalLocalFilter)',
+		],
+		drop_path_rate=0.7,
+		out_indices=[0, 1, 2, 3],
 		with_cp=True,
-		frozen_stages=-1,
-		init_cfg=dict(type='Pretrained', checkpoint='/gdrive/My Drive/checkpoints/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
+		pretrained='https://cloud.tsinghua.edu.cn/f/6c84935e63b547f383fb/?dl=1'
+	),
 	neck=[
 		dict(
 			type='BiFPN',
@@ -115,7 +113,7 @@ albu_train_transforms = [
 
 train_pipeline = [
 	dict(type = 'FocusBoundingBox'),
-	dict(type = 'RandomMaskFace', mask_face_prob=0.25),	
+	#dict(type = 'RandomMaskFace', mask_face_prob=0.25),	
 	dict(
 		type = 'AutoAugment',
 		policies = [
