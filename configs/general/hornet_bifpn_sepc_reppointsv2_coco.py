@@ -16,7 +16,7 @@ model = dict(
 		drop_path_rate=0.7,
 		out_indices=[0, 1, 2, 3],
 		with_cp=True,
-		pretrained='https://cloud.tsinghua.edu.cn/f/6c84935e63b547f383fb/?dl=1'
+		pretrained='/gdrive/My Drive/checkpoints/hornet_base_gf.pth'
 	),
 	neck=[
 		dict(
