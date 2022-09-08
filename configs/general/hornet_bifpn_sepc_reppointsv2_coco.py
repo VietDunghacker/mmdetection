@@ -14,23 +14,26 @@ model = dict(
 			'partial(gnconv, order=5, s=1/3, h=7, w=4, gflayer=GlobalLocalFilter)',
 		],
 		drop_path_rate=0.7,
-		out_indices=[1, 2, 3],
+		out_indices=[0, 1, 2, 3],
 		with_cp=True,
 		pretrained='/gdrive/My Drive/checkpoints/hornet_base_gf.pth'
 	),
 	neck=[
 		dict(
-			type='BiFPN',
-			in_channels=[256, 512, 1024],
+			type='GNFPN', 
+			in_channels=[128, 256, 512, 1024],
 			out_channels=256,
-			input_indices=(1, 2, 3),
+			start_level=1,
+			add_extra_convs='on_output',
 			num_outs=5,
-			strides=[8, 16, 32],
-			num_layers=1,
-			weight_method='fast_attn',
-			act_cfg='silu',
-			separable_conv=True,
-			epsilon=0.0001
+			relu_before_extra_convs=True,
+			gn_conv_cfg=dict(
+				kernel_size=7,
+				type='gngf', 
+				proj_out=True,
+				order=2,
+			),
+			norm_cfg=dict(type='GN', num_groups=32, requires_grad=True)
 		),
 		dict(
 			type='SEPC',
