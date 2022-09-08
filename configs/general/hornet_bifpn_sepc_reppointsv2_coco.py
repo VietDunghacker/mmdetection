@@ -19,22 +19,6 @@ model = dict(
 		pretrained='/gdrive/My Drive/checkpoints/hornet_base_gf.pth'
 	),
 	neck=[
-		'''dict(
-			type='GNFPN', 
-			in_channels=[128, 256, 512, 1024],
-			out_channels=256,
-			start_level=1,
-			add_extra_convs='on_output',
-			num_outs=5,
-			relu_before_extra_convs=True,
-			gn_conv_cfg=dict(
-				kernel_size=7,
-				type='gngf', 
-				proj_out=True,
-				order=2,
-			),
-			norm_cfg=dict(type='GN', num_groups=32, requires_grad=True)
-		),'''
 		dict(
 			type='BiFPN',
 			in_channels=[256, 512, 1024],
