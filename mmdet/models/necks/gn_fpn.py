@@ -162,7 +162,8 @@ class GNFPN(BaseModule):
 						act_cfg=act_cfg,
 						inplace=False)
 				)
-				self.fpn_convs.extend(extra_fpn_conv)
+				extra_fpn_conv = nn.Sequential(*extra_fpn_conv)
+				self.fpn_convs.append(extra_fpn_conv)
 
 
 	@auto_fp16()
@@ -218,6 +219,4 @@ class GNFPN(BaseModule):
 						outs.append(self.fpn_convs[i](F.relu(outs[-1])))
 					else:
 						outs.append(self.fpn_convs[i](outs[-1]))
-		for out in outs:
-			print(out.shape)
 		return tuple(outs)
