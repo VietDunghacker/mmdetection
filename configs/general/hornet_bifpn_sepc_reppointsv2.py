@@ -20,18 +20,20 @@ model = dict(
 	),
 	neck=[
 		dict(
-			type='BiFPN',
-			in_channels=[256, 512, 1024],
+			type='GNFPN', 
+			in_channels=[128, 256, 512, 1024],
 			out_channels=256,
-			input_indices=(3, 4, 5),
+			start_level=1,
+			add_extra_convs='on_output',
 			num_outs=5,
-			strides=[8, 16, 32],
-			num_layers=1,
-			weight_method='fast_attn',
-			norm_cfg=dict(type='GN', num_groups=32, requires_grad=True),
-			act_cfg='silu',
-			separable_conv=True,
-			epsilon=0.0001
+			relu_before_extra_convs=True,
+			gn_conv_cfg=dict(
+				kernel_size=7,
+				type='gngf', 
+				proj_out=True,
+				order=2,
+			),
+			norm_cfg=dict(type='GN', num_groups=32, requires_grad=True)
 		),
 		dict(
 			type='SEPC',
@@ -113,7 +115,7 @@ albu_train_transforms = [
 
 train_pipeline = [
 	dict(type = 'FocusBoundingBox'),
-	#dict(type = 'RandomMaskFace', mask_face_prob=0.25),	
+	dict(type = 'RandomMaskFace', mask_face_prob=0.25),	
 	dict(
 		type = 'AutoAugment',
 		policies = [
