@@ -248,7 +248,7 @@ class HorNet(BaseModule):
 		outs = []
 		for i in range(4):
 			x = self.downsample_layers[i](x)
-			if self.with_cp:
+			if self.with_cp and x.requires_grad:
 				x = checkpoint.checkpoint_sequential(self.stages[i], len(self.stages[i]), x)
 			else:
 				x = self.stages[i](x)
