@@ -480,11 +480,11 @@ class DaViT(BaseModule):
 
 		outs = []
 		for i in range(self.num_stages):
-			norm_layer = getattr(self, f'norm{i}')
-			x_out = norm_layer(features[i])
-			H, W = sizes[i]
-			out = x_out.view(-1, H, W, self.embed_dims[i]).permute(0, 3, 1, 2).contiguous()
 			if i in self.out_indices:
+				norm_layer = getattr(self, f'norm{i}')
+				x_out = norm_layer(features[i])
+				H, W = sizes[i]
+				out = x_out.view(-1, H, W, self.embed_dims[i]).permute(0, 3, 1, 2).contiguous()
 				outs.append(out)
 
 		return tuple(outs)
