@@ -18,8 +18,7 @@ class MySequential(nn.Sequential):
 	def forward(self, *inputs):
 		for module in self._modules.values():
 			if type(inputs) == tuple:
-				for item in inputs:
-					print(type(item))
+				print(inputs)
 				inputs = module(*inputs)
 			else:
 				inputs = module(inputs)
