@@ -17,7 +17,6 @@ from ..builder import BACKBONES
 class MySequential(nn.Sequential):
 	def forward(self, *inputs):
 		for module in self._modules.values():
-			print(inputs)
 			if type(inputs) == tuple:
 				inputs = module(*inputs)
 			else:
@@ -197,7 +196,7 @@ class ChannelBlock(nn.Module):
 		x = self.cpe[1](x, size)
 		if self.ffn:
 			x = x + self.drop_path(self.mlp(self.norm2(x)))
-		return x
+		return x, size
 
 
 def window_partition(x, window_size: int):
@@ -348,7 +347,7 @@ class SpatialBlock(nn.Module):
 		x = self.cpe[1](x, size)
 		if self.ffn:
 			x = x + self.drop_path(self.mlp(self.norm2(x)))
-		return x
+		return x, size
 
 
 @BACKBONES.register_module()
@@ -475,9 +474,9 @@ class DaViT(BaseModule):
 					branches.append(branch_id)
 			for layer_index, branch_id in enumerate(block_param):
 				if self.with_cp and x.requires_grad:
-					features[branch_id] = cp.checkpoint(self.main_blocks[block_index][layer_index], features[branch_id], sizes[branch_id])
+					features[branch_id], _ = cp.checkpoint(self.main_blocks[block_index][layer_index], features[branch_id], sizes[branch_id])
 				else:
-					features[branch_id] = self.main_blocks[block_index][layer_index](features[branch_id], sizes[branch_id])
+					features[branch_id], _ = self.main_blocks[block_index][layer_index](features[branch_id], sizes[branch_id])
 
 		outs = []
 		for i in range(self.num_stages):
