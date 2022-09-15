@@ -2716,7 +2716,7 @@ class RandomMaskFace:
 	def find_valid_face(self, person, faces):
 		valid_faces = [self.valid_face(person, face) for face in faces]
 
-    	smallest_distance = float('inf')
+		smallest_distance = float('inf')
 		return_idx = -1
 
 		for idx, (face, valid) in enumerate(zip(faces, valid_faces)):
