@@ -376,6 +376,7 @@ class DaViT(BaseModule):
 
 		self.with_cp = with_cp
 		self.pretrained = pretrained
+		self.out_indices = out_indices
 
 		architecture = [[index] * item for index, item in enumerate(depths)]
 		self.architecture = architecture
