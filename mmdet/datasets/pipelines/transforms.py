@@ -2716,20 +2716,23 @@ class RandomMaskFace:
 	def find_valid_face(self, person, faces):
 		valid_faces = [self.valid_face(person, face) for face in faces]
 
-		largest_area = 0
+    	smallest_distance = float('inf')
 		return_idx = -1
 
 		for idx, (face, valid) in enumerate(zip(faces, valid_faces)):
 			if valid:
-				face_area = (face[3] - face[1]) * (face[2] - face[0])
-				if face_area > largest_area:
-					largest_area = face_area
+				face_x = (face[0] + face[2]) / 2
+				person_x = (person[0] + person[2]) / 2
+				center_distance = np.abs(face_x - person_x)
+
+				if center_distance < smallest_distance:
+					smallest_distance = center_distance
 					return_idx = idx
 
 		return return_idx
 
 	def valid_face(self, person, face):
-		return face[0] >= person[0] - 5 and face[1] >= person[1] - 5 and face[2] <= person[2] + 5 and face[3] <= person[3] + 5 and abs(face[1] - person[1]) <= (person[3] - person[1]) / 5 and face[3] - face[1] >= 10 and face[2] - face[0] >= 10
+		return face[0] >= person[0] - 5 and face[1] >= person[1] - 5 and face[2] <= person[2] + 5 and face[3] <= person[3] + 5 and face[3] - face[1] >= 10 and face[2] - face[0] >= 10 and face[0] < person[0] + (person[2] - person[0]) * 0.9 and face[1] < person[1] + (person[3] - person[1]) * 0.9
 
 	def __repr__(self):
 		repr_str = self.__class__.__name__

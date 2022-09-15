@@ -5,6 +5,7 @@ from .crossformer import CrossFormer_S, CrossFormer_B, CrossFormer_L
 from .csp_darknet import CSPDarknet
 from .cswin_transformer import CSWin
 from .darknet import Darknet
+from .davit import DaViT
 from .detectors_res2net import DetectoRS_Res2Net
 from .detectors_resnet import DetectoRS_ResNet
 from .detectors_resnext import DetectoRS_ResNeXt
@@ -37,5 +38,5 @@ __all__ = [
     'SwinTransformer', 'EfficientNet', 'DLA', 'PyramidVisionTransformer', 'PyramidVisionTransformerV2',
     'CrossFormer_S', 'CrossFormer_B', 'CrossFormer_L', 'LIT', 'XCiT', 'CBResNet', 'CBRes2Net',
     'CBSwinTransformer', 'CSWin', 'RepVGGplus', 'ConvNeXt', 'UniFormer', 'FocalNet', 'SwinTransformerV2',
-    'HorNet'
+    'HorNet', 'DaViT'
 ]
