@@ -20,6 +20,7 @@ class MySequential(nn.Sequential):
 			if type(inputs) == tuple:
 				inputs = module(*inputs)
 			else:
+				print(type(inputs))
 				inputs = module(inputs)
 		return inputs
 
@@ -474,7 +475,7 @@ class DaViT(BaseModule):
 					branches.append(branch_id)
 			for layer_index, branch_id in enumerate(block_param):
 				if self.with_cp and x.requires_grad:
-					features[branch_id] = cp.checkpoint(self.main_blocks[block_index][layer_index], features[branch_id], sizes[branch_id])
+					features[branch_id] = cp.checkpoint(self.main_blocks[block_index][layer_index], (features[branch_id], sizes[branch_id]))
 				else:
 					features[branch_id] = self.main_blocks[block_index][layer_index](features[branch_id], sizes[branch_id])
 
