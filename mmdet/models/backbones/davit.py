@@ -8,6 +8,7 @@ import torch.utils.checkpoint as cp
 
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
 
+from mmcv.runner import BaseModule
 from mmcv_custom import load_checkpoint
 from mmdet.utils import get_root_logger
 from ..builder import BACKBONES
