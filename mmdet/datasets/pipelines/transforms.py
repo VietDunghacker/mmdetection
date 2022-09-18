@@ -2668,7 +2668,7 @@ class RandomMaskFace:
 			else:
 				boxes = []
 
-			if len(boxes) and len(results['gt_bboxes']):
+			if len(boxes) and len(results['gt_bboxes']) and random.random() < self.mask_face_prob:
 				remove_idxs = []
 				for idx, person in enumerate(results['gt_bboxes']):
 					erase_idx = self.find_valid_face(person, boxes)
@@ -2704,11 +2704,6 @@ class RandomMaskFace:
 
 				for key in ['gt_bboxes', 'gt_labels']:
 					results[key] = results[key][remain_idx]
-
-				if len(remain_idx) == 0 and random.random() < 0.5 and y_cropped < img.shape[0] * 0.75:
-					img = img[int(y_cropped) : img.shape[0]]
-
-					results['img_shape'] = img.shape
 
 				results['img'] = img
 		return results
