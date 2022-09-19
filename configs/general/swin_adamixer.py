@@ -109,7 +109,7 @@ albu_train_transforms = [
 ]
 
 train_pipeline = [
-	dict(type = 'RandomMaskFace', mask_face_prob=0.5),	
+	#dict(type = 'RandomMaskFace', mask_face_prob=0.5),	
 	dict(type = 'FocusBoundingBox'),
 	dict(
 		type = 'AutoAugment',
