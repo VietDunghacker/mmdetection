@@ -16,13 +16,10 @@ class_name = ['Audrey Marie Anderson',
  'Willa Joanna Chance Holland']
 num_classes = len(class_name)
 
-num_levels = 4
+num_stages = 6
+num_proposals = 300
 model = dict(
-    type='DINO',
-    num_queries=900,  # num_matching_queries
-    with_box_refine=True,
-    as_two_stage=True,
-    num_feature_levels=num_levels,
+    type='SparseRCNN',
     data_preprocessor=dict(
         type='DetDataPreprocessor',
         mean=[123.675, 116.28, 103.53],
@@ -31,93 +28,106 @@ model = dict(
         pad_size_divisor=32),
     backbone=dict(
         type='SwinTransformer',
-        embed_dims=128,
+        pretrain_img_size=384,
+        embed_dims=192,
         depths=[2, 2, 18, 2],
-        num_heads=[4, 8, 16, 32],
-        window_size=7,
+        num_heads=[6, 12, 24, 48],
+        window_size=12,
         mlp_ratio=4,
         qkv_bias=True,
         qk_scale=None,
         drop_rate=0.,
         attn_drop_rate=0.,
-        drop_path_rate=0.3,
+        drop_path_rate=0.2,
         patch_norm=True,
         out_indices=(0, 1, 2, 3),
         with_cp=True,
-        init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
+        convert_weights=True,
+        init_cfg=dict(type='Pretrained', checkpoint='https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_large_patch4_window12_384_22k.pth')),
     neck=dict(
-        type='ChannelMapper',
-        in_channels=[128, 256, 512, 1024],
-        kernel_size=1,
+        type='FPN',
+        in_channels=[192, 384, 768, 1536],
         out_channels=256,
-        act_cfg=None,
-        norm_cfg=dict(type='GN', num_groups=32),
-        num_outs=num_levels),
-    encoder=dict(
-        num_layers=6,
-        layer_cfg=dict(
-            self_attn_cfg=dict(embed_dims=256, num_levels=num_levels,
-                               dropout=0.0),  # 0.1 for DeformDETR
-            ffn_cfg=dict(
-                embed_dims=256,
-                feedforward_channels=2048,  # 1024 for DeformDETR
-                ffn_drop=0.0))),  # 0.1 for DeformDETR
-    decoder=dict(
-        num_layers=6,
-        return_intermediate=True,
-        layer_cfg=dict(
-            self_attn_cfg=dict(embed_dims=256, num_heads=8,
-                               dropout=0.0),  # 0.1 for DeformDETR
-            cross_attn_cfg=dict(embed_dims=256, num_levels=num_levels,
-                                dropout=0.0),  # 0.1 for DeformDETR
-            ffn_cfg=dict(
-                embed_dims=256,
-                feedforward_channels=2048,  # 1024 for DeformDETR
-                ffn_drop=0.0)),  # 0.1 for DeformDETR
-        post_norm_cfg=None),
-    positional_encoding=dict(
-        num_feats=128,
-        normalize=True,
-        offset=0.0,  # -0.5 for DeformDETR
-        temperature=20),  # 10000 for DeformDETR
-    bbox_head=dict(
-        type='DINOHead',
-        num_classes=num_classes,
-        sync_cls_avg_factor=True,
-        loss_cls=dict(
-            type='FocalLoss',
-            use_sigmoid=True,
-            gamma=2.0,
-            alpha=0.25,
-            loss_weight=1.0),  # 2.0 in DeformDETR
-        loss_bbox=dict(type='L1Loss', loss_weight=5.0),
-        loss_iou=dict(type='GIoULoss', loss_weight=2.0)),
-    dn_cfg=dict(  # TODO: Move to model.train_cfg ?
-        label_noise_scale=0.5,
-        box_noise_scale=1.0,  # 0.4 for DN-DETR
-        group_cfg=dict(dynamic=True, num_groups=None,
-                       num_dn_queries=100)),  # TODO: half num_dn_queries
+        start_level=0,
+        add_extra_convs='on_input',
+        num_outs=4),
+    rpn_head=dict(
+        type='EmbeddingRPNHead',
+        num_proposals=num_proposals,
+        proposal_feature_channel=256),
+    roi_head=dict(
+        type='SparseRoIHead',
+        num_stages=num_stages,
+        stage_loss_weights=[1] * num_stages,
+        proposal_feature_channel=256,
+        bbox_roi_extractor=dict(
+            type='SingleRoIExtractor',
+            roi_layer=dict(type='RoIAlign', output_size=7, sampling_ratio=2),
+            out_channels=256,
+            featmap_strides=[4, 8, 16, 32]),
+        bbox_head=[
+            dict(
+                type='DIIHead',
+                num_classes=num_classes,
+                num_ffn_fcs=2,
+                num_heads=8,
+                num_cls_fcs=1,
+                num_reg_fcs=3,
+                feedforward_channels=2048,
+                in_channels=256,
+                dropout=0.0,
+                ffn_act_cfg=dict(type='ReLU', inplace=True),
+                dynamic_conv_cfg=dict(
+                    type='DynamicConv',
+                    in_channels=256,
+                    feat_channels=64,
+                    out_channels=256,
+                    input_feat_shape=7,
+                    act_cfg=dict(type='ReLU', inplace=True),
+                    norm_cfg=dict(type='LN')),
+                loss_bbox=dict(type='L1Loss', loss_weight=5.0),
+                loss_iou=dict(type='GIoULoss', loss_weight=2.0),
+                loss_cls=dict(
+                    type='FocalLoss',
+                    use_sigmoid=True,
+                    gamma=2.0,
+                    alpha=0.25,
+                    loss_weight=2.0),
+                bbox_coder=dict(
+                    type='DeltaXYWHBBoxCoder',
+                    clip_border=False,
+                    target_means=[0., 0., 0., 0.],
+                    target_stds=[0.5, 0.5, 1., 1.])) for _ in range(num_stages)
+        ]),
     # training and testing settings
     train_cfg=dict(
-        assigner=dict(
-            type='HungarianAssigner',
-            match_costs=[
-                dict(type='FocalLossCost', weight=2.0),
-                dict(type='BBoxL1Cost', weight=5.0, box_format='xywh'),
-                dict(type='IoUCost', iou_mode='giou', weight=2.0)
-            ])),
-    test_cfg=dict(max_per_img=300, score_threshold=0.05))  # 100 for DeformDETR
+        rpn=None,
+        rcnn=[
+            dict(
+                assigner=dict(
+                    type='HungarianAssigner',
+                    match_costs=[
+                        dict(type='FocalLossCost', weight=2.0),
+                        dict(type='BBoxL1Cost', weight=5.0, box_format='xyxy'),
+                        dict(type='IoUCost', iou_mode='giou', weight=2.0)
+                    ]),
+                sampler=dict(type='PseudoSampler'),
+                pos_weight=1) for _ in range(num_stages)
+        ]),
+    test_cfg=dict(rpn=None, rcnn=dict(max_per_img=num_proposals, score_threshold=0.05)))
 
 # optimizer
-base_lr = 0.0001
+base_lr = 0.000025
 optim_wrapper = dict(
     type='AmpOptimWrapper',
     paramwise_cfg=dict(
         custom_keys={
-            'backbone': dict(lr_mult=0.1)
+            'absolute_pos_embed': dict(decay_mult=0.),
+            'relative_position_bias_table': dict(decay_mult=0.),
+            'norm': dict(decay_mult=0.)
         }),
     optimizer=dict(
-        _delete_=True, type='AdamW', lr=base_lr, weight_decay=0.0001),
+        _delete_=True, type='AdamW', lr=0.000025, weight_decay=0.0001),
     clip_grad=None)
 
 dataset_type = 'CocoDataset'
@@ -260,5 +270,5 @@ param_scheduler = [
         T_max=10000,
     )
 ]
-load_from = 'https://github.com/RistoranteRist/mmlab-weights/releases/download/dino-swinl/dino-5scale_swin-l_8xb2-36e_coco-5486e051.pth'
+load_from = 'https://download.openmmlab.com/mmdetection/v2.0/sparse_rcnn/sparse_rcnn_r101_fpn_300_proposals_crop_mstrain_480-800_3x_coco/sparse_rcnn_r101_fpn_300_proposals_crop_mstrain_480-800_3x_coco_20201223_023452-c23c3564.pth'
 log_processor = dict(type='LogProcessor', by_epoch=False)
