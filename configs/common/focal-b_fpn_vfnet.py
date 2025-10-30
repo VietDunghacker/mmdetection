@@ -30,9 +30,9 @@ model = dict(
         depths=[2, 2, 18, 2],
         drop_path_rate=0.5,
         patch_norm=True,
-        use_checkpoint=False,
+        use_checkpoint=True,
         focal_windows=[9,9,9,9],
-        focal_levels=[2,2,2,2], 
+        focal_levels=[3,3,3,3], 
         use_conv_embed=False, 
         use_layerscale=False, 
         init_cfg=dict(type='Pretrained', checkpoint='https://github.com/microsoft/FocalNet/releases/download/v1.0.0/focalnet_base_lrf.pth'),
@@ -80,7 +80,7 @@ model = dict(
 # optimizer
 base_lr = 0.0001
 optim_wrapper = dict(
-    type='OptimWrapper',
+    type='AmpOptimWrapper',
     paramwise_cfg=dict(
         bias_lr_mult=2., bias_decay_mult=0.,
         custom_keys={
@@ -185,8 +185,8 @@ train_dataloader = dict(
         ),
         pipeline=train_pipeline))
 val_dataloader = dict(
-    batch_size=4,
-    num_workers=2,
+    batch_size=8,
+    num_workers=4,
     persistent_workers=True,
     drop_last=False,
     sampler=dict(type='DefaultSampler', shuffle=False),

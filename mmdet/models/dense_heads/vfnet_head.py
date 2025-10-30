@@ -475,7 +475,7 @@ class VFNetHead(ATSSHead, FCOSHead):
             if self.use_vfl:
                 pos_ious = iou_targets_rf.clone().detach()
                 cls_iou_targets = torch.zeros_like(flatten_cls_scores)
-                cls_iou_targets[pos_inds, pos_labels] = pos_ious
+                cls_iou_targets[pos_inds, pos_labels] = pos_ious.to(cls_iou_targets.dtype)
         else:
             loss_bbox = pos_bbox_preds.sum() * 0
             loss_bbox_refine = pos_bbox_preds_refine.sum() * 0

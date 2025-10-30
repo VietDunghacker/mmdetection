@@ -12,13 +12,16 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.checkpoint as checkpoint
 import numpy as np
-from timm.models.layers import DropPath, to_2tuple
+from timm.models.layers import DropPath
 
+from mmcv.cnn.bricks.transformer import FFN, build_dropout
+from mmengine.logging import MMLogger
 from mmengine.model import BaseModule
-from mmengine.model.weight_init import trunc_normal_
+from mmengine.model.weight_init import (constant_init, trunc_normal_,
+                                        trunc_normal_init)
+from mmengine.runner.checkpoint import CheckpointLoader
+from mmengine.utils import to_2tuple
 
-from mmcv_custom import load_checkpoint
-from mmdet.utils import get_root_logger
 from mmdet.registry import MODELS
 
 class Mlp(nn.Module):
@@ -425,31 +428,113 @@ class FocalNet(BaseModule):
                 for param in m.parameters():
                     param.requires_grad = False
 
-    def init_weights(self, pretrained=None):
-        """Initialize the weights in backbone.
-
-        Args:
-            pretrained (str, optional): Path to pre-trained weights.
-                Defaults to None.
-        """
-
-        def _init_weights(m):
-            if isinstance(m, nn.Linear):
-                trunc_normal_(m.weight, std=.02)
-                if isinstance(m, nn.Linear) and m.bias is not None:
-                    nn.init.constant_(m.bias, 0)
-            elif isinstance(m, nn.LayerNorm):
-                nn.init.constant_(m.bias, 0)
-                nn.init.constant_(m.weight, 1.0)
-
-        if isinstance(pretrained, str):
-            self.apply(_init_weights)
-            logger = get_root_logger()
-            load_checkpoint(self, self.init_cfg.checkpoint, strict=False, logger=logger)
-        elif pretrained is None:
-            self.apply(_init_weights)
+    def init_weights(self):
+        logger = MMLogger.get_current_instance()
+        if self.init_cfg is None:
+            logger.warn(f'No pre-trained weights for '
+                        f'{self.__class__.__name__}, '
+                        f'training start from scratch')
+            if self.use_abs_pos_embed:
+                trunc_normal_(self.absolute_pos_embed, std=0.02)
+            for m in self.modules():
+                if isinstance(m, nn.Linear):
+                    trunc_normal_init(m, std=.02, bias=0.)
+                elif isinstance(m, nn.LayerNorm):
+                    constant_init(m, 1.0)
         else:
-            raise TypeError('pretrained must be a str or None')
+            assert 'checkpoint' in self.init_cfg, f'Only support ' \
+                                                  f'specify `Pretrained` in ' \
+                                                  f'`init_cfg` in ' \
+                                                  f'{self.__class__.__name__} '
+            ckpt = CheckpointLoader.load_checkpoint(
+                self.init_cfg.checkpoint, logger=logger, map_location='cpu')
+            if 'state_dict' in ckpt:
+                state_dict = ckpt['state_dict']
+            elif 'model' in ckpt:
+                state_dict = ckpt['model']
+            else:
+                state_dict = ckpt
+
+            if list(state_dict.keys())[0].startswith('module.'):
+                state_dict = {k[7:]: v for k, v in state_dict.items()}
+        
+            focal_layers_keys = [k for k in state_dict.keys() if ("focal_layers" in k and 'bias' not in k)]
+            for table_key in focal_layers_keys:        
+                if table_key not in self.state_dict():
+                    continue
+                table_pretrained = state_dict[table_key]
+                table_current = self.state_dict()[table_key]
+        
+                if len(table_pretrained.shape) != 4:
+                    L1 = table_pretrained.shape[1]
+                    L2 = table_current.shape[1]
+        
+                    if L1 != L2:
+                        S1 = int(L1 ** 0.5)
+                        S2 = int(L2 ** 0.5)
+                        table_pretrained_resized = F.interpolate(
+                                table_pretrained.view(1, 1, S1, S1),
+                                size=(S2, S2), mode='bicubic')
+                        state_dict[table_key] = table_pretrained_resized.view(1, L2) * L1 / L2
+                else:
+                    fsize1 = table_pretrained.shape[2]
+                    fsize2 = table_current.shape[2]
+        
+                    # NOTE: different from interpolation used in self-attention, we use padding or clipping for focal conv
+                    if fsize1 < fsize2:
+                        table_pretrained_resized = torch.zeros(table_current.shape)
+                        table_pretrained_resized[:, :, (fsize2-fsize1)//2:-(fsize2-fsize1)//2, (fsize2-fsize1)//2:-(fsize2-fsize1)//2] = table_pretrained
+                        state_dict[table_key] = table_pretrained_resized
+                    elif fsize1 > fsize2:
+                        table_pretrained_resized = table_pretrained[:, :, (fsize1-fsize2)//2:-(fsize1-fsize2)//2, (fsize1-fsize2)//2:-(fsize1-fsize2)//2]
+                        state_dict[table_key] = table_pretrained_resized
+        
+            f_layers_keys = [k for k in state_dict.keys() if ("modulation.f" in k)]
+            for table_key in f_layers_keys:        
+                if table_key not in self.state_dict():
+                    continue
+                table_pretrained = state_dict[table_key]
+                table_current = self.state_dict()[table_key]
+                if table_pretrained.shape != table_current.shape:
+                    if len(table_pretrained.shape) == 2:
+                        # for linear weights
+                        dim = table_pretrained.shape[1]
+                        assert table_current.shape[1] == dim
+                        L1 = table_pretrained.shape[0]
+                        L2 = table_current.shape[0]
+        
+                        if L1 < L2:
+                            table_pretrained_resized = torch.zeros(table_current.shape)
+                            # copy for linear project
+                            table_pretrained_resized[:2*dim] = table_pretrained[:2*dim]
+                            # copy for global token gating
+                            table_pretrained_resized[-1] = table_pretrained[-1]
+                            # copy for first multiple focal levels
+                            table_pretrained_resized[2*dim:2*dim+(L1-2*dim-1)] = table_pretrained[2*dim:-1]
+                            # reassign pretrained weights
+                            state_dict[table_key] = table_pretrained_resized
+                        elif L1 > L2:
+                            raise NotImplementedError
+                    elif len(table_pretrained.shape) == 1:
+                        # for linear bias
+                        L1 = table_pretrained.shape[0]
+                        L2 = table_current.shape[0]
+                        if L1 < L2:
+                            table_pretrained_resized = torch.zeros(table_current.shape)
+                            # copy for linear project
+                            table_pretrained_resized[:2*dim] = table_pretrained[:2*dim]
+                            # copy for global token gating
+                            table_pretrained_resized[-1] = table_pretrained[-1]
+                            # copy for first multiple focal levels
+                            table_pretrained_resized[2*dim:2*dim+(L1-2*dim-1)] = table_pretrained[2*dim:-1]
+                            # reassign pretrained weights
+                            state_dict[table_key] = table_pretrained_resized
+                        elif L1 > L2:
+                            raise NotImplementedError
+
+
+            # load state_dict
+            self.load_state_dict(state_dict, False)
 
     def forward(self, x):
         """Forward function."""
