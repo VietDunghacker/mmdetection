@@ -16,10 +16,8 @@ class_name = ['Audrey Marie Anderson',
  'Willa Joanna Chance Holland']
 num_classes = len(class_name)
 
-num_stages = 6
-num_proposals = 300
 model = dict(
-    type='SparseRCNN',
+    type='TOOD',
     data_preprocessor=dict(
         type='DetDataPreprocessor',
         mean=[123.675, 116.28, 103.53],
@@ -44,78 +42,60 @@ model = dict(
         init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
     neck=dict(
         type='FPN',
-        in_channels=[128, 256, 512, 1024],
+        in_channels=[256, 512, 1024, 2048],
         out_channels=256,
-        start_level=0,
-        add_extra_convs='on_input',
-        num_outs=4),
-    rpn_head=dict(
-        type='EmbeddingRPNHead',
-        num_proposals=num_proposals,
-        proposal_feature_channel=256),
-    roi_head=dict(
-        type='SparseRoIHead',
-        num_stages=num_stages,
-        stage_loss_weights=[1] * num_stages,
-        proposal_feature_channel=256,
-        bbox_roi_extractor=dict(
-            type='SingleRoIExtractor',
-            roi_layer=dict(type='RoIAlign', output_size=7, sampling_ratio=2),
-            out_channels=256,
-            featmap_strides=[4, 8, 16, 32]),
-        bbox_head=[
-            dict(
-                type='DIIHead',
-                num_classes=num_classes,
-                num_ffn_fcs=2,
-                num_heads=8,
-                num_cls_fcs=1,
-                num_reg_fcs=3,
-                feedforward_channels=2048,
-                in_channels=256,
-                dropout=0.0,
-                ffn_act_cfg=dict(type='ReLU', inplace=True),
-                dynamic_conv_cfg=dict(
-                    type='DynamicConv',
-                    in_channels=256,
-                    feat_channels=64,
-                    out_channels=256,
-                    input_feat_shape=7,
-                    act_cfg=dict(type='ReLU', inplace=True),
-                    norm_cfg=dict(type='LN')),
-                loss_bbox=dict(type='L1Loss', loss_weight=5.0),
-                loss_iou=dict(type='GIoULoss', loss_weight=2.0),
-                loss_cls=dict(
-                    type='FocalLoss',
-                    use_sigmoid=True,
-                    gamma=2.0,
-                    alpha=0.25,
-                    loss_weight=2.0),
-                bbox_coder=dict(
-                    type='DeltaXYWHBBoxCoder',
-                    clip_border=False,
-                    target_means=[0., 0., 0., 0.],
-                    target_stds=[0.5, 0.5, 1., 1.])) for _ in range(num_stages)
-        ]),
-    # training and testing settings
+        start_level=1,
+        add_extra_convs='on_output',
+        num_outs=5),
+    bbox_head=dict(
+        type='TOODHead',
+        num_classes=num_classes,
+        in_channels=256,
+        stacked_convs=6,
+        feat_channels=256,
+        anchor_type='anchor_free',
+        anchor_generator=dict(
+            type='AnchorGenerator',
+            ratios=[1.0],
+            octave_base_scale=8,
+            scales_per_octave=1,
+            strides=[8, 16, 32, 64, 128]),
+        bbox_coder=dict(
+            type='DeltaXYWHBBoxCoder',
+            target_means=[.0, .0, .0, .0],
+            target_stds=[0.1, 0.1, 0.2, 0.2]),
+        initial_loss_cls=dict(
+            type='FocalLoss',
+            use_sigmoid=True,
+            activated=True,  # use probability instead of logit as input
+            gamma=2.0,
+            alpha=0.25,
+            loss_weight=1.0),
+        loss_cls=dict(
+            type='QualityFocalLoss',
+            use_sigmoid=True,
+            activated=True,  # use probability instead of logit as input
+            beta=2.0,
+            loss_weight=1.0),
+        loss_bbox=dict(type='GIoULoss', loss_weight=2.0)),
     train_cfg=dict(
-        rpn=None,
-        rcnn=[
-            dict(
-                assigner=dict(
-                    type='HungarianAssigner',
-                    match_costs=[
-                        dict(type='FocalLossCost', weight=2.0),
-                        dict(type='BBoxL1Cost', weight=5.0, box_format='xyxy'),
-                        dict(type='IoUCost', iou_mode='giou', weight=2.0)
-                    ]),
-                sampler=dict(type='PseudoSampler'),
-                pos_weight=1) for _ in range(num_stages)
-        ]),
-    test_cfg=dict(rpn=None, rcnn=dict(max_per_img=num_proposals, score_threshold=0.05)))
+        initial_epoch=4,
+        initial_assigner=dict(type='ATSSAssigner', topk=9),
+        assigner=dict(type='TaskAlignedAssigner', topk=13),
+        alpha=1,
+        beta=6,
+        allowed_border=-1,
+        pos_weight=-1,
+        debug=False),
+    test_cfg=dict(
+        nms_pre=1000,
+        min_bbox_size=0,
+        score_thr=0.05,
+        nms=dict(type='soft_nms', iou_threshold=0.6),
+        max_per_img=100))
 
 # optimizer
-base_lr = 0.000025
+base_lr = 0.0001
 optim_wrapper = dict(
     type='AmpOptimWrapper',
     paramwise_cfg=dict(
@@ -125,7 +105,7 @@ optim_wrapper = dict(
             'norm': dict(decay_mult=0.)
         }),
     optimizer=dict(
-        _delete_=True, type='AdamW', lr=0.000025, weight_decay=0.0001),
+        _delete_=True, type='AdamW', lr=base_lr, weight_decay=0.0001),
     clip_grad=None)
 
 dataset_type = 'CocoDataset'
@@ -148,29 +128,42 @@ metainfo = {
 #         'data/': 's3://openmmlab/datasets/detection/'
 #     }))
 backend_args = None
+albu_train_transforms = [
+    dict(type='ShiftScaleRotate', shift_limit=0.0, scale_limit=0.1, rotate_limit=1, interpolation=1, p=0.5, border_mode=0),
+    dict(type='ColorJitter', brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2),
+    dict(type='RGBShift', r_shift_limit=20, g_shift_limit=20, b_shift_limit=20),
+    dict(type='HueSaturationValue', hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20),
+    dict(type='JpegCompression', quality_lower=85, quality_upper=95, p=0.2),
+    dict(
+        type='OneOf',
+        transforms=[
+            dict(type='ChannelShuffle', p=1.0),
+            dict(type='ToGray', p=1.0)
+        ],
+        p=0.1),
+]
 
 train_pipeline = [
-    dict(type='LoadImageFromFile', backend_args={{_base_.backend_args}}),
-    dict(type='LoadAnnotations', with_bbox=True),
-    dict(
-        type = 'AutoAugment',
-        policies = [
-            [
-                dict(type='Mosaic', center_ratio_range=(0.95, 1.05), img_scale=(1280, 1280), pad_val=0.0),
-                dict(type='RandomResize', scale=[(640, 640), (1280, 1280)], keep_ratio=True)
-            ],
-            [
-                dict(type='RandomResize', scale=[(640, 640), (1280, 1280)], keep_ratio=True)
-            ],
-            [
-                dict(type='RandomResize', scale=[(640, 640), (1280, 1280)], keep_ratio=True)
-            ]
-        ]
-    ),
+    dict(type='Mosaic', center_ratio_range=(0.95, 1.05), img_scale=(1280, 1280), pad_val=0.0, prob=0.1),
+    dict(type='RandomResize', scale=[(960, 960), (1280, 1280)], keep_ratio=True),
     dict(
         type='CutOut',
         n_holes=(5, 25),
         cutout_shape=[(4, 4), (4, 8), (8, 4), (8, 8), (16, 8), (8, 16), (16, 16), (16, 32), (32, 16), (32, 32)]),
+    dict(
+        type='Albu',
+        transforms=albu_train_transforms,
+        bbox_params=dict(
+            type='BboxParams',
+            format='pascal_voc',
+            label_fields=['gt_bboxes_labels', 'gt_ignore_flags'],
+            min_visibility=0.0,
+            filter_lost_elements=True),
+        keymap={
+            'img': 'image',
+            'gt_bboxes': 'bboxes'
+        },
+        skip_img_without_anno=False),
     dict(type='RandomFlip', prob=0.5),
     dict(type='PackDetInputs')
 ]
@@ -192,13 +185,22 @@ train_dataloader = dict(
     sampler=dict(type='InfiniteSampler', shuffle=True),
     batch_sampler=dict(type='AspectRatioBatchSampler'),
     dataset=dict(
-        type=dataset_type,
-        data_root=data_root,
-        metainfo=metainfo,
-        ann_file='celebrity_detection_coco_train.json',
-        data_prefix=dict(img='images/train/'),
-        pipeline=train_pipeline,
-        backend_args=backend_args))
+        _delete_=True,
+        type="MultiImageMixDataset",
+        dataset=dict(
+            type=dataset_type,
+            data_root=data_root,
+            metainfo=metainfo,
+            pipeline=[
+                dict(type='LoadImageFromFile', backend_args=backend_args),
+                dict(type='LoadAnnotations', with_bbox=True)
+            ],
+            ann_file='celebrity_detection_coco_train.json',
+            data_prefix=dict(img='images/train/'),
+            filter_cfg=dict(filter_empty_gt=False, min_size=10),
+            backend_args=backend_args,
+        ),
+        pipeline=train_pipeline))
 val_dataloader = dict(
     batch_size=4,
     num_workers=2,
