@@ -22,6 +22,7 @@ model = dict(
     num_queries=900,  # num_matching_queries
     with_box_refine=True,
     as_two_stage=True,
+    num_feature_levels=num_levels,
     data_preprocessor=dict(
         type='DetDataPreprocessor',
         mean=[123.675, 116.28, 103.53],
@@ -144,7 +145,7 @@ albu_train_transforms = [
     dict(type='ColorJitter', brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2),
     dict(type='RGBShift', r_shift_limit=20, g_shift_limit=20, b_shift_limit=20),
     dict(type='HueSaturationValue', hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20),
-    dict(type='JpegCompression', quality_lower=85, quality_upper=95, p=0.2),
+    dict(type='ImageCompression', quality_lower=85, quality_upper=95, p=0.2),
     dict(
         type='OneOf',
         transforms=[
@@ -259,5 +260,5 @@ param_scheduler = [
         T_max=10000,
     )
 ]
-load_from = 'https://download.openmmlab.com/mmdetection/v2.0/sparse_rcnn/sparse_rcnn_r101_fpn_300_proposals_crop_mstrain_480-800_3x_coco/sparse_rcnn_r101_fpn_300_proposals_crop_mstrain_480-800_3x_coco_20201223_023452-c23c3564.pth'
+load_from = 'https://github.com/RistoranteRist/mmlab-weights/releases/download/dino-swinl/dino-5scale_swin-l_8xb2-36e_coco-5486e051.pth'
 log_processor = dict(type='LogProcessor', by_epoch=False)
