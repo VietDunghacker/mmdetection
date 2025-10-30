@@ -153,7 +153,7 @@ albu_train_transforms = [
     dict(type='ColorJitter', brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2),
     dict(type='RGBShift', r_shift_limit=20, g_shift_limit=20, b_shift_limit=20),
     dict(type='HueSaturationValue', hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20),
-    dict(type='JpegCompression', quality_lower=85, quality_upper=95, p=0.2),
+    dict(type='ImageCompression', quality_lower=85, quality_upper=95, p=0.2),
     dict(
         type='OneOf',
         transforms=[

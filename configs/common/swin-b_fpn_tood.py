@@ -42,7 +42,7 @@ model = dict(
         init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
     neck=dict(
         type='FPN',
-        in_channels=[256, 512, 1024, 2048],
+        in_channels=[128, 256, 512, 1024],
         out_channels=256,
         start_level=1,
         add_extra_convs='on_output',
@@ -97,7 +97,7 @@ model = dict(
 # optimizer
 base_lr = 0.0001
 optim_wrapper = dict(
-    type='AmpOptimWrapper',
+    type='OptimWrapper',
     paramwise_cfg=dict(
         custom_keys={
             'absolute_pos_embed': dict(decay_mult=0.),
@@ -133,7 +133,7 @@ albu_train_transforms = [
     dict(type='ColorJitter', brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2),
     dict(type='RGBShift', r_shift_limit=20, g_shift_limit=20, b_shift_limit=20),
     dict(type='HueSaturationValue', hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20),
-    dict(type='JpegCompression', quality_lower=85, quality_upper=95, p=0.2),
+    dict(type='ImageCompression', quality_lower=85, quality_upper=95, p=0.2),
     dict(
         type='OneOf',
         transforms=[
@@ -236,6 +236,7 @@ default_hooks = dict(
     checkpoint=dict(by_epoch=False, interval=500, max_keep_ckpts=3),
 )
 
+custom_hooks = [dict(type='Fp16CompresssionHook')]
 
 param_scheduler = [
     dict(
@@ -248,5 +249,5 @@ param_scheduler = [
         T_max=10000,
     )
 ]
-load_from = 'https://download.openmmlab.com/mmdetection/v2.0/sparse_rcnn/sparse_rcnn_r101_fpn_300_proposals_crop_mstrain_480-800_3x_coco/sparse_rcnn_r101_fpn_300_proposals_crop_mstrain_480-800_3x_coco_20201223_023452-c23c3564.pth'
+load_from = 'https://download.openmmlab.com/mmdetection/v2.0/tood/tood_x101_64x4d_fpn_mstrain_2x_coco/tood_x101_64x4d_fpn_mstrain_2x_coco_20211211_003519-a4f36113.pth'
 log_processor = dict(type='LogProcessor', by_epoch=False)
