@@ -356,54 +356,53 @@ class TOODHead(ATSSHead):
         Returns:
             dict[str, Tensor]: A dictionary of loss components.
         """
-        with torch.cuda.amp.autocast(enabled=False):
-            assert stride[0] == stride[1], 'h stride is not equal to w stride!'
-            anchors = anchors.reshape(-1, 4)
-            cls_score = cls_score.permute(0, 2, 3, 1).reshape(
-                -1, self.cls_out_channels).contiguous()
-            bbox_pred = bbox_pred.permute(0, 2, 3, 1).reshape(-1, 4)
-            bbox_targets = bbox_targets.reshape(-1, 4)
-            labels = labels.reshape(-1)
-            alignment_metrics = alignment_metrics.reshape(-1)
-            label_weights = label_weights.reshape(-1)
-            targets = labels if self.epoch < self.initial_epoch else (
-                labels, alignment_metrics)
-            cls_loss_func = self.initial_loss_cls \
-                if self.epoch < self.initial_epoch else self.loss_cls
+        assert stride[0] == stride[1], 'h stride is not equal to w stride!'
+        anchors = anchors.reshape(-1, 4)
+        cls_score = cls_score.permute(0, 2, 3, 1).reshape(
+            -1, self.cls_out_channels).contiguous()
+        bbox_pred = bbox_pred.permute(0, 2, 3, 1).reshape(-1, 4)
+        bbox_targets = bbox_targets.reshape(-1, 4)
+        labels = labels.reshape(-1)
+        alignment_metrics = alignment_metrics.reshape(-1)
+        label_weights = label_weights.reshape(-1)
+        targets = labels if self.epoch < self.initial_epoch else (
+            labels, alignment_metrics)
+        cls_loss_func = self.initial_loss_cls \
+            if self.epoch < self.initial_epoch else self.loss_cls
 
-            loss_cls = cls_loss_func(
-                cls_score, targets, label_weights, avg_factor=1.0)
+        loss_cls = cls_loss_func(
+            cls_score, targets, label_weights, avg_factor=1.0)
 
-            # FG cat_id: [0, num_classes -1], BG cat_id: num_classes
-            bg_class_ind = self.num_classes
-            pos_inds = ((labels >= 0)
-                        & (labels < bg_class_ind)).nonzero().squeeze(1)
+        # FG cat_id: [0, num_classes -1], BG cat_id: num_classes
+        bg_class_ind = self.num_classes
+        pos_inds = ((labels >= 0)
+                    & (labels < bg_class_ind)).nonzero().squeeze(1)
 
-            if len(pos_inds) > 0:
-                pos_bbox_targets = bbox_targets[pos_inds]
-                pos_bbox_pred = bbox_pred[pos_inds]
-                pos_anchors = anchors[pos_inds]
+        if len(pos_inds) > 0:
+            pos_bbox_targets = bbox_targets[pos_inds]
+            pos_bbox_pred = bbox_pred[pos_inds]
+            pos_anchors = anchors[pos_inds]
 
-                pos_decode_bbox_pred = pos_bbox_pred
-                pos_decode_bbox_targets = pos_bbox_targets / stride[0]
+            pos_decode_bbox_pred = pos_bbox_pred
+            pos_decode_bbox_targets = pos_bbox_targets / stride[0]
 
-                # regression loss
-                pos_bbox_weight = self.centerness_target(
-                    pos_anchors, pos_bbox_targets
-                ) if self.epoch < self.initial_epoch else alignment_metrics[
-                    pos_inds]
+            # regression loss
+            pos_bbox_weight = self.centerness_target(
+                pos_anchors, pos_bbox_targets
+            ) if self.epoch < self.initial_epoch else alignment_metrics[
+                pos_inds]
 
-                loss_bbox = self.loss_bbox(
-                    pos_decode_bbox_pred,
-                    pos_decode_bbox_targets,
-                    weight=pos_bbox_weight,
-                    avg_factor=1.0)
-            else:
-                loss_bbox = bbox_pred.sum() * 0
-                pos_bbox_weight = bbox_targets.new_tensor(0.)
+            loss_bbox = self.loss_bbox(
+                pos_decode_bbox_pred,
+                pos_decode_bbox_targets,
+                weight=pos_bbox_weight,
+                avg_factor=1.0)
+        else:
+            loss_bbox = bbox_pred.sum() * 0
+            pos_bbox_weight = bbox_targets.new_tensor(0.)
 
-            return loss_cls, loss_bbox, alignment_metrics.sum(
-            ), pos_bbox_weight.sum()
+        return loss_cls, loss_bbox, alignment_metrics.sum(
+        ), pos_bbox_weight.sum()
 
     def loss_by_feat(
             self,
@@ -434,55 +433,56 @@ class TOODHead(ATSSHead):
         Returns:
             dict[str, Tensor]: A dictionary of loss components.
         """
-        num_imgs = len(batch_img_metas)
-        featmap_sizes = [featmap.size()[-2:] for featmap in cls_scores]
-        assert len(featmap_sizes) == self.prior_generator.num_levels
+        with torch.cuda.amp.autocast(enabled=False):
+            num_imgs = len(batch_img_metas)
+            featmap_sizes = [featmap.size()[-2:] for featmap in cls_scores]
+            assert len(featmap_sizes) == self.prior_generator.num_levels
 
-        device = cls_scores[0].device
-        anchor_list, valid_flag_list = self.get_anchors(
-            featmap_sizes, batch_img_metas, device=device)
+            device = cls_scores[0].device
+            anchor_list, valid_flag_list = self.get_anchors(
+                featmap_sizes, batch_img_metas, device=device)
 
-        flatten_cls_scores = torch.cat([
-            cls_score.permute(0, 2, 3, 1).reshape(num_imgs, -1,
-                                                  self.cls_out_channels)
-            for cls_score in cls_scores
-        ], 1)
-        flatten_bbox_preds = torch.cat([
-            bbox_pred.permute(0, 2, 3, 1).reshape(num_imgs, -1, 4) * stride[0]
-            for bbox_pred, stride in zip(bbox_preds,
-                                         self.prior_generator.strides)
-        ], 1)
+            flatten_cls_scores = torch.cat([
+                cls_score.permute(0, 2, 3, 1).reshape(num_imgs, -1,
+                                                      self.cls_out_channels)
+                for cls_score in cls_scores
+            ], 1)
+            flatten_bbox_preds = torch.cat([
+                bbox_pred.permute(0, 2, 3, 1).reshape(num_imgs, -1, 4) * stride[0]
+                for bbox_pred, stride in zip(bbox_preds,
+                                             self.prior_generator.strides)
+            ], 1)
 
-        cls_reg_targets = self.get_targets(
-            flatten_cls_scores,
-            flatten_bbox_preds,
-            anchor_list,
-            valid_flag_list,
-            batch_gt_instances,
-            batch_img_metas,
-            batch_gt_instances_ignore=batch_gt_instances_ignore)
-        (anchor_list, labels_list, label_weights_list, bbox_targets_list,
-         alignment_metrics_list) = cls_reg_targets
-
-        losses_cls, losses_bbox, \
-            cls_avg_factors, bbox_avg_factors = multi_apply(
-                self.loss_by_feat_single,
+            cls_reg_targets = self.get_targets(
+                flatten_cls_scores,
+                flatten_bbox_preds,
                 anchor_list,
-                cls_scores,
-                bbox_preds,
-                labels_list,
-                label_weights_list,
-                bbox_targets_list,
-                alignment_metrics_list,
-                self.prior_generator.strides)
+                valid_flag_list,
+                batch_gt_instances,
+                batch_img_metas,
+                batch_gt_instances_ignore=batch_gt_instances_ignore)
+            (anchor_list, labels_list, label_weights_list, bbox_targets_list,
+             alignment_metrics_list) = cls_reg_targets
 
-        cls_avg_factor = reduce_mean(sum(cls_avg_factors)).clamp_(min=1).item()
-        losses_cls = list(map(lambda x: x / cls_avg_factor, losses_cls))
+            losses_cls, losses_bbox, \
+                cls_avg_factors, bbox_avg_factors = multi_apply(
+                    self.loss_by_feat_single,
+                    anchor_list,
+                    cls_scores,
+                    bbox_preds,
+                    labels_list,
+                    label_weights_list,
+                    bbox_targets_list,
+                    alignment_metrics_list,
+                    self.prior_generator.strides)
 
-        bbox_avg_factor = reduce_mean(
-            sum(bbox_avg_factors)).clamp_(min=1).item()
-        losses_bbox = list(map(lambda x: x / bbox_avg_factor, losses_bbox))
-        return dict(loss_cls=losses_cls, loss_bbox=losses_bbox)
+            cls_avg_factor = reduce_mean(sum(cls_avg_factors)).clamp_(min=1).item()
+            losses_cls = list(map(lambda x: x / cls_avg_factor, losses_cls))
+
+            bbox_avg_factor = reduce_mean(
+                sum(bbox_avg_factors)).clamp_(min=1).item()
+            losses_bbox = list(map(lambda x: x / bbox_avg_factor, losses_bbox))
+            return dict(loss_cls=losses_cls, loss_bbox=losses_bbox)
 
     def _predict_by_feat_single(self,
                                 cls_score_list: List[Tensor],
