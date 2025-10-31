@@ -371,7 +371,7 @@ class DINOHead(DeformableDETRHead):
             - neg_inds (Tensor): Sampled negative indices for each image.
         """
         gt_bboxes = gt_instances.bboxes
-        gt_labels = gt_instances.labels
+        gt_labels = gt_instances.labels.to(torch.long)
         num_groups = dn_meta['num_denoising_groups']
         num_denoising_queries = dn_meta['num_denoising_queries']
         num_queries_each_group = int(num_denoising_queries / num_groups)
