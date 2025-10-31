@@ -356,53 +356,54 @@ class TOODHead(ATSSHead):
         Returns:
             dict[str, Tensor]: A dictionary of loss components.
         """
-        assert stride[0] == stride[1], 'h stride is not equal to w stride!'
-        anchors = anchors.reshape(-1, 4)
-        cls_score = cls_score.permute(0, 2, 3, 1).reshape(
-            -1, self.cls_out_channels).contiguous()
-        bbox_pred = bbox_pred.permute(0, 2, 3, 1).reshape(-1, 4)
-        bbox_targets = bbox_targets.reshape(-1, 4)
-        labels = labels.reshape(-1)
-        alignment_metrics = alignment_metrics.reshape(-1)
-        label_weights = label_weights.reshape(-1)
-        targets = labels if self.epoch < self.initial_epoch else (
-            labels, alignment_metrics)
-        cls_loss_func = self.initial_loss_cls \
-            if self.epoch < self.initial_epoch else self.loss_cls
+        with torch.cuda.amp.autocast(enabled=False):
+            assert stride[0] == stride[1], 'h stride is not equal to w stride!'
+            anchors = anchors.reshape(-1, 4)
+            cls_score = cls_score.permute(0, 2, 3, 1).reshape(
+                -1, self.cls_out_channels).contiguous()
+            bbox_pred = bbox_pred.permute(0, 2, 3, 1).reshape(-1, 4)
+            bbox_targets = bbox_targets.reshape(-1, 4)
+            labels = labels.reshape(-1)
+            alignment_metrics = alignment_metrics.reshape(-1)
+            label_weights = label_weights.reshape(-1)
+            targets = labels if self.epoch < self.initial_epoch else (
+                labels, alignment_metrics)
+            cls_loss_func = self.initial_loss_cls \
+                if self.epoch < self.initial_epoch else self.loss_cls
 
-        loss_cls = cls_loss_func(
-            cls_score, targets, label_weights, avg_factor=1.0)
+            loss_cls = cls_loss_func(
+                cls_score, targets, label_weights, avg_factor=1.0)
 
-        # FG cat_id: [0, num_classes -1], BG cat_id: num_classes
-        bg_class_ind = self.num_classes
-        pos_inds = ((labels >= 0)
-                    & (labels < bg_class_ind)).nonzero().squeeze(1)
+            # FG cat_id: [0, num_classes -1], BG cat_id: num_classes
+            bg_class_ind = self.num_classes
+            pos_inds = ((labels >= 0)
+                        & (labels < bg_class_ind)).nonzero().squeeze(1)
 
-        if len(pos_inds) > 0:
-            pos_bbox_targets = bbox_targets[pos_inds]
-            pos_bbox_pred = bbox_pred[pos_inds]
-            pos_anchors = anchors[pos_inds]
+            if len(pos_inds) > 0:
+                pos_bbox_targets = bbox_targets[pos_inds]
+                pos_bbox_pred = bbox_pred[pos_inds]
+                pos_anchors = anchors[pos_inds]
 
-            pos_decode_bbox_pred = pos_bbox_pred
-            pos_decode_bbox_targets = pos_bbox_targets / stride[0]
+                pos_decode_bbox_pred = pos_bbox_pred
+                pos_decode_bbox_targets = pos_bbox_targets / stride[0]
 
-            # regression loss
-            pos_bbox_weight = self.centerness_target(
-                pos_anchors, pos_bbox_targets
-            ) if self.epoch < self.initial_epoch else alignment_metrics[
-                pos_inds]
+                # regression loss
+                pos_bbox_weight = self.centerness_target(
+                    pos_anchors, pos_bbox_targets
+                ) if self.epoch < self.initial_epoch else alignment_metrics[
+                    pos_inds]
 
-            loss_bbox = self.loss_bbox(
-                pos_decode_bbox_pred,
-                pos_decode_bbox_targets,
-                weight=pos_bbox_weight,
-                avg_factor=1.0)
-        else:
-            loss_bbox = bbox_pred.sum() * 0
-            pos_bbox_weight = bbox_targets.new_tensor(0.)
+                loss_bbox = self.loss_bbox(
+                    pos_decode_bbox_pred,
+                    pos_decode_bbox_targets,
+                    weight=pos_bbox_weight,
+                    avg_factor=1.0)
+            else:
+                loss_bbox = bbox_pred.sum() * 0
+                pos_bbox_weight = bbox_targets.new_tensor(0.)
 
-        return loss_cls, loss_bbox, alignment_metrics.sum(
-        ), pos_bbox_weight.sum()
+            return loss_cls, loss_bbox, alignment_metrics.sum(
+            ), pos_bbox_weight.sum()
 
     def loss_by_feat(
             self,
