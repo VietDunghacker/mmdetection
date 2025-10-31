@@ -97,7 +97,7 @@ model = dict(
 # optimizer
 base_lr = 0.0001
 optim_wrapper = dict(
-    type='OptimWrapper',
+    type='AmpOptimWrapper',
     paramwise_cfg=dict(
         custom_keys={
             'absolute_pos_embed': dict(decay_mult=0.),
@@ -133,7 +133,6 @@ albu_train_transforms = [
     dict(type='ColorJitter', brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2),
     dict(type='RGBShift', r_shift_limit=20, g_shift_limit=20, b_shift_limit=20),
     dict(type='HueSaturationValue', hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20),
-    dict(type='ImageCompression', quality_lower=85, quality_upper=95, p=0.2),
     dict(
         type='OneOf',
         transforms=[
@@ -202,8 +201,8 @@ train_dataloader = dict(
         ),
         pipeline=train_pipeline))
 val_dataloader = dict(
-    batch_size=4,
-    num_workers=2,
+    batch_size=8,
+    num_workers=4,
     persistent_workers=True,
     drop_last=False,
     sampler=dict(type='DefaultSampler', shuffle=False),
