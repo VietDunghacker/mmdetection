@@ -16,10 +16,10 @@ class_name = ['Audrey Marie Anderson',
  'Willa Joanna Chance Holland']
 num_classes = len(class_name)
 
-num_levels = 4
+num_levels = 5
 model = dict(
     type='DINO',
-    num_queries=900,  # num_matching_queries
+    num_queries=48,  # num_matching_queries
     with_box_refine=True,
     as_two_stage=True,
     num_feature_levels=num_levels,
@@ -42,12 +42,12 @@ model = dict(
         attn_drop_rate=0.,
         drop_path_rate=0.3,
         patch_norm=True,
-        out_indices=(0, 1, 2, 3),
+        out_indices=(1, 2, 3),
         with_cp=True,
         init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
     neck=dict(
         type='ChannelMapper',
-        in_channels=[128, 256, 512, 1024],
+        in_channels=[256, 512, 1024],
         kernel_size=1,
         out_channels=256,
         act_cfg=None,
@@ -55,6 +55,7 @@ model = dict(
         num_outs=num_levels),
     encoder=dict(
         num_layers=6,
+        num_cp=6,
         layer_cfg=dict(
             self_attn_cfg=dict(embed_dims=256, num_levels=num_levels,
                                dropout=0.0),  # 0.1 for DeformDETR
@@ -78,8 +79,8 @@ model = dict(
     positional_encoding=dict(
         num_feats=128,
         normalize=True,
-        offset=0.0,  # -0.5 for DeformDETR
-        temperature=20),  # 10000 for DeformDETR
+        offset=-0.5,  # -0.5 for DeformDETR
+        temperature=10000),  # 10000 for DeformDETR
     bbox_head=dict(
         type='DINOHead',
         num_classes=num_classes,
@@ -89,7 +90,7 @@ model = dict(
             use_sigmoid=True,
             gamma=2.0,
             alpha=0.25,
-            loss_weight=1.0),  # 2.0 in DeformDETR
+            loss_weight=2.0),  # 2.0 in DeformDETR
         loss_bbox=dict(type='L1Loss', loss_weight=5.0),
         loss_iou=dict(type='GIoULoss', loss_weight=2.0)),
     dn_cfg=dict(  # TODO: Move to model.train_cfg ?
@@ -114,7 +115,12 @@ optim_wrapper = dict(
     type='AmpOptimWrapper',
     paramwise_cfg=dict(
         custom_keys={
-            'backbone': dict(lr_mult=0.1)
+            'backbone': dict(lr_mult=0.1),
+            'sampling_offsets': dict(lr_mult=0.1),
+            'reference_points': dict(lr_mult=0.1),
+            'absolute_pos_embed': dict(decay_mult=0.),
+            'relative_position_bias_table': dict(decay_mult=0.),
+            'norm': dict(decay_mult=0.)
         }),
     optimizer=dict(
         _delete_=True, type='AdamW', lr=base_lr, weight_decay=0.0001),
@@ -145,7 +151,6 @@ albu_train_transforms = [
     dict(type='ColorJitter', brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2),
     dict(type='RGBShift', r_shift_limit=20, g_shift_limit=20, b_shift_limit=20),
     dict(type='HueSaturationValue', hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20),
-    dict(type='ImageCompression', quality_lower=85, quality_upper=95, p=0.2),
     dict(
         type='OneOf',
         transforms=[
