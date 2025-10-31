@@ -429,7 +429,7 @@ class DETRHead(BaseModule):
             img_meta=img_meta)
 
         gt_bboxes = gt_instances.bboxes
-        gt_labels = gt_instances.labels
+        gt_labels = gt_instances.labels.to(torch.long)
         pos_inds = torch.nonzero(
             assign_result.gt_inds > 0, as_tuple=False).squeeze(-1).unique()
         neg_inds = torch.nonzero(
