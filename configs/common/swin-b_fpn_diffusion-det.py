@@ -16,8 +16,13 @@ class_name = ['Audrey Marie Anderson',
  'Willa Joanna Chance Holland']
 num_classes = len(class_name)
 
+custom_imports = dict(
+    imports=['projects.DiffusionDet.diffusiondet'], allow_failed_imports=False)
+
+num_stages = 6
+num_proposals = 32
 model = dict(
-    type='VFNet',
+    type='DiffusionDet',
     data_preprocessor=dict(
         type='DetDataPreprocessor',
         mean=[123.675, 116.28, 103.53],
@@ -44,55 +49,81 @@ model = dict(
         type='FPN',
         in_channels=[128, 256, 512, 1024],
         out_channels=256,
-        start_level=1,
-        add_extra_convs='on_output',
-        num_outs=5),
+        start_level=0,
+        add_extra_convs='on_input',
+        num_outs=4),
     bbox_head=dict(
-        type='VFNetHead',
+        type='DynamicDiffusionDetHead',
         num_classes=num_classes,
-        in_channels=256,
-        stacked_convs=3,
         feat_channels=256,
-        strides=[8, 16, 32, 64, 128],
-        center_sampling=False,
-        dcn_on_last_conv=False,
-        use_atss=True,
-        use_vfl=True,
-        loss_cls=dict(
-            type='VarifocalLoss',
-            use_sigmoid=True,
-            alpha=0.75,
-            gamma=2.0,
-            iou_weighted=True,
-            loss_weight=1.0),
-        loss_bbox=dict(type='GIoULoss', loss_weight=1.5),
-        loss_bbox_refine=dict(type='GIoULoss', loss_weight=2.0)),
-    # training and testing settings
-    train_cfg=dict(
-        assigner=dict(type='ATSSAssigner', topk=9),
-        allowed_border=-1,
-        pos_weight=-1,
-        debug=False),
+        num_proposals=num_proposals,
+        num_heads=6,
+        deep_supervision=True,
+        prior_prob=0.01,
+        snr_scale=2.0,
+        sampling_timesteps=1,
+        ddim_sampling_eta=1.0,
+        single_head=dict(
+            type='SingleDiffusionDetHead',
+            num_cls_convs=1,
+            num_reg_convs=3,
+            dim_feedforward=2048,
+            num_heads=8,
+            dropout=0.0,
+            act_cfg=dict(type='ReLU', inplace=True),
+            dynamic_conv=dict(dynamic_dim=64, dynamic_num=2)),
+        roi_extractor=dict(
+            type='SingleRoIExtractor',
+            roi_layer=dict(type='RoIAlign', output_size=7, sampling_ratio=2),
+            out_channels=256,
+            featmap_strides=[4, 8, 16, 32]),
+        # criterion
+        criterion=dict(
+            type='DiffusionDetCriterion',
+            num_classes=num_classes,
+            assigner=dict(
+                type='DiffusionDetMatcher',
+                match_costs=[
+                    dict(
+                        type='FocalLossCost',
+                        alpha=0.25,
+                        gamma=2.0,
+                        weight=2.0,
+                        eps=1e-8),
+                    dict(type='BBoxL1Cost', weight=5.0, box_format='xyxy'),
+                    dict(type='IoUCost', iou_mode='giou', weight=2.0)
+                ],
+                center_radius=2.5,
+                candidate_topk=5),
+            loss_cls=dict(
+                type='FocalLoss',
+                use_sigmoid=True,
+                alpha=0.25,
+                gamma=2.0,
+                reduction='sum',
+                loss_weight=2.0),
+            loss_bbox=dict(type='L1Loss', reduction='sum', loss_weight=5.0),
+            loss_giou=dict(type='GIoULoss', reduction='sum',
+                           loss_weight=2.0))),
     test_cfg=dict(
-        nms_pre=1000,
+        use_nms=True,
+        score_thr=0.5,
         min_bbox_size=0,
-        score_thr=0.05,
         nms=dict(type='soft_nms', iou_threshold=0.6),
-        max_per_img=100))
+    ))
 
 # optimizer
-base_lr = 0.0001
+base_lr = 0.000025
 optim_wrapper = dict(
-    type='OptimWrapper',
+    type='AmpOptimWrapper',
     paramwise_cfg=dict(
-        bias_lr_mult=2., bias_decay_mult=0.,
         custom_keys={
             'absolute_pos_embed': dict(decay_mult=0.),
             'relative_position_bias_table': dict(decay_mult=0.),
             'norm': dict(decay_mult=0.)
         }),
     optimizer=dict(
-        _delete_=True, type='AdamW', lr=base_lr, weight_decay=0.0001),
+        _delete_=True, type='AdamW', lr=0.000025, weight_decay=0.0001),
     clip_grad=None)
 
 dataset_type = 'CocoDataset'
@@ -222,7 +253,6 @@ default_hooks = dict(
     checkpoint=dict(by_epoch=False, interval=500, max_keep_ckpts=3),
 )
 
-custom_hooks = [dict(type='Fp16CompresssionHook')]
 
 param_scheduler = [
     dict(
@@ -235,5 +265,5 @@ param_scheduler = [
         T_max=10000,
     )
 ]
-load_from = 'https://download.openmmlab.com/mmdetection/v2.0/vfnet/vfnet_x101_64x4d_fpn_mdconv_c3-c5_mstrain_2x_coco/vfnet_x101_64x4d_fpn_mdconv_c3-c5_mstrain_2x_coco_20201027pth-b5f6da5e.pth'
+load_from = '/workspace/diffdet_coco_swinbase.pth'
 log_processor = dict(type='LogProcessor', by_epoch=False)
