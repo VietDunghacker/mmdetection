@@ -88,7 +88,7 @@ class DiffusionDetCriterion(nn.Module):
         assert 'pred_logits' in outputs
         src_logits = outputs['pred_logits']
         target_classes_list = [
-            gt.labels[J] for gt, (_, J) in zip(batch_gt_instances, indices)
+            gt.labels[J].to(torch.long) for gt, (_, J) in zip(batch_gt_instances, indices)
         ]
         target_classes = torch.full(
             src_logits.shape[:2],
