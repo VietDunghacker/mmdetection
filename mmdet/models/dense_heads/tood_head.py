@@ -242,63 +242,64 @@ class TOODHead(ATSSHead):
                     each is a 4D-tensor, the channels number is
                     num_anchors * 4. In [tl_x, tl_y, br_x, br_y] format.
         """
-        cls_scores = []
-        bbox_preds = []
-        for idx, (x, scale, stride) in enumerate(
-                zip(feats, self.scales, self.prior_generator.strides)):
-            b, c, h, w = x.shape
-            anchor = self.prior_generator.single_level_grid_priors(
-                (h, w), idx, device=x.device)
-            anchor = torch.cat([anchor for _ in range(b)])
-            # extract task interactive features
-            inter_feats = []
-            for inter_conv in self.inter_convs:
-                x = inter_conv(x)
-                inter_feats.append(x)
-            feat = torch.cat(inter_feats, 1)
+        with torch.cuda.amp.autocast(enabled=False):
+            cls_scores = []
+            bbox_preds = []
+            for idx, (x, scale, stride) in enumerate(
+                    zip(feats, self.scales, self.prior_generator.strides)):
+                b, c, h, w = x.shape
+                anchor = self.prior_generator.single_level_grid_priors(
+                    (h, w), idx, device=x.device)
+                anchor = torch.cat([anchor for _ in range(b)])
+                # extract task interactive features
+                inter_feats = []
+                for inter_conv in self.inter_convs:
+                    x = inter_conv(x)
+                    inter_feats.append(x)
+                feat = torch.cat(inter_feats, 1)
 
-            # task decomposition
-            avg_feat = F.adaptive_avg_pool2d(feat, (1, 1))
-            cls_feat = self.cls_decomp(feat, avg_feat)
-            reg_feat = self.reg_decomp(feat, avg_feat)
+                # task decomposition
+                avg_feat = F.adaptive_avg_pool2d(feat, (1, 1))
+                cls_feat = self.cls_decomp(feat, avg_feat)
+                reg_feat = self.reg_decomp(feat, avg_feat)
 
-            # cls prediction and alignment
-            cls_logits = self.tood_cls(cls_feat)
-            cls_prob = self.cls_prob_module(feat)
-            cls_score = sigmoid_geometric_mean(cls_logits, cls_prob)
+                # cls prediction and alignment
+                cls_logits = self.tood_cls(cls_feat)
+                cls_prob = self.cls_prob_module(feat)
+                cls_score = sigmoid_geometric_mean(cls_logits, cls_prob)
 
-            # reg prediction and alignment
-            if self.anchor_type == 'anchor_free':
-                reg_dist = scale(self.tood_reg(reg_feat).exp()).float()
-                reg_dist = reg_dist.permute(0, 2, 3, 1).reshape(-1, 4)
-                reg_bbox = distance2bbox(
-                    self.anchor_center(anchor) / stride[0],
-                    reg_dist).reshape(b, h, w, 4).permute(0, 3, 1,
-                                                          2)  # (b, c, h, w)
-            elif self.anchor_type == 'anchor_based':
-                reg_dist = scale(self.tood_reg(reg_feat)).float()
-                reg_dist = reg_dist.permute(0, 2, 3, 1).reshape(-1, 4)
-                reg_bbox = self.bbox_coder.decode(anchor, reg_dist).reshape(
-                    b, h, w, 4).permute(0, 3, 1, 2) / stride[0]
-            else:
-                raise NotImplementedError(
-                    f'Unknown anchor type: {self.anchor_type}.'
-                    f'Please use `anchor_free` or `anchor_based`.')
-            reg_offset = self.reg_offset_module(feat)
-            bbox_pred = self.deform_sampling(reg_bbox.contiguous(),
-                                             reg_offset.contiguous())
+                # reg prediction and alignment
+                if self.anchor_type == 'anchor_free':
+                    reg_dist = scale(self.tood_reg(reg_feat).exp()).float()
+                    reg_dist = reg_dist.permute(0, 2, 3, 1).reshape(-1, 4)
+                    reg_bbox = distance2bbox(
+                        self.anchor_center(anchor) / stride[0],
+                        reg_dist).reshape(b, h, w, 4).permute(0, 3, 1,
+                                                              2)  # (b, c, h, w)
+                elif self.anchor_type == 'anchor_based':
+                    reg_dist = scale(self.tood_reg(reg_feat)).float()
+                    reg_dist = reg_dist.permute(0, 2, 3, 1).reshape(-1, 4)
+                    reg_bbox = self.bbox_coder.decode(anchor, reg_dist).reshape(
+                        b, h, w, 4).permute(0, 3, 1, 2) / stride[0]
+                else:
+                    raise NotImplementedError(
+                        f'Unknown anchor type: {self.anchor_type}.'
+                        f'Please use `anchor_free` or `anchor_based`.')
+                reg_offset = self.reg_offset_module(feat)
+                bbox_pred = self.deform_sampling(reg_bbox.contiguous(),
+                                                 reg_offset.contiguous())
 
-            # After deform_sampling, some boxes will become invalid (The
-            # left-top point is at the right or bottom of the right-bottom
-            # point), which will make the GIoULoss negative.
-            invalid_bbox_idx = (bbox_pred[:, [0]] > bbox_pred[:, [2]]) | \
-                               (bbox_pred[:, [1]] > bbox_pred[:, [3]])
-            invalid_bbox_idx = invalid_bbox_idx.expand_as(bbox_pred)
-            bbox_pred = torch.where(invalid_bbox_idx, reg_bbox, bbox_pred)
+                # After deform_sampling, some boxes will become invalid (The
+                # left-top point is at the right or bottom of the right-bottom
+                # point), which will make the GIoULoss negative.
+                invalid_bbox_idx = (bbox_pred[:, [0]] > bbox_pred[:, [2]]) | \
+                                   (bbox_pred[:, [1]] > bbox_pred[:, [3]])
+                invalid_bbox_idx = invalid_bbox_idx.expand_as(bbox_pred)
+                bbox_pred = torch.where(invalid_bbox_idx, reg_bbox, bbox_pred)
 
-            cls_scores.append(cls_score)
-            bbox_preds.append(bbox_pred)
-        return tuple(cls_scores), tuple(bbox_preds)
+                cls_scores.append(cls_score)
+                bbox_preds.append(bbox_pred)
+            return tuple(cls_scores), tuple(bbox_preds)
 
     def deform_sampling(self, feat: Tensor, offset: Tensor) -> Tensor:
         """Sampling the feature x according to offset.
