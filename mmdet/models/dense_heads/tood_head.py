@@ -247,6 +247,7 @@ class TOODHead(ATSSHead):
             bbox_preds = []
             for idx, (x, scale, stride) in enumerate(
                     zip(feats, self.scales, self.prior_generator.strides)):
+                x = x.to(torch.float32)
                 b, c, h, w = x.shape
                 anchor = self.prior_generator.single_level_grid_priors(
                     (h, w), idx, device=x.device)
