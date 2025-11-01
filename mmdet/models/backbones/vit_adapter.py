@@ -377,9 +377,6 @@ class TIMMVisionTransformer(BaseModule):
 
         window_attn = [window_attn] * depth if not isinstance(window_attn, list) else window_attn
         window_size = [window_size] * depth if not isinstance(window_size, list) else window_size
-        logging.info('window attention:', window_attn)
-        logging.info('window size:', window_size)
-        logging.info('layer scale:', layer_scale)
 
         self.patch_embed = embed_layer(
             img_size=img_size, patch_size=patch_size,
