@@ -12,7 +12,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.checkpoint as checkpoint
 import numpy as np
-from timm.models.layers import DropPath
+from timm.layers import DropPath
 
 from mmcv.cnn.bricks.transformer import FFN, build_dropout
 from mmengine.logging import MMLogger

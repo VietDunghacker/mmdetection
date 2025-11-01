@@ -739,7 +739,7 @@ class ViTAdapter(TIMMVisionTransformer):
 
     def _init_deform_weights(self, m):
         if isinstance(m, MultiScaleDeformableAttention):
-            m._reset_parameters()
+            m.init_weights()
 
     def _add_level_embed(self, c2, c3, c4):
         c2 = c2 + self.level_embed[0]
