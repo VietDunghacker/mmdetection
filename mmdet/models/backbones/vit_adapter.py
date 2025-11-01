@@ -404,7 +404,7 @@ class TIMMVisionTransformer(BaseModule):
     def init_weights(self, pretrained=None):
         logger = MMLogger.get_current_instance()
         if isinstance(pretrained, str):
-            ckpt = CheckpointLoader.load_checkpoint(self.pretrained, logger=logger, map_location='cpu')
+            ckpt = CheckpointLoader.load_checkpoint(pretrained, logger=logger, map_location='cpu')
             # get state_dict from checkpoint
             if isinstance(ckpt, OrderedDict):
                 state_dict = ckpt
@@ -680,7 +680,7 @@ class ViTAdapter(TIMMVisionTransformer):
                  init_values=0., interaction_indexes=None, with_cffn=True, cffn_ratio=0.25,
                  deform_ratio=1.0, add_vit_feature=True, use_extra_extractor=True, with_cp=False, *args, **kwargs):
 
-        super().__init__(num_heads=num_heads, *args, **kwargs)
+        super().__init__(num_heads=num_heads, with_cp=with_cp, *args, **kwargs)
 
         # self.num_classes = 80
         self.cls_token = None
