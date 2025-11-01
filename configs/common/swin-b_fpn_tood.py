@@ -105,7 +105,7 @@ optim_wrapper = dict(
             'norm': dict(decay_mult=0.)
         }),
     optimizer=dict(
-        _delete_=True, type='AdamW', lr=base_lr, weight_decay=0.0001),
+        _delete_=True, type='AdamW', lr=base_lr, weight_decay=0.05),
     clip_grad=None)
 
 dataset_type = 'CocoDataset'
