@@ -3872,7 +3872,7 @@ class FocusBoundingBox(BaseTransform):
             crop_x1, crop_y1, crop_x2, crop_y2 = 0, 0, 0, 0
 
             for box in results['gt_bboxes']:
-                x1, y1, x2, y2 = box
+                x1, y1, x2, y2 = box[0]
                 xmin = min(xmin, x1)
                 ymin = min(ymin, y1)
                 xmax = max(xmax, x2)
