@@ -13,6 +13,7 @@ from mmcv.ops import MultiScaleDeformableAttention
 from mmengine.logging import MMLogger
 from mmengine.model import BaseModule
 from mmengine.model.weight_init import trunc_normal_
+from mmengine.runner.checkpoint import CheckpointLoader
 from mmengine.utils import to_2tuple
 from mmdet.registry import MODELS
 
