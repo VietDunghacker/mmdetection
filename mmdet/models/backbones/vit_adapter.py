@@ -262,7 +262,7 @@ class ResBottleneckBlock(nn.Module):
 
 
 class Block(nn.Module):
-    def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False, drop=0., with_cp=False,
+    def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False, drop=0., with_cp=True,
                  attn_drop=0., drop_path=0., act_layer=nn.GELU, norm_layer=nn.LayerNorm,
                  windowed=False, window_size=14, use_residual=False, layer_scale=False):
         super().__init__()
@@ -335,7 +335,7 @@ class TIMMVisionTransformer(BaseModule):
     def __init__(self, img_size=224, patch_size=16, in_chans=3, residual_indices=[], embed_dim=768,
                  depth=12, num_heads=12, mlp_ratio=4., qkv_bias=True, drop_rate=0., attn_drop_rate=0.,
                  drop_path_rate=0., layer_scale=True, embed_layer=PatchEmbed, norm_layer=partial(nn.LayerNorm, eps=1e-6),
-                 act_layer=nn.GELU, window_attn=False, window_size=14, with_cp=False, pretrained=None):
+                 act_layer=nn.GELU, window_attn=False, window_size=14, with_cp=True, pretrained=None):
         """
         Args:
             img_size (int, tuple): input image size
@@ -510,7 +510,7 @@ class DWConv(nn.Module):
 class Extractor(nn.Module):
     def __init__(self, dim, num_heads=6, n_points=4, n_levels=1, deform_ratio=1.0,
                  with_cffn=True, cffn_ratio=0.25, drop=0., drop_path=0.,
-                 norm_layer=partial(nn.LayerNorm, eps=1e-6), with_cp=False):
+                 norm_layer=partial(nn.LayerNorm, eps=1e-6), with_cp=True):
         super().__init__()
         self.query_norm = norm_layer(dim)
         self.feat_norm = norm_layer(dim)
@@ -545,7 +545,7 @@ class Extractor(nn.Module):
 
 class Injector(nn.Module):
     def __init__(self, dim, num_heads=6, n_points=4, n_levels=1, deform_ratio=1.0,
-                 norm_layer=partial(nn.LayerNorm, eps=1e-6), init_values=0., with_cp=False):
+                 norm_layer=partial(nn.LayerNorm, eps=1e-6), init_values=0., with_cp=True):
         super().__init__()
         self.with_cp = with_cp
         self.query_norm = norm_layer(dim)
@@ -573,7 +573,7 @@ class Injector(nn.Module):
 class InteractionBlock(nn.Module):
     def __init__(self, dim, num_heads=6, n_points=4, norm_layer=partial(nn.LayerNorm, eps=1e-6),
                  drop=0., drop_path=0., with_cffn=True, cffn_ratio=0.25, init_values=0.,
-                 deform_ratio=1.0, extra_extractor=False, with_cp=False):
+                 deform_ratio=1.0, extra_extractor=False, with_cp=True):
         super().__init__()
 
         self.injector = Injector(dim=dim, n_levels=3, num_heads=num_heads, init_values=init_values,
@@ -667,7 +667,7 @@ class SpatialPriorModule(nn.Module):
 class ViTAdapter(TIMMVisionTransformer):
     def __init__(self, pretrain_size=224, num_heads=12, conv_inplane=64, n_points=4, deform_num_heads=6,
                  init_values=0., interaction_indexes=None, with_cffn=True, cffn_ratio=0.25,
-                 deform_ratio=1.0, add_vit_feature=True, use_extra_extractor=True, with_cp=False, *args, **kwargs):
+                 deform_ratio=1.0, add_vit_feature=True, use_extra_extractor=True, with_cp=True, *args, **kwargs):
 
         super().__init__(num_heads=num_heads, with_cp=with_cp, *args, **kwargs)
 
