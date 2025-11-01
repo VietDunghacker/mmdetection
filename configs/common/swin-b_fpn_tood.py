@@ -79,7 +79,7 @@ model = dict(
             loss_weight=1.0),
         loss_bbox=dict(type='GIoULoss', loss_weight=2.0)),
     train_cfg=dict(
-        initial_epoch=4,
+        initial_iter=4000,
         initial_assigner=dict(type='ATSSAssigner', topk=9),
         assigner=dict(type='TaskAlignedAssigner', topk=13),
         alpha=1,
