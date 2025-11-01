@@ -526,7 +526,7 @@ class Extractor(nn.Module):
         self.query_norm = norm_layer(dim)
         self.feat_norm = norm_layer(dim)
         self.attn = MultiScaleDeformableAttention(embed_dims=dim, num_levels=n_levels, num_heads=num_heads,
-                                 num_points=n_points, value_proj_ratio=deform_ratio)
+                                 num_points=n_points, value_proj_ratio=deform_ratio, batch_first=True)
         self.with_cffn = with_cffn
         self.with_cp = with_cp
         if with_cffn:
@@ -562,7 +562,7 @@ class Injector(nn.Module):
         self.query_norm = norm_layer(dim)
         self.feat_norm = norm_layer(dim)
         self.attn = MultiScaleDeformableAttention(embed_dims=dim, num_levels=n_levels, num_heads=num_heads,
-                                 num_points=n_points, value_proj_ratio=deform_ratio)
+                                 num_points=n_points, value_proj_ratio=deform_ratio, batch_first=True)
         self.gamma = nn.Parameter(init_values * torch.ones((dim)), requires_grad=True)
 
     def forward(self, query, reference_points, feat, spatial_shapes, level_start_index):
