@@ -299,7 +299,7 @@ class TOODHead(ATSSHead):
 
             cls_scores.append(cls_score)
             bbox_preds.append(bbox_pred)
-    return tuple(cls_scores), tuple(bbox_preds)
+        return tuple(cls_scores), tuple(bbox_preds)
 
     def deform_sampling(self, feat: Tensor, offset: Tensor) -> Tensor:
         """Sampling the feature x according to offset.
