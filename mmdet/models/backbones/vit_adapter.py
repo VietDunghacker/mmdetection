@@ -48,7 +48,7 @@ class PatchEmbed(nn.Module):
 class Attention(nn.MultiheadAttention):
     def __init__(self, dim, num_heads=8, qkv_bias=False,
                  attn_drop=0., proj_drop=0.):
-        super().__init__(embed_dim=dim, num_heads=num_heads, drop_out=attn_drop)
+        super().__init__(embed_dim=dim, num_heads=num_heads, dropout=attn_drop)
         self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
         self.proj_drop = nn.Dropout(proj_drop)
 
