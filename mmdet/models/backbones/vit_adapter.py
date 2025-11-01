@@ -409,9 +409,9 @@ class TIMMVisionTransformer(BaseModule):
             # get state_dict from checkpoint
             if isinstance(ckpt, OrderedDict):
                 state_dict = ckpt
-            elif isinstance(checkpoint, dict) and 'state_dict' in checkpoint:
+            elif isinstance(ckpt, dict) and 'state_dict' in ckpt:
                 state_dict = ckpt['state_dict']
-            elif isinstance(checkpoint, dict) and 'model' in checkpoint:
+            elif isinstance(ckpt, dict) and 'model' in ckpt:
                 state_dict = ckpt['model']  # for classification weights
             else:
                 state_dict = ckpt #  fix "No state_dict found in checkpoint file"
@@ -419,7 +419,7 @@ class TIMMVisionTransformer(BaseModule):
                 #     'No state_dict found in checkpoint file {}'.format(filename))
             # strip prefix of state_dict
             if list(state_dict.keys())[0].startswith('module.'):
-                state_dict = {k[7:]: v for k, v in checkpoint['state_dict'].items()}
+                state_dict = {k[7:]: v for k, v in ckpt['state_dict'].items()}
             # load state_dict
             self.load_state_dict(state_dict, False)
 
