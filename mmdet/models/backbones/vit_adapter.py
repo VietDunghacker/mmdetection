@@ -48,13 +48,13 @@ class PatchEmbed(nn.Module):
 class Attention(nn.MultiheadAttention):
     def __init__(self, dim, num_heads=8, qkv_bias=False,
                  attn_drop=0., proj_drop=0.):
-        super().__init__(embed_dim=dim, num_heads=num_heads, dropout=attn_drop)
+        super().__init__(embed_dim=dim, num_heads=num_heads, dropout=attn_drop, batch_first=True)
         self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
         self.proj_drop = nn.Dropout(proj_drop)
 
     def forward(self, x, H, W):
         B, N, C = x.shape
-        qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
+        qkv = self.qkv(x).reshape(B, N, 3, C).permute(2, 0, 1, 3)
         q, k, v = qkv.unbind(0)  # make torchscript happy (cannot use tensor as tuple)
 
         attn = super().forward(q, k, v, need_weights=False)
