@@ -143,6 +143,7 @@ albu_train_transforms = [
 ]
 
 train_pipeline = [
+    dict(type='FocusBoundingBox', prob=0.5),
     dict(type='Mosaic', center_ratio_range=(0.95, 1.05), img_scale=(1280, 1280), pad_val=0.0, prob=0.1),
     dict(type='RandomResize', scale=[(960, 960), (1280, 1280)], keep_ratio=True),
     dict(

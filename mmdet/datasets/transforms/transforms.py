@@ -3854,3 +3854,51 @@ class CachedMixUp(BaseTransform):
         repr_str += f'random_pop={self.random_pop}, '
         repr_str += f'prob={self.prob})'
         return repr_str
+
+@TRANSFORMS.register_module()
+class FocusBoundingBox(BaseTransform):
+    def __init__(self, prob: float = 0.5) -> None:
+        assert 0 <= prob <= 1.0, 'The probability should be in range [0,1]. ' \
+                                 f'got {prob}.'
+        self.prob = prob
+
+    @autocast_box_type()
+    def transform(self, results: dict) -> dict:
+        if len(results['gt_bboxes']) > 0 and random.uniform(0, 1) < self.prob:
+            img = results['img']
+
+            h, w = img.shape[:2]
+            xmin, ymin, xmax, ymax = w, h, 0, 0
+            crop_x1, crop_y1, crop_x2, crop_y2 = 0, 0, 0, 0
+
+            for box in results['gt_bboxes']:
+                x1, y1, x2, y2 = box
+                xmin = min(xmin, x1)
+                ymin = min(ymin, y1)
+                xmax = max(xmax, x2)
+                ymax = max(ymax, y2)
+
+            xmin = max(xmin, 0)
+            ymin = max(ymin, 0)
+            xmax = min(xmax, w)
+            ymax = min(ymax, h)
+
+            assert xmin < xmax and ymin < ymax
+
+            crop_x1 = random.randint(0, xmin + 1)
+            crop_y1 = random.randint(0, ymin + 1)
+            crop_x2 = random.randint(xmax, w + 1)
+            crop_y2 = random.randint(ymax, h + 1)
+
+            img = img[crop_y1:crop_y2, crop_x1:crop_x2, ...]
+
+            results['gt_bboxes'].translate_([-crop_x1, -crop_y1])
+
+            results['img_shape'] = img.shape[:2]
+            results['img'] = img
+
+        return results
+
+    def __repr__(self):
+        repr_str = self.__class__.__name__
+        return repr_str
