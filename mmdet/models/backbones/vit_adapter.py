@@ -537,10 +537,9 @@ class Extractor(nn.Module):
     def forward(self, query, reference_points, feat, spatial_shapes, level_start_index, H, W):
 
         def _inner_forward(query, feat):
-
-            attn = self.attn(self.query_norm(query), reference_points,
-                             self.feat_norm(feat), spatial_shapes,
-                             level_start_index, None)
+            attn = self.attn(query=self.query_norm(query), value=self.feat_norm(feat),
+                             reference_points=reference_points, spatial_shapes=spatial_shapes,
+                             level_start_index=level_start_index, key_padding_mask=None)
             query = query + attn
 
             if self.with_cffn:
@@ -569,10 +568,9 @@ class Injector(nn.Module):
     def forward(self, query, reference_points, feat, spatial_shapes, level_start_index):
 
         def _inner_forward(query, feat):
-
-            attn = self.attn(self.query_norm(query), reference_points,
-                             self.feat_norm(feat), spatial_shapes,
-                             level_start_index, None)
+            attn = self.attn(query=self.query_norm(query), value=self.feat_norm(feat),
+                             reference_points=reference_points, spatial_shapes=spatial_shapes,
+                             level_start_index=level_start_index, key_padding_mask=None)
             return query + self.gamma * attn
 
         if self.with_cp and query.requires_grad:
