@@ -6,6 +6,7 @@ from collections import OrderedDict
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.utils.checkpoint as cp
 from timm.layers import DropPath, Mlp
 from torch.nn.init import normal_
 
