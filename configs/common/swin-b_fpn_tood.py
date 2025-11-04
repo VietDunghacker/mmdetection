@@ -91,7 +91,7 @@ model = dict(
         nms_pre=1000,
         min_bbox_size=0,
         score_thr=0.05,
-        nms=dict(type='soft_nms', iou_threshold=0.6),
+        nms=dict(type='nms', iou_threshold=0.6),
         max_per_img=100))
 
 # optimizer
@@ -233,7 +233,7 @@ train_cfg = dict(_delete_=True, type='IterBasedTrainLoop', max_iters=10000, val_
 
 default_hooks = dict(
     logger=dict(interval=25),
-    checkpoint=dict(by_epoch=False, interval=500, max_keep_ckpts=3),
+    checkpoint=dict(by_epoch=False, interval=500, max_keep_ckpts=3, save_best='coco/bbox_mAP'),
 )
 
 custom_hooks = [dict(type='Fp16CompresssionHook')]

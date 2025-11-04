@@ -16,7 +16,7 @@ class_name = ['Audrey Marie Anderson',
  'Willa Joanna Chance Holland']
 num_classes = len(class_name)
 
-num_levels = 5
+num_levels = 4
 model = dict(
     type='DINO',
     num_queries=48,  # num_matching_queries
@@ -250,7 +250,7 @@ train_cfg = dict(_delete_=True, type='IterBasedTrainLoop', max_iters=10000, val_
 
 default_hooks = dict(
     logger=dict(interval=25),
-    checkpoint=dict(by_epoch=False, interval=500, max_keep_ckpts=3),
+    checkpoint=dict(by_epoch=False, interval=500, max_keep_ckpts=3, save_best='coco/bbox_mAP'),
 )
 
 
