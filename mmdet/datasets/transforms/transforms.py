@@ -3871,12 +3871,10 @@ class FocusBoundingBox(BaseTransform):
             xmin, ymin, xmax, ymax = w, h, 0, 0
             crop_x1, crop_y1, crop_x2, crop_y2 = 0, 0, 0, 0
 
-            for box in results['gt_bboxes']:
-                x1, y1, x2, y2 = box.tensor[0]
-                xmin = min(xmin, x1)
-                ymin = min(ymin, y1)
-                xmax = max(xmax, x2)
-                ymax = max(ymax, y2)
+            xmin = np.min(results['gt_bboxes'][:, 0])
+            ymin = np.min(results['gt_bboxes'][:, 1])
+            xmax = np.max(results['gt_bboxes'][:, 2])
+            ymax = np.max(results['gt_bboxes'][:, 3])
 
             xmin = max(xmin, 0)
             ymin = max(ymin, 0)
