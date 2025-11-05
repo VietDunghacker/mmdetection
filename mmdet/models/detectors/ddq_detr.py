@@ -169,7 +169,7 @@ class DDQDETR(DINO):
             #   particularly by DDQ DETR for region proposal generation,
             #   instead of `topk` of class scores by DINO.
             _, keep_idxs = batched_nms(
-                single_proposals, single_scores,
+                single_proposals, single_scores.to(single_proposals.dtype),
                 torch.ones(len(single_scores), device=single_scores.device),
                 self.cache_dict['dqs_cfg'])
 
