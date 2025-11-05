@@ -114,30 +114,31 @@ def quality_focal_loss_with_prob(pred, target, beta=2.0):
     Returns:
         torch.Tensor: Loss tensor with shape (N,).
     """
-    assert len(target) == 2, """target for QFL must be a tuple of two elements,
-        including category label and quality label, respectively"""
-    # label denotes the category id, score denotes the quality score
-    label, score = target
+    with torch.cuda.amp.autocast(enabled=False):
+        assert len(target) == 2, """target for QFL must be a tuple of two elements,
+            including category label and quality label, respectively"""
+        # label denotes the category id, score denotes the quality score
+        label, score = target
 
-    # negatives are supervised by 0 quality score
-    pred_sigmoid = pred
-    scale_factor = pred_sigmoid
-    zerolabel = scale_factor.new_zeros(pred.shape)
-    loss = F.binary_cross_entropy(
-        pred, zerolabel, reduction='none') * scale_factor.pow(beta)
+        # negatives are supervised by 0 quality score
+        pred_sigmoid = pred
+        scale_factor = pred_sigmoid
+        zerolabel = scale_factor.new_zeros(pred.shape)
+        loss = F.binary_cross_entropy(
+            pred, zerolabel, reduction='none') * scale_factor.pow(beta)
 
-    # FG cat_id: [0, num_classes -1], BG cat_id: num_classes
-    bg_class_ind = pred.size(1)
-    pos = ((label >= 0) & (label < bg_class_ind)).nonzero().squeeze(1)
-    pos_label = label[pos].long()
-    # positives are supervised by bbox quality (IoU) score
-    scale_factor = score[pos] - pred_sigmoid[pos, pos_label]
-    loss[pos, pos_label] = F.binary_cross_entropy(
-        pred[pos, pos_label], score[pos],
-        reduction='none') * scale_factor.abs().pow(beta)
+        # FG cat_id: [0, num_classes -1], BG cat_id: num_classes
+        bg_class_ind = pred.size(1)
+        pos = ((label >= 0) & (label < bg_class_ind)).nonzero().squeeze(1)
+        pos_label = label[pos].long()
+        # positives are supervised by bbox quality (IoU) score
+        scale_factor = score[pos] - pred_sigmoid[pos, pos_label]
+        loss[pos, pos_label] = F.binary_cross_entropy(
+            pred[pos, pos_label], score[pos],
+            reduction='none') * scale_factor.abs().pow(beta)
 
-    loss = loss.sum(dim=1, keepdim=False)
-    return loss
+        loss = loss.sum(dim=1, keepdim=False)
+        return loss
 
 
 @weighted_loss
