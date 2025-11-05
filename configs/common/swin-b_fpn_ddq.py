@@ -25,11 +25,12 @@ num_classes = len(class_name)
 
 num_levels = 4
 model = dict(
-    type='DINO',
+    type='DDQDETR',
     num_queries=48,  # num_matching_queries
+    # ratio of num_dense queries to num_queries
+    dense_topk_ratio=1.5,
     with_box_refine=True,
     as_two_stage=True,
-    num_feature_levels=num_levels,
     data_preprocessor=dict(
         type='DetDataPreprocessor',
         mean=[123.675, 116.28, 103.53],
@@ -60,23 +61,13 @@ model = dict(
         act_cfg=None,
         norm_cfg=dict(type='GN', num_groups=32),
         num_outs=num_levels),
-    encoder=dict(
-        num_layers=6,
-        num_cp=6,
-        layer_cfg=dict(
-            self_attn_cfg=dict(embed_dims=256, num_levels=num_levels,
-                               dropout=0.0),  # 0.1 for DeformDETR
-            ffn_cfg=dict(
-                embed_dims=256,
-                feedforward_channels=2048,  # 1024 for DeformDETR
-                ffn_drop=0.0))),  # 0.1 for DeformDETR
     decoder=dict(
         num_layers=6,
         return_intermediate=True,
         layer_cfg=dict(
             self_attn_cfg=dict(embed_dims=256, num_heads=8,
                                dropout=0.0),  # 0.1 for DeformDETR
-            cross_attn_cfg=dict(embed_dims=256, num_levels=num_levels,
+            cross_attn_cfg=dict(embed_dims=256, num_levels=4,
                                 dropout=0.0),  # 0.1 for DeformDETR
             ffn_cfg=dict(
                 embed_dims=256,
@@ -86,10 +77,10 @@ model = dict(
     positional_encoding=dict(
         num_feats=128,
         normalize=True,
-        offset=-0.5,  # -0.5 for DeformDETR
-        temperature=10000),  # 10000 for DeformDETR
+        offset=0.0,  # -0.5 for DeformDETR
+        temperature=20),  # 10000 for DeformDETR
     bbox_head=dict(
-        type='DINOHead',
+        type='DDQDETRHead',
         num_classes=num_classes,
         sync_cls_avg_factor=True,
         loss_cls=dict(
@@ -97,14 +88,14 @@ model = dict(
             use_sigmoid=True,
             gamma=2.0,
             alpha=0.25,
-            loss_weight=2.0),  # 2.0 in DeformDETR
+            loss_weight=2.0),
         loss_bbox=dict(type='L1Loss', loss_weight=5.0),
         loss_iou=dict(type='GIoULoss', loss_weight=2.0)),
-    dn_cfg=dict(  # TODO: Move to model.train_cfg ?
+    dn_cfg=dict(
         label_noise_scale=0.5,
-        box_noise_scale=1.0,  # 0.4 for DN-DETR
-        group_cfg=dict(dynamic=True, num_groups=None,
-                       num_dn_queries=16)),  # TODO: half num_dn_queries
+        box_noise_scale=1.0,
+        group_cfg=dict(dynamic=True, num_groups=None, num_dn_queries=16)),
+    dqs_cfg=dict(type='nms', iou_threshold=0.8),
     # training and testing settings
     train_cfg=dict(
         assigner=dict(
@@ -272,5 +263,5 @@ param_scheduler = [
         T_max=10000,
     )
 ]
-load_from = 'https://github.com/RistoranteRist/mmlab-weights/releases/download/dino-swinl/dino-5scale_swin-l_8xb2-36e_coco-5486e051.pth'
+load_from = 'https://download.openmmlab.com/mmdetection/v3.0/ddq/ddq_detr_swinl_30e.pth'
 log_processor = dict(type='LogProcessor', by_epoch=False)
