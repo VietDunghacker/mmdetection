@@ -337,7 +337,7 @@ class DDQDETRHead(DINOHead):
                 bbox_preds_list.append(det_bboxes)
             bbox_preds = torch.stack(bbox_preds_list)
             aux_loss = self.aux_loss_for_dense.loss(
-                cls_scores, bbox_preds,
+                cls_scores.to(torch.float32), bbox_preds.to(torch.float32),
                 [item.bboxes for item in batch_gt_instances],
                 [item.labels for item in batch_gt_instances], batch_img_metas)
             for k, v in aux_loss.items():
