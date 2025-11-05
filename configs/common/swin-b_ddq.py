@@ -77,8 +77,8 @@ model = dict(
     positional_encoding=dict(
         num_feats=128,
         normalize=True,
-        offset=0.0,  # -0.5 for DeformDETR
-        temperature=20),  # 10000 for DeformDETR
+        offset=-0.5,  # -0.5 for DeformDETR
+        temperature=10000),  # 10000 for DeformDETR
     bbox_head=dict(
         type='DDQDETRHead',
         num_classes=num_classes,
@@ -94,7 +94,7 @@ model = dict(
     dn_cfg=dict(
         label_noise_scale=0.5,
         box_noise_scale=1.0,
-        group_cfg=dict(dynamic=True, num_groups=None, num_dn_queries=16)),
+        group_cfg=dict(dynamic=False, num_groups=10)),
     dqs_cfg=dict(type='nms', iou_threshold=0.8),
     # training and testing settings
     train_cfg=dict(
@@ -108,7 +108,7 @@ model = dict(
     test_cfg=dict(max_per_img=300, score_threshold=0.05))  # 100 for DeformDETR
 
 # optimizer
-base_lr = 0.0001
+base_lr = 0.0002
 optim_wrapper = dict(
     type='AmpOptimWrapper',
     paramwise_cfg=dict(
