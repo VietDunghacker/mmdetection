@@ -607,7 +607,7 @@ class DETRHead(BaseModule):
         # exclude background
         if self.loss_cls.use_sigmoid:
             cls_score = cls_score.sigmoid()
-            scores, indexes = cls_score.view(-1).topk(max_per_img)
+            scores, indexes = cls_score.view(-1).topk(min(max_per_img, cls_score.shape[0]))
             det_labels = indexes % self.num_classes
             bbox_index = indexes // self.num_classes
             bbox_pred = bbox_pred[bbox_index]
