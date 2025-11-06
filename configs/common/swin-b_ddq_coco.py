@@ -3,26 +3,6 @@ _base_ = [
     '../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py'
 ]
 
-class_name = ['Alexandra Lecciones Doig',
- 'Audrey Marie Anderson',
- 'Caity Lotz',
- 'Candice Patton',
- 'Ciara Renée Harper',
- 'Danielle Nicole Panabaker',
- 'Elizabeth Melise Jow',
- 'Emily Bett Rickards',
- 'Jessica Elise De Gouw',
- 'Juliana Jay Harkavy',
- 'Katherine Evelyn Anita Cassidy',
- 'Katherine Grace McNamara',
- 'Katrina Law',
- 'Kelly Ann Hu',
- 'Lư Tĩnh San',
- 'Melissa Marie Benoist',
- 'Susanna Thompson',
- 'Willa Joanna Chance Holland']
-num_classes = len(class_name)
-
 num_levels = 4
 model = dict(
     type='DDQDETR',
@@ -94,7 +74,7 @@ model = dict(
         temperature=10000),  # 10000 for DeformDETR
     bbox_head=dict(
         type='DDQDETRHead',
-        num_classes=num_classes,
+        num_classes=80,
         sync_cls_avg_factor=True,
         loss_cls=dict(
             type='FocalLoss',
@@ -138,10 +118,7 @@ optim_wrapper = dict(
     clip_grad=None)
 
 dataset_type = 'CocoDataset'
-data_root = '/workspace/compressed_data_yolo/'
-metainfo = {
-    'classes': class_name,
-}
+data_root = '/workspace/coco/'
 
 # Example to use different file client
 # Method 1: simply set the data root and let the file I/O module
@@ -172,8 +149,8 @@ albu_train_transforms = [
 ]
 
 train_pipeline = [
-    dict(type='Mosaic', center_ratio_range=(0.95, 1.05), img_scale=(1280, 1280), pad_val=0.0, prob=0.1),
-    dict(type='RandomResize', scale=[(960, 960), (1280, 1280)], keep_ratio=True),
+    dict(type='Mosaic', center_ratio_range=(0.5, 1.5), img_scale=(1280, 1280), pad_val=0.0, prob=0.1),
+    dict(type='RandomResize', scale=[(640, 640), (1280, 1280)], keep_ratio=True),
     dict(
         type='CutOut',
         n_holes=(5, 25),
@@ -208,7 +185,7 @@ test_pipeline = [
 ]
 train_dataloader = dict(
     batch_size=8,
-    num_workers=4,
+    num_workers=8,
     persistent_workers=True,
     sampler=dict(type='InfiniteSampler', shuffle=True),
     batch_sampler=dict(type='AspectRatioBatchSampler'),
@@ -223,15 +200,15 @@ train_dataloader = dict(
                 dict(type='LoadImageFromFile', backend_args=backend_args),
                 dict(type='LoadAnnotations', with_bbox=True)
             ],
-            ann_file='celebrity_detection_coco_train.json',
-            data_prefix=dict(img='images/train/'),
+            ann_file='annotations_train2017.json',
+            data_prefix=dict(img='train2017/'),
             filter_cfg=dict(filter_empty_gt=False, min_size=10),
             backend_args=backend_args,
         ),
         pipeline=train_pipeline))
 val_dataloader = dict(
     batch_size=8,
-    num_workers=4,
+    num_workers=8,
     persistent_workers=True,
     drop_last=False,
     sampler=dict(type='DefaultSampler', shuffle=False),
@@ -239,8 +216,8 @@ val_dataloader = dict(
         type=dataset_type,
         data_root=data_root,
         metainfo=metainfo,
-        ann_file='celebrity_detection_coco_val.json',
-        data_prefix=dict(img='images/val/'),
+        ann_file='annotations_val2017.json',
+        data_prefix=dict(img='val2017/'),
         test_mode=True,
         pipeline=test_pipeline,
         backend_args=backend_args))
@@ -248,7 +225,7 @@ test_dataloader = val_dataloader
 
 val_evaluator = dict(
     type='CocoMetric',
-    ann_file=data_root + 'celebrity_detection_coco_val.json',
+    ann_file=data_root + 'annotations_val2017.json',
     metric='bbox',
     format_only=False,
     classwise=True,
