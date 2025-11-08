@@ -683,7 +683,7 @@ class PatchMerging(BaseModule):
         self.reduction = nn.Linear(sample_dim, out_channels, bias=bias)
 
     def forward(self, x: torch.Tensor,
-                input_size: typing.Tuple[int]) -> Tuple[torch.Tensor, typing.Tuple[int]]:
+                input_size: typing.Tuple[int]) -> typing.Tuple[torch.Tensor, typing.Tuple[int]]:
         """
         Args:
             x (Tensor): Has shape (B, H*W, C_in).
