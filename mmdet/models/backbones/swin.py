@@ -19,13 +19,6 @@ from mmengine.utils import to_2tuple
 from mmdet.registry import MODELS
 from ..layers import PatchEmbed, PatchMerging
 
-try:
-    from flash_swin_attn import flash_swin_attn_func
-    USING_FLASH_ATTN = True
-except Exception as e:
-    print(e)
-    USING_FLASH_ATTN = False
-
 
 class WindowMSA(BaseModule):
     """Window based multi-head self-attention (W-MSA) module with relative
@@ -100,6 +93,9 @@ class WindowMSA(BaseModule):
         # make torchscript happy (cannot use tensor as tuple)
         q, k, v = qkv[0], qkv[1], qkv[2]
 
+        q = q * self.scale
+        attn = (q @ k.transpose(-2, -1))
+
         relative_position_bias = self.relative_position_bias_table[
             self.relative_position_index.view(-1)].view(
                 self.window_size[0] * self.window_size[1],
@@ -107,25 +103,18 @@ class WindowMSA(BaseModule):
                 -1)  # Wh*Ww,Wh*Ww,nH
         relative_position_bias = relative_position_bias.permute(
             2, 0, 1).contiguous()  # nH, Wh*Ww, Wh*Ww
+        attn = attn + relative_position_bias.unsqueeze(0)
 
-        if mask is None and USING_FLASH_ATTN:
-            x = flash_swin_attn_func(q, k, v, relative_position_bias, self.scale)
-        else:
-            q = q * self.scale
-            attn = (q @ k.transpose(-2, -1))
-            attn = attn + relative_position_bias.unsqueeze(0)
+        if mask is not None:
+            nW = mask.shape[0]
+            attn = attn.view(B // nW, nW, self.num_heads, N,
+                             N) + mask.unsqueeze(1).unsqueeze(0)
+            attn = attn.view(-1, self.num_heads, N, N)
+        attn = self.softmax(attn)
 
-            if mask is not None:
-                nW = mask.shape[0]
-                attn = attn.view(B // nW, nW, self.num_heads, N,
-                                 N) + mask.unsqueeze(1).unsqueeze(0)
-                attn = attn.view(-1, self.num_heads, N, N)
-            attn = self.softmax(attn)
+        attn = self.attn_drop(attn)
 
-            attn = self.attn_drop(attn)
-            x = attn @ v
-
-        x = x.transpose(1, 2).reshape(B, N, C)
+        x = (attn @ v).transpose(1, 2).reshape(B, N, C)
         x = self.proj(x)
         x = self.proj_drop(x)
         return x
@@ -383,7 +372,7 @@ class SwinBlock(BaseModule):
             return x
 
         if self.with_cp and x.requires_grad:
-            x = cp.checkpoint(_inner_forward, x, use_reentrant=True)
+            x = cp.checkpoint(_inner_forward, x)
         else:
             x = _inner_forward(x)
 
