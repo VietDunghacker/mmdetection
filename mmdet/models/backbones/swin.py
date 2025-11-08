@@ -110,6 +110,7 @@ class WindowMSA(BaseModule):
             q, k, v,
             attn_mask=attn_mask,
             dropout_p=self.attn_drop.p if self.training else 0.,
+            scale=self.scale
         )
 
         x = x.transpose(1, 2).reshape(B, N, C)
