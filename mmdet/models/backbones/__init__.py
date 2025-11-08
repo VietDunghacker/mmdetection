@@ -20,6 +20,7 @@ from .trident_resnet import TridentResNet
 from .focalnet import FocalNet
 from .vit_adapter import ViTAdapter
 from .swin_v2 import SwinTransformerV2
+from .timm_model import TimmModel
 
 __all__ = [
     'RegNet', 'ResNet', 'ResNetV1d', 'ResNeXt', 'SSDVGG', 'HRNet',
@@ -27,5 +28,5 @@ __all__ = [
     'DetectoRS_ResNeXt', 'Darknet', 'ResNeSt', 'TridentResNet', 'CSPDarknet',
     'SwinTransformer', 'PyramidVisionTransformer',
     'PyramidVisionTransformerV2', 'EfficientNet', 'CSPNeXt', 'FocalNet', 'ViTAdapter',
-    'SwinTransformerV2'
+    'SwinTransformerV2', 'TimmModel'
 ]
