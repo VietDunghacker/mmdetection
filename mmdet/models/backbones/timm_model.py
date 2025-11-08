@@ -12,11 +12,9 @@ class TimmModel(BaseModule):
                  init_cfg=None):
         super(TimmModel, self).__init__(init_cfg=init_cfg)
 
-        self.model = timm.create_model(model_name, pretrained=True)
+        self.model = timm.create_model(model_name, features_only=True, pretrained=True, out_indices=out_indices)
 
     def forward(self, x):
-        x = self.model.forward_features(x)
-        assert False, x.shape
-        x = x.permute(0, 3, 1, 2)
+        outputs = self.model(x)
         return outputs
 
