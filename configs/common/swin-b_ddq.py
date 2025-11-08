@@ -43,6 +43,7 @@ model = dict(
         pad_size_divisor=32),
     backbone=dict(
         type='SwinTransformer',
+        pretrain_img_size=384,
         embed_dims=128,
         depths=[2, 2, 18, 2],
         num_heads=[4, 8, 16, 32],
@@ -56,7 +57,7 @@ model = dict(
         patch_norm=True,
         out_indices=(1, 2, 3),
         with_cp=True,
-        init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
+        init_cfg=dict(type='Pretrained', checkpoint='https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_base_patch4_window12_384_22k.pth')),
     neck=dict(
         type='ChannelMapper',
         in_channels=[256, 512, 1024],
@@ -212,7 +213,7 @@ test_pipeline = [
 ]
 train_dataloader = dict(
     batch_size=8,
-    num_workers=4,
+    num_workers=8,
     persistent_workers=True,
     sampler=dict(type='InfiniteSampler', shuffle=True),
     batch_sampler=dict(type='AspectRatioBatchSampler'),
@@ -234,8 +235,8 @@ train_dataloader = dict(
         ),
         pipeline=train_pipeline))
 val_dataloader = dict(
-    batch_size=8,
-    num_workers=4,
+    batch_size=16,
+    num_workers=16,
     persistent_workers=True,
     drop_last=False,
     sampler=dict(type='DefaultSampler', shuffle=False),
