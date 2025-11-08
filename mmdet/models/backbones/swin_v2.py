@@ -134,9 +134,9 @@ class WindowMSA(BaseModule):
             self.q_bias = None
             self.k_bias = None
             self.v_bias = None
-        self.attn_drop = nn.Dropout(attn_drop)
+        self.attn_drop = nn.Dropout(attn_drop_rate)
         self.proj = nn.Linear(embed_dims, embed_dims)
-        self.proj_drop = nn.Dropout(proj_drop)
+        self.proj_drop = nn.Dropout(proj_drop_rate)
         self.softmax = nn.Softmax(dim=-1)
 
     def forward(self, x, mask=None):
