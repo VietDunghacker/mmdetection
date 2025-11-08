@@ -602,7 +602,7 @@ class PatchMerging(BaseModule):
         sample_dim = kernel_size[0] * kernel_size[1] * in_channels
 
         if norm_cfg is not None:
-            self.norm = build_norm_layer(norm_cfg, sample_dim)[1]
+            self.norm = build_norm_layer(norm_cfg, out_channels)[1]
         else:
             self.norm = None
 
