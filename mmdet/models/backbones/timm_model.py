@@ -15,6 +15,7 @@ class TimmModel(BaseModule):
         self.model = timm.create_model(model_name, pretrained=True)
 
     def forward(self, x):
-        outputs = self.model.forward_features(x)
+        x = self.model.forward_features(x)
+        x = x.permute(0, 3, 1, 2)
         return outputs
 
