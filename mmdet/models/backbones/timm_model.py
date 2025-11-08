@@ -16,6 +16,7 @@ class TimmModel(BaseModule):
 
     def forward(self, x):
         x = self.model.forward_features(x)
+        assert False, x.shape
         x = x.permute(0, 3, 1, 2)
         return outputs
 
