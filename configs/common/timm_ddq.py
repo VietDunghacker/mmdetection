@@ -44,7 +44,7 @@ model = dict(
     neck=dict(
         type='SimpleFPN',
         backbone_channel=768,
-        in_channels=[192, 384, 768, 768],
+        in_channels=[384, 768, 768, 768],
         out_channels=256,
         num_outs=num_levels,
         norm_cfg=dict(type='GN', num_groups=32)),
