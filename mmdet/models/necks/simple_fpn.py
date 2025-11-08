@@ -99,4 +99,5 @@ class SimpleFPN(BaseModule):
         if self.num_outs > len(outs):
             for i in range(self.num_outs - self.num_ins):
                 outs.append(F.max_pool2d(outs[-1], 1, stride=2))
+        assert False, [out.shape for out in outs]
         return tuple(outs)
