@@ -36,13 +36,7 @@ class SimpleFPN(BaseModule):
             nn.ConvTranspose2d(self.backbone_channel,
                                self.backbone_channel // 2, 2, 2))
         self.fpn2 = nn.Sequential(nn.Identity())
-        self.fpn3 = nn.Sequential(nn.Conv2d(self.backbone_channel, self.backbone_channel * 2, kernel_size=2, stride=2))
-        self.fpn4 = nn.Sequential(
-            nn.Conv2d(self.backbone_channel, self.backbone_channel * 2, kernel_size=2, stride=2),
-            build_norm_layer(norm_cfg, self.backbone_channel * 2)[1],
-            nn.GELU(),
-            nn.Conv2d(self.backbone_channel * 2, self.backbone_channel * 4, kernel_size=2, stride=2),
-        )
+        self.fpn3 = nn.Sequential(nn.MaxPool2d(kernel_size=2, stride=2))
 
         self.lateral_convs = nn.ModuleList()
         self.fpn_convs = nn.ModuleList()
@@ -68,6 +62,24 @@ class SimpleFPN(BaseModule):
 
             self.lateral_convs.append(l_conv)
             self.fpn_convs.append(fpn_conv)
+        if num_outs > len(in_channels):
+            self.extra_convs = nn.ModuleList()
+            for i in range(len(in_channels), num_outs):
+                if i == len(in_channels):
+                    in_channel = in_channels[-1]
+                else:
+                    in_channel = out_channels
+                self.extra_convs.append(
+                    ConvModule(
+                        in_channel,
+                        out_channels,
+                        3,
+                        stride=2,
+                        padding=1,
+                        conv_cfg=conv_cfg,
+                        norm_cfg=norm_cfg,
+                        act_cfg=act_cfg,
+                        bias=bias))
 
     def forward(self, input: Tensor) -> tuple:
         """Forward function.
@@ -82,7 +94,7 @@ class SimpleFPN(BaseModule):
         inputs.append(self.fpn1(input))
         inputs.append(self.fpn2(input))
         inputs.append(self.fpn3(input))
-        inputs.append(self.fpn4(input))
+        #inputs.append(self.fpn4(input))
 
         # build laterals
         laterals = [
@@ -95,7 +107,10 @@ class SimpleFPN(BaseModule):
         outs = [self.fpn_convs[i](laterals[i]) for i in range(self.num_ins)]
 
         # part 2: add extra levels
-        if self.num_outs > len(outs):
-            for i in range(self.num_outs - self.num_ins):
-                outs.append(F.max_pool2d(outs[-1], 1, stride=2))
+        if self.extra_convs:
+            for i in range(len(self.extra_convs)):
+                if i == 0:
+                    outs.append(self.extra_convs[0](inputs[-1]))
+                else:
+                    outs.append(self.extra_convs[i](outs[-1]))
         return tuple(outs)
