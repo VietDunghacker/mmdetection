@@ -682,8 +682,8 @@ class PatchMerging(BaseModule):
 
         self.reduction = nn.Linear(sample_dim, out_channels, bias=bias)
 
-    def forward(self, x: Tensor,
-                input_size: Tuple[int]) -> Tuple[Tensor, Tuple[int]]:
+    def forward(self, x: torch.Tensor,
+                input_size: typing.Tuple[int]) -> Tuple[torch.Tensor, typing.Tuple[int]]:
         """
         Args:
             x (Tensor): Has shape (B, H*W, C_in).
@@ -698,7 +698,7 @@ class PatchMerging(BaseModule):
                     (Merged_H, Merged_W).
         """
         B, L, C = x.shape
-        assert isinstance(input_size, Sequence), f'Expect ' \
+        assert isinstance(input_size, typing.Sequence), f'Expect ' \
                                                  f'input_size is ' \
                                                  f'`Sequence` ' \
                                                  f'but get {input_size}'
