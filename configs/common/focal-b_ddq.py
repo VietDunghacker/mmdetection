@@ -52,6 +52,7 @@ model = dict(
         focal_levels=[3,3,3,3], 
         use_conv_embed=False, 
         use_layerscale=False, 
+        out_indices=(1, 2, 3),
         init_cfg=dict(type='Pretrained', checkpoint='https://github.com/microsoft/FocalNet/releases/download/v1.0.0/focalnet_base_lrf.pth'),
     ),
     neck=dict(
