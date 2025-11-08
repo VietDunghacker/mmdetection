@@ -217,7 +217,7 @@ class WindowAttention(nn.Module):
         attn = (
             F.normalize(q, dim=-1) @ F.normalize(k, dim=-1).transpose(-2, -1))
         logit_scale = torch.clamp(
-            self.logit_scale, max=torch.log(torch.tensor(1. / 0.01))).exp()
+            self.logit_scale, max=torch.log(torch.tensor(1. / 0.01, device=x.device))).exp()
         attn = attn * logit_scale
 
         relative_position_bias_table = self.cpb_mlp(
@@ -531,7 +531,7 @@ class BasicLayer(nn.Module):
 
         for blk in self.blocks:
             blk.H, blk.W = H, W
-            if self.use_checkpoint:
+            if self.use_checkpoint and x.requires_grad:
                 x = checkpoint.checkpoint(blk, x.type_as(attn_mask), attn_mask)
             else:
                 x = blk(x, attn_mask)
