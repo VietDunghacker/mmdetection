@@ -91,10 +91,7 @@ class WindowMSA(BaseModule):
         qkv = self.qkv(x).reshape(B, N, 3, self.num_heads,
                                   C // self.num_heads).permute(2, 0, 3, 1, 4)
         # make torchscript happy (cannot use tensor as tuple)
-        q, k, v = qkv[0], qkv[1], qkv[2]
-
-        q = q * self.scale
-        attn = (q @ k.transpose(-2, -1))
+        q, k, v = qkv.unbind(0)
 
         relative_position_bias = self.relative_position_bias_table[
             self.relative_position_index.view(-1)].view(
@@ -103,18 +100,19 @@ class WindowMSA(BaseModule):
                 -1)  # Wh*Ww,Wh*Ww,nH
         relative_position_bias = relative_position_bias.permute(
             2, 0, 1).contiguous()  # nH, Wh*Ww, Wh*Ww
-        attn = attn + relative_position_bias.unsqueeze(0)
-
+        attn_mask = relative_position_bias.unsqueeze(0)
         if mask is not None:
             nW = mask.shape[0]
-            attn = attn.view(B // nW, nW, self.num_heads, N,
-                             N) + mask.unsqueeze(1).unsqueeze(0)
-            attn = attn.view(-1, self.num_heads, N, N)
-        attn = self.softmax(attn)
+            mask = mask.view(1, nW, 1, N, N).expand(B // nW, -1, self.num_heads, -1, -1)
+            attn_mask = attn_mask + mask.reshape(-1, self.num_heads, N, N)
 
-        attn = self.attn_drop(attn)
+        x = torch.nn.functional.scaled_dot_product_attention(
+            q, k, v,
+            attn_mask=attn_mask,
+            dropout_p=self.attn_drop.p if self.training else 0.,
+        )
 
-        x = (attn @ v).transpose(1, 2).reshape(B, N, C)
+        x = x.transpose(1, 2).reshape(B, N, C)
         x = self.proj(x)
         x = self.proj_drop(x)
         return x
