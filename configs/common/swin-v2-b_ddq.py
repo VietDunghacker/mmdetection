@@ -43,7 +43,6 @@ model = dict(
         depths=[2, 2, 18, 2],
         num_heads=[4, 8, 16, 32],
         window_size=7,
-        mlp_ratio=4,
         qkv_bias=True,
         drop_rate=0.,
         attn_drop_rate=0.,
