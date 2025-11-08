@@ -127,9 +127,9 @@ class WindowMSA(BaseModule):
 
         self.qkv = nn.Linear(embed_dims, embed_dims * 3, bias=False)
         if qkv_bias:
-            self.q_bias = nn.Parameter(torch.zeros(dim))
-            self.register_buffer('k_bias', torch.zeros(dim), persistent=False)
-            self.v_bias = nn.Parameter(torch.zeros(dim))
+            self.q_bias = nn.Parameter(torch.zeros(embed_dims))
+            self.register_buffer('k_bias', torch.zeros(embed_dims), persistent=False)
+            self.v_bias = nn.Parameter(torch.zeros(embed_dims))
         else:
             self.q_bias = None
             self.k_bias = None
