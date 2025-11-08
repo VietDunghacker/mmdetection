@@ -13,6 +13,7 @@ class TimmModel(BaseModule):
         super(TimmModel, self).__init__(init_cfg=init_cfg)
 
         self.model = timm.create_model(model_name, features_only=True, pretrained=True, out_indices=out_indices)
+        self.model.set_grad_checkpointing()
 
     def forward(self, x):
         outputs = self.model(x)
