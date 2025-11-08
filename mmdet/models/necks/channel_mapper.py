@@ -109,4 +109,5 @@ class ChannelMapper(BaseModule):
                     outs.append(self.extra_convs[0](inputs[-1]))
                 else:
                     outs.append(self.extra_convs[i](outs[-1]))
+        assert False, [out.shape for out in outs]
         return tuple(outs)
