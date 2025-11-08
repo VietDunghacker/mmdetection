@@ -784,7 +784,7 @@ class SwinTransformerV2(BaseModule):
                     if reinit_key in k:
                         del state_dict[k]
 
-            self.load_state_dict(self, state_dict, strict=False, logger=logger)
+            self.load_state_dict(state_dict, False)
 
     def forward(self, x):
         """Forward function."""
