@@ -78,8 +78,7 @@ class SimpleFPN(BaseModule):
                         padding=1,
                         conv_cfg=conv_cfg,
                         norm_cfg=norm_cfg,
-                        act_cfg=act_cfg,
-                        bias=bias))
+                        act_cfg=act_cfg))
 
     def forward(self, input: Tensor) -> tuple:
         """Forward function.
