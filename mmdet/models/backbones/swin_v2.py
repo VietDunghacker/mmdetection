@@ -778,6 +778,7 @@ class SwinTransformerV2(BaseModule):
                  embed_dims=96,
                  patch_size=4,
                  window_size=7,
+                 mlp_ratio=4,
                  depths=[2, 2, 6, 2],
                  num_heads=[3, 6, 12, 24],
                  strides=(4, 2, 2, 2),
