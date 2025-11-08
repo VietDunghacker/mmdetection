@@ -34,16 +34,10 @@ class SimpleFPN(BaseModule):
 
         self.fpn1 = nn.Sequential(
             nn.ConvTranspose2d(self.backbone_channel,
-                               self.backbone_channel // 2, 2, 2),
-            build_norm_layer(norm_cfg, self.backbone_channel // 2)[1],
-            nn.GELU(),
-            nn.ConvTranspose2d(self.backbone_channel // 2,
-                               self.backbone_channel // 4, 2, 2))
-        self.fpn2 = nn.Sequential(
-            nn.ConvTranspose2d(self.backbone_channel,
                                self.backbone_channel // 2, 2, 2))
-        self.fpn3 = nn.Sequential(nn.Identity())
-        self.fpn4 = nn.Sequential(nn.MaxPool2d(kernel_size=2, stride=2))
+        self.fpn2 = nn.Sequential(nn.Identity())
+        self.fpn3 = nn.Sequential(nn.MaxPool2d(kernel_size=2, stride=2))
+        self.fpn4 = nn.Sequential(nn.MaxPool2d(kernel_size=4, stride=4))
 
         self.lateral_convs = nn.ModuleList()
         self.fpn_convs = nn.ModuleList()
@@ -99,5 +93,4 @@ class SimpleFPN(BaseModule):
         if self.num_outs > len(outs):
             for i in range(self.num_outs - self.num_ins):
                 outs.append(F.max_pool2d(outs[-1], 1, stride=2))
-        assert False, [out.shape for out in outs]
         return tuple(outs)
