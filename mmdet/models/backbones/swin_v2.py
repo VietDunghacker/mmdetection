@@ -24,7 +24,8 @@ from mmengine.model import BaseModule, ModuleList
 from mmengine.runner.checkpoint import CheckpointLoader
 from mmengine.utils import to_2tuple
 from mmengine.logging import MMLogger
-from mmcv.cnn.bricks import DropPath
+from mmcv.cnn import build_norm_layer
+from mmcv.cnn.bricks.transformer import FFN, build_dropout
 
 from mmdet.registry import MODELS
 from mmdet.utils import OptConfigType
