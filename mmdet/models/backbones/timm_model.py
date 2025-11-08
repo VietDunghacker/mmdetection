@@ -16,5 +16,7 @@ class TimmModel(BaseModule):
 
     def forward(self, x):
         outputs = self.model(x)
+        if len(outputs) == 1:
+            outputs = outputs[0]
         return outputs
 
