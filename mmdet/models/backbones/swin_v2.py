@@ -640,7 +640,7 @@ class PatchMerging(BaseModule):
                  stride: typing.Optional[typing.Union[int, tuple]] = None,
                  padding: typing.Union[int, tuple, str] = 'corner',
                  dilation: typing.Optional[typing.Union[int, tuple]] = 1,
-                 bias: Otyping.ptional[bool] = False,
+                 bias: typing.Optional[bool] = False,
                  norm_cfg: OptConfigType = dict(type='LN'),
                  init_cfg: OptConfigType = None) -> None:
         super().__init__(init_cfg=init_cfg)
