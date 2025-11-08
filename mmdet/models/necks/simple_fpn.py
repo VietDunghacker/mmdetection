@@ -36,8 +36,13 @@ class SimpleFPN(BaseModule):
             nn.ConvTranspose2d(self.backbone_channel,
                                self.backbone_channel // 2, 2, 2))
         self.fpn2 = nn.Sequential(nn.Identity())
-        self.fpn3 = nn.Sequential(nn.MaxPool2d(kernel_size=2, stride=2))
-        self.fpn4 = nn.Sequential(nn.MaxPool2d(kernel_size=4, stride=4))
+        self.fpn3 = nn.Sequential(nn.Conv2d(self.backbone_channel, self.backbone_channel * 2, kernel_size=2, stride=2))
+        self.fpn4 = nn.Sequential(
+            nn.Conv2d(self.backbone_channel, self.backbone_channel * 2, kernel_size=2, stride=2),
+            build_norm_layer(norm_cfg, self.backbone_channel * 2)[1],
+            nn.GELU(),
+            nn.Conv2d(self.backbone_channel * 2, self.backbone_channel * 4, kernel_size=2, stride=2),
+        )
 
         self.lateral_convs = nn.ModuleList()
         self.fpn_convs = nn.ModuleList()
