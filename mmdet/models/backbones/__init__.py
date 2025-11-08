@@ -19,11 +19,13 @@ from .swin import SwinTransformer
 from .trident_resnet import TridentResNet
 from .focalnet import FocalNet
 from .vit_adapter import ViTAdapter
+from .swin_v2 import SwinTransformerV2
 
 __all__ = [
     'RegNet', 'ResNet', 'ResNetV1d', 'ResNeXt', 'SSDVGG', 'HRNet',
     'MobileNetV2', 'Res2Net', 'HourglassNet', 'DetectoRS_ResNet',
     'DetectoRS_ResNeXt', 'Darknet', 'ResNeSt', 'TridentResNet', 'CSPDarknet',
     'SwinTransformer', 'PyramidVisionTransformer',
-    'PyramidVisionTransformerV2', 'EfficientNet', 'CSPNeXt', 'FocalNet', 'ViTAdapter'
+    'PyramidVisionTransformerV2', 'EfficientNet', 'CSPNeXt', 'FocalNet', 'ViTAdapter',
+    'SwinTransformerV2'
 ]
