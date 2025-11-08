@@ -18,7 +18,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.utils.checkpoint as checkpoint
+import torch.utils.checkpoint as cp
 from mmengine.model.weight_init import (constant_init, trunc_normal_, trunc_normal_init)
 from mmengine.model import BaseModule, ModuleList
 from mmengine.runner.checkpoint import CheckpointLoader
