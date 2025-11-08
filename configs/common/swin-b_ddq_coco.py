@@ -3,10 +3,14 @@ _base_ = [
     '../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py'
 ]
 
+class_name = ['person']
+num_classes = len(class_name)
+
 num_levels = 4
+num_queries = 48
 model = dict(
     type='DDQDETR',
-    num_queries=48,  # num_matching_queries
+    num_queries=num_queries,  # num_matching_queries
     # ratio of num_dense queries to num_queries
     dense_topk_ratio=1.5,
     with_box_refine=True,
@@ -43,7 +47,7 @@ model = dict(
         num_outs=num_levels),
     encoder=dict(
         num_layers=6,
-        num_cp=3,
+        num_cp=2,
         layer_cfg=dict(
             self_attn_cfg=dict(embed_dims=256, num_levels=4,
                                dropout=0.0),  # 0.1 for DeformDETR
@@ -74,7 +78,7 @@ model = dict(
         temperature=10000),  # 10000 for DeformDETR
     bbox_head=dict(
         type='DDQDETRHead',
-        num_classes=80,
+        num_classes=num_classes,
         sync_cls_avg_factor=True,
         loss_cls=dict(
             type='FocalLoss',
@@ -98,7 +102,7 @@ model = dict(
                 dict(type='BBoxL1Cost', weight=5.0, box_format='xywh'),
                 dict(type='IoUCost', iou_mode='giou', weight=2.0)
             ])),
-    test_cfg=dict(max_per_img=300, score_threshold=0.05))  # 100 for DeformDETR
+    test_cfg=dict(max_per_img=48, score_threshold=0.05))  # 100 for DeformDETR
 
 # optimizer
 base_lr = 0.0002
@@ -119,6 +123,9 @@ optim_wrapper = dict(
 
 dataset_type = 'CocoDataset'
 data_root = '/workspace/coco/'
+metainfo = {
+    'classes': class_name,
+}
 
 # Example to use different file client
 # Method 1: simply set the data root and let the file I/O module
@@ -149,12 +156,13 @@ albu_train_transforms = [
 ]
 
 train_pipeline = [
-    dict(type='Mosaic', center_ratio_range=(0.5, 1.5), img_scale=(1280, 1280), pad_val=0.0, prob=0.1),
-    dict(type='RandomResize', scale=[(640, 640), (1280, 1280)], keep_ratio=True),
+    dict(type='Mosaic', center_ratio_range=(0.5, 1.5), img_scale=(640, 640), pad_val=0.0, prob=0.1),
     dict(
-        type='CutOut',
-        n_holes=(5, 25),
-        cutout_shape=[(4, 4), (4, 8), (8, 4), (8, 8), (16, 8), (8, 16), (16, 16), (16, 32), (32, 16), (32, 32)]),
+        type='RandomChoiceResize',
+        scales=[(480, 1333), (512, 1333), (544, 1333), (576, 1333),
+                (608, 1333), (640, 1333), (672, 1333), (704, 1333),
+                (736, 1333), (768, 1333), (800, 1333)],
+        keep_ratio=True),
     dict(
         type='Albu',
         transforms=albu_train_transforms,
@@ -175,7 +183,7 @@ train_pipeline = [
 
 test_pipeline = [
     dict(type='LoadImageFromFile', backend_args=backend_args),
-    dict(type='Resize', scale=(1280, 1280), keep_ratio=True),
+    dict(type='Resize', scale=(1333, 800), keep_ratio=True),
     # If you don't have a gt annotation, delete the pipeline
     dict(type='LoadAnnotations', with_bbox=True),
     dict(
@@ -195,7 +203,6 @@ train_dataloader = dict(
         dataset=dict(
             type=dataset_type,
             data_root=data_root,
-            metainfo=metainfo,
             pipeline=[
                 dict(type='LoadImageFromFile', backend_args=backend_args),
                 dict(type='LoadAnnotations', with_bbox=True)
@@ -215,7 +222,6 @@ val_dataloader = dict(
     dataset=dict(
         type=dataset_type,
         data_root=data_root,
-        metainfo=metainfo,
         ann_file='annotations_val2017.json',
         data_prefix=dict(img='val2017/'),
         test_mode=True,
@@ -234,7 +240,7 @@ test_evaluator = val_evaluator
 
 
 # learning policy
-train_cfg = dict(_delete_=True, type='IterBasedTrainLoop', max_iters=10000, val_interval=500)
+train_cfg = dict(_delete_=True, type='IterBasedTrainLoop', max_iters=5000, val_interval=500)
 
 default_hooks = dict(
     logger=dict(interval=25),
@@ -250,7 +256,7 @@ param_scheduler = [
         eta_min=base_lr * 0.01,
         begin=500,
         by_epoch=False,
-        T_max=10000,
+        T_max=5000,
     )
 ]
 load_from = 'https://download.openmmlab.com/mmdetection/v3.0/ddq/ddq_detr_swinl_30e.pth'
