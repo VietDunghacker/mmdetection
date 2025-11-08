@@ -15,6 +15,7 @@ class TimmModel(BaseModule):
         self.model = timm.create_model(model_name, features_only=True, pretrained=True)
 
     def forward(self, x):
+        print(x.shape)
         outputs = self.model(x)
         for output in outputs:
             print(output.shape)
