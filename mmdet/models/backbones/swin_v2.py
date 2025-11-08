@@ -776,10 +776,11 @@ class SwinTransformerV2(BaseModule):
                  in_channels=3,
                  embed_dims=96,
                  patch_size=4,
+                 window_size=7,
                  depths=[2, 2, 6, 2],
                  num_heads=[3, 6, 12, 24],
-                 window_size=7,
-                 mlp_ratio=4.,
+                 strides=(4, 2, 2, 2),
+                 out_indices=(0, 1, 2, 3),
                  qkv_bias=True,
                  patch_norm=True,
                  drop_rate=0.,
@@ -824,6 +825,17 @@ class SwinTransformerV2(BaseModule):
 
         self.embed_dims = embed_dims
         self.patch_norm = patch_norm
+
+        assert strides[0] == patch_size, 'Use non-overlapping patch embed.'
+
+        self.patch_embed = PatchEmbed(
+            in_channels=in_channels,
+            embed_dims=embed_dims,
+            conv_type='Conv2d',
+            kernel_size=patch_size,
+            stride=strides[0],
+            norm_cfg=norm_cfg if patch_norm else None,
+            init_cfg=None)
 
         # split image into non-overlapping patches
         self.patch_embed = PatchEmbed(
