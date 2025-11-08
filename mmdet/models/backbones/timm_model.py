@@ -19,6 +19,5 @@ class TimmModel(BaseModule):
         outputs = self.model(x)
         if len(outputs) == 1:
             outputs = outputs[0]
-            assert False, outputs.shape
         return outputs
 
