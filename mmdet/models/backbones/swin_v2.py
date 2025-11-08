@@ -59,8 +59,8 @@ class WindowMSA(BaseModule):
                  num_heads,
                  window_size,
                  qkv_bias=True,
-                 attn_drop=0.,
-                 proj_drop=0.,
+                 attn_drop_rate=0.,
+                 proj_drop_rate=0.,
                  pretrained_window_size=[0, 0],
                  init_cfg=None):
 
