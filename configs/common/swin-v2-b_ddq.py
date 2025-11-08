@@ -51,6 +51,7 @@ model = dict(
         patch_norm=True,
         out_indices=(1, 2, 3),
         with_cp=True,
+        convert_weights=True,
         init_cfg=dict(type='Pretrained', checkpoint='https://github.com/SwinTransformer/storage/releases/download/v2.0.0/swinv2_base_patch4_window12_192_22k.pth')),
     neck=dict(
         type='ChannelMapper',
