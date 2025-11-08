@@ -12,7 +12,7 @@ class TimmModel(BaseModule):
                  init_cfg=None):
         super(TimmModel, self).__init__(init_cfg=init_cfg)
 
-        self.model = timm.create_model(model_name, features_only=True, pretrained=True)
+        self.model = timm.create_model(model_name, pretrained=True)
 
     def forward(self, x):
         outputs = self.model.forward_features(x)
