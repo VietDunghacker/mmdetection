@@ -869,8 +869,6 @@ class SwinTransformerV2(BaseModule):
             for bly in self.layers:
                 bly._init_respostnorm()
         else:
-            if self.ape:
-                raise NotImplementedError
             assert 'checkpoint' in self.init_cfg, f'Only support ' \
                                                   f'specify `Pretrained` in ' \
                                                   f'`init_cfg` in ' \
