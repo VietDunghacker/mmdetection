@@ -41,13 +41,12 @@ model = dict(
         type='TimmModel',
         model_name='naflexvit_base_patch16_par_gap.e300_s576_in1k'),
     neck=dict(
-        type='ChannelMapper',
-        in_channels=[256, 512, 1024],
-        kernel_size=1,
+        type='SimpleFPN',
+        backbone_channel=768,
+        in_channels=[192, 384, 768, 768],
         out_channels=256,
-        act_cfg=None,
-        norm_cfg=dict(type='GN', num_groups=32),
-        num_outs=num_levels),
+        num_outs=num_levels,
+        norm_cfg=dict(type='GN', num_groups=32)),
     encoder=dict(
         num_layers=6,
         num_cp=3,
