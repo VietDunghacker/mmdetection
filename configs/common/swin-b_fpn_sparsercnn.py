@@ -17,7 +17,7 @@ class_name = ['Audrey Marie Anderson',
 num_classes = len(class_name)
 
 num_stages = 6
-num_proposals = 32
+num_proposals = 48
 model = dict(
     type='SparseRCNN',
     data_preprocessor=dict(
@@ -39,12 +39,12 @@ model = dict(
         attn_drop_rate=0.,
         drop_path_rate=0.3,
         patch_norm=True,
-        out_indices=(0, 1, 2, 3),
+        out_indices=(1, 2, 3),
         with_cp=True,
         init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
     neck=dict(
         type='FPN',
-        in_channels=[128, 256, 512, 1024],
+        in_channels=[256, 512, 1024],
         out_channels=256,
         start_level=0,
         add_extra_convs='on_input',
