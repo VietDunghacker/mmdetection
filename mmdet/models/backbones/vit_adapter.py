@@ -124,11 +124,13 @@ class WindowedAttention(nn.Module):
         q, k, v = qkv.unbind(0)  # make torchscript happy (cannot use tensor as tuple)
 
         # q,k,v [B, L, num_head, N_, C/num_head]
-        attn = (q @ k.transpose(-2, -1)) * self.scale  # [B, L, num_head, N_, N_]
-        attn = attn.softmax(dim=-1)
-        attn = self.attn_drop(attn)  # [B, L, num_head, N_, N_]
-        # attn @ v = [B, L, num_head, N_, C/num_head]
-        x = (attn @ v).permute(0, 2, 4, 3, 1).reshape(B, C_kw_kw // 3, L)
+        x = torch.nn.functional.scaled_dot_product_attention(q, k, v, dropout_p=self.attn_drop.p if self.training else 0., scale=self.scale)
+        # attn = (q @ k.transpose(-2, -1)) * self.scale  # [B, L, num_head, N_, N_]
+        # attn = attn.softmax(dim=-1)
+        # attn = self.attn_drop(attn)  # [B, L, num_head, N_, N_]
+        # # attn @ v = [B, L, num_head, N_, C/num_head]
+        # x = (attn @ v).permute(0, 2, 4, 3, 1).reshape(B, C_kw_kw // 3, L)
+        x = x.permute(0, 2, 4, 3, 1).reshape(B, C_kw_kw // 3, L)
 
         x = F.fold(x, output_size=(H_, W_),
                    kernel_size=(self.window_size, self.window_size),
@@ -137,47 +139,6 @@ class WindowedAttention(nn.Module):
         x = self.proj(x)
         x = self.proj_drop(x)
         return x
-
-
-# class WindowedAttention(nn.Module):
-#     def __init__(self, dim, num_heads=8, qkv_bias=False, attn_drop=0., proj_drop=0., window_size=14, pad_mode="constant"):
-#         super().__init__()
-#         self.num_heads = num_heads
-#         head_dim = dim // num_heads
-#         self.scale = head_dim ** -0.5
-#
-#         self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
-#         self.attn_drop = nn.Dropout(attn_drop)
-#         self.proj = nn.Linear(dim, dim)
-#         self.proj_drop = nn.Dropout(proj_drop)
-#         self.window_size = window_size
-#         self.pad_mode = pad_mode
-#
-#     def forward(self, x, H, W):
-#         B, N, C = x.shape
-#
-#         N_ = self.window_size * self.window_size
-#         H_ = math.ceil(H / self.window_size) * self.window_size
-#         W_ = math.ceil(W / self.window_size) * self.window_size
-#         x = x.view(B, H, W, C)
-#         x = F.pad(x, [0, 0, 0, W_ - W, 0, H_- H], mode=self.pad_mode)
-#
-#         x = window_partition(x, window_size=self.window_size)# nW*B, window_size, window_size, C
-#         x = x.view(-1, N_, C)
-#
-#         qkv = self.qkv(x).view(-1, N_, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
-#         q, k, v = qkv.unbind(0)   # make torchscript happy (cannot use tensor as tuple)
-#         attn = (q @ k.transpose(-2, -1)) * self.scale # [B, L, num_head, N_, N_]
-#         attn = attn.softmax(dim=-1)
-#         attn = self.attn_drop(attn) # [B, L, num_head, N_, N_]
-#         x = (attn @ v).transpose(1, 2).reshape(-1, self.window_size, self.window_size, C)
-#
-#         x = window_reverse(x, self.window_size, H_, W_)
-#         x = x[:, :H, :W, :].reshape(B, N, C).contiguous()
-#         x = self.proj(x)
-#         x = self.proj_drop(x)
-#         return x
-
 
 class LayerNorm(nn.Module):
     """
