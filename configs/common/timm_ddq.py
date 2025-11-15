@@ -39,15 +39,16 @@ model = dict(
         pad_size_divisor=32),
     backbone=dict(
         type='TimmModel',
-        model_name='naflexvit_base_patch16_par_gap.e300_s576_in1k',
-        out_indices=[-1]),
+        model_name='mvitv2_base_cls.fb_inw21k',
+        out_indices=[0, 1, 2]),
     neck=dict(
-        type='SimpleFPN',
-        backbone_channel=768,
-        in_channels=[384, 768, 768, 768],
+        type='ChannelMapper',
+        in_channels=[256, 512, 1024],
+        kernel_size=1,
         out_channels=256,
-        num_outs=num_levels,
-        norm_cfg=dict(type='GN', num_groups=32)),
+        act_cfg=None,
+        norm_cfg=dict(type='GN', num_groups=32),
+        num_outs=num_levels),
     encoder=dict(
         num_layers=6,
         num_cp=3,
