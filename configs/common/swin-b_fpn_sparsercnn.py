@@ -42,13 +42,22 @@ model = dict(
         out_indices=(0, 1, 2, 3),
         with_cp=True,
         init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
-    neck=dict(
-        type='FPN',
-        in_channels=[128, 256, 512, 1024],
-        out_channels=256,
-        start_level=0,
-        add_extra_convs='on_input',
-        num_outs=4),
+    neck=[
+        dict(
+            type='FPN',
+            in_channels=[128, 256, 512, 1024],
+            out_channels=256,
+            start_level=0,
+            add_extra_convs='on_input',
+            num_outs=4),
+        dict(
+            type='DyHead',
+            in_channels=256,
+            out_channels=256,
+            num_blocks=6,
+            # disable zero_init_offset to follow official implementation
+            zero_init_offset=False)
+    ],
     rpn_head=dict(
         type='EmbeddingRPNHead',
         num_proposals=num_proposals,
