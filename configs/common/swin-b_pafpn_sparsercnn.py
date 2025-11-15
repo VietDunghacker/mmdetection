@@ -17,7 +17,7 @@ class_name = ['Audrey Marie Anderson',
 num_classes = len(class_name)
 
 num_stages = 6
-num_proposals = 32
+num_proposals = 48
 model = dict(
     type='SparseRCNN',
     data_preprocessor=dict(
