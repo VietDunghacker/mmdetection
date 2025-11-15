@@ -3,7 +3,7 @@ _base_ = [
     '../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py'
 ]
 
-['Alexandra Lecciones Doig',
+class_name = ['Alexandra Lecciones Doig',
  'Audrey Marie Anderson',
  'Azie Tesfai',
  'Caity Lotz',
