@@ -3,15 +3,22 @@ _base_ = [
     '../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py'
 ]
 
-class_name = ['Audrey Marie Anderson',
+class_name = ['Alexandra Lecciones Doig',
+ 'Audrey Marie Anderson',
  'Caity Lotz',
+ 'Candice Patton',
+ 'Ciara Renée Harper',
+ 'Danielle Nicole Panabaker',
+ 'Elizabeth Melise Jow',
  'Emily Bett Rickards',
  'Jessica Elise De Gouw',
  'Juliana Jay Harkavy',
  'Katherine Evelyn Anita Cassidy',
+ 'Katherine Grace McNamara',
  'Katrina Law',
  'Kelly Ann Hu',
  'Lư Tĩnh San',
+ 'Melissa Marie Benoist',
  'Susanna Thompson',
  'Willa Joanna Chance Holland']
 num_classes = len(class_name)
@@ -248,23 +255,26 @@ test_evaluator = val_evaluator
 
 
 # learning policy
-train_cfg = dict(_delete_=True, type='IterBasedTrainLoop', max_iters=10000, val_interval=500)
+max_iters = 5000
+iter_interval = 250
+train_cfg = dict(_delete_=True, type='IterBasedTrainLoop', max_iters=max_iters, val_interval=iter_interval)
+val_cfg = dict(type='ValLoop', fp16=True)
 
 default_hooks = dict(
     logger=dict(interval=25),
-    checkpoint=dict(by_epoch=False, interval=500, max_keep_ckpts=3),
+    checkpoint=dict(by_epoch=False, interval=iter_interval, max_keep_ckpts=3, save_best='coco/bbox_mAP'),
 )
 
 
 param_scheduler = [
     dict(
-        type='LinearLR', start_factor=0.1, by_epoch=False, begin=0, end=500),
+        type='LinearLR', start_factor=0.1, by_epoch=False, begin=0, end=iter_interval),
     dict(
         type='CosineAnnealingLR',
         eta_min=base_lr * 0.12,
-        begin=500,
+        begin=iter_interval,
         by_epoch=False,
-        T_max=10000,
+        T_max=max_iters,
     )
 ]
 load_from = 'https://download.openmmlab.com/mmdetection/v2.0/sparse_rcnn/sparse_rcnn_r101_fpn_300_proposals_crop_mstrain_480-800_3x_coco/sparse_rcnn_r101_fpn_300_proposals_crop_mstrain_480-800_3x_coco_20201223_023452-c23c3564.pth'

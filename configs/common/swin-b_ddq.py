@@ -3,23 +3,36 @@ _base_ = [
     '../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py'
 ]
 
-class_name = ['Alexandra Lecciones Doig',
+['Alexandra Lecciones Doig',
  'Audrey Marie Anderson',
+ 'Azie Tesfai',
  'Caity Lotz',
  'Candice Patton',
+ 'Chyler Leigh Potts',
  'Ciara Renée Harper',
+ 'Danielle Diggs',
  'Danielle Nicole Panabaker',
  'Elizabeth Melise Jow',
+ 'Elizabeth Tulloch',
  'Emily Bett Rickards',
  'Jessica Elise De Gouw',
+ 'Jessica Lisa Camacho',
+ 'Jessica Parker Kennedy',
  'Juliana Jay Harkavy',
  'Katherine Evelyn Anita Cassidy',
  'Katherine Grace McNamara',
  'Katrina Law',
+ 'Kayla Compton',
  'Kelly Ann Hu',
  'Lư Tĩnh San',
  'Melissa Marie Benoist',
+ 'Michelle Harrison',
+ 'Natalie Rachel Dreyfuss',
+ 'Nicole Amber Maines',
+ 'Ruby Rose Langenheim',
+ 'Susan Walters',
  'Susanna Thompson',
+ 'Violett Beane',
  'Willa Joanna Chance Holland']
 num_classes = len(class_name)
 num_queries = 48
