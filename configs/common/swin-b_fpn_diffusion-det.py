@@ -116,7 +116,7 @@ model = dict(
         use_nms=True,
         score_thr=0.5,
         min_bbox_size=0,
-        nms=dict(type='soft_nms', iou_threshold=0.6),
+        nms=dict(type='nms', iou_threshold=0.6),
     ))
 
 # optimizer
