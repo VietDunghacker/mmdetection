@@ -3,9 +3,6 @@ _base_ = [
     '../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py'
 ]
 
-class_name = ['person']
-num_classes = len(class_name)
-
 num_levels = 4
 num_queries = 48
 model = dict(
@@ -78,7 +75,7 @@ model = dict(
         temperature=10000),  # 10000 for DeformDETR
     bbox_head=dict(
         type='DDQDETRHead',
-        num_classes=num_classes,
+        num_classes=80,
         sync_cls_avg_factor=True,
         loss_cls=dict(
             type='FocalLoss',
@@ -123,9 +120,6 @@ optim_wrapper = dict(
 
 dataset_type = 'CocoDataset'
 data_root = '/workspace/coco/'
-metainfo = {
-    'classes': class_name,
-}
 
 # Example to use different file client
 # Method 1: simply set the data root and let the file I/O module
