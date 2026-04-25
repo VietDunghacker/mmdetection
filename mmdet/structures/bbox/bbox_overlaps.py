@@ -127,7 +127,7 @@ def bbox_overlaps(bboxes1, bboxes2, mode='iou', is_aligned=False, eps=1e-6):
         >>> assert tuple(bbox_overlaps(empty, empty).shape) == (0, 0)
     """
 
-    assert mode in ['iou', 'iof', 'giou'], f'Unsupported mode {mode}'
+    assert mode in ['iou', 'iof', 'giou', 'ciou'], f'Unsupported mode {mode}'
     # Either the boxes are empty or the length of boxes' last dimension is 4
     assert (bboxes1.size(-1) == 4 or bboxes1.size(0) == 0)
     assert (bboxes2.size(-1) == 4 or bboxes2.size(0) == 0)
@@ -157,16 +157,18 @@ def bbox_overlaps(bboxes1, bboxes2, mode='iou', is_aligned=False, eps=1e-6):
         lt = torch.max(bboxes1[..., :2], bboxes2[..., :2])  # [B, rows, 2]
         rb = torch.min(bboxes1[..., 2:], bboxes2[..., 2:])  # [B, rows, 2]
 
-        wh = fp16_clamp(rb - lt, min=0)
+        wh = fp16_clamp(rb - lt, min=0) 
         overlap = wh[..., 0] * wh[..., 1]
 
-        if mode in ['iou', 'giou']:
+        if mode in ['iou', 'giou', 'ciou']:
             union = area1 + area2 - overlap
         else:
             union = area1
-        if mode == 'giou':
+            
+        if mode in ['giou', 'ciou']:
             enclosed_lt = torch.min(bboxes1[..., :2], bboxes2[..., :2])
             enclosed_rb = torch.max(bboxes1[..., 2:], bboxes2[..., 2:])
+            
     else:
         lt = torch.max(bboxes1[..., :, None, :2],
                        bboxes2[..., None, :, :2])  # [B, rows, cols, 2]
@@ -176,24 +178,66 @@ def bbox_overlaps(bboxes1, bboxes2, mode='iou', is_aligned=False, eps=1e-6):
         wh = fp16_clamp(rb - lt, min=0)
         overlap = wh[..., 0] * wh[..., 1]
 
-        if mode in ['iou', 'giou']:
+        if mode in ['iou', 'giou', 'ciou']:
             union = area1[..., None] + area2[..., None, :] - overlap
         else:
             union = area1[..., None]
-        if mode == 'giou':
+            
+        if mode in ['giou', 'ciou']:
             enclosed_lt = torch.min(bboxes1[..., :, None, :2],
                                     bboxes2[..., None, :, :2])
             enclosed_rb = torch.max(bboxes1[..., :, None, 2:],
                                     bboxes2[..., None, :, 2:])
 
-    eps = union.new_tensor([eps])
-    union = torch.max(union, eps)
+    eps_tensor = union.new_tensor([eps])
+    union = torch.max(union, eps_tensor)
     ious = overlap / union
+    
     if mode in ['iou', 'iof']:
         return ious
-    # calculate gious
+
+    # calculate enclosed bounding box width and height for both GIoU and CIoU
     enclose_wh = fp16_clamp(enclosed_rb - enclosed_lt, min=0)
-    enclose_area = enclose_wh[..., 0] * enclose_wh[..., 1]
-    enclose_area = torch.max(enclose_area, eps)
-    gious = ious - (enclose_area - union) / enclose_area
-    return gious
+    
+    if mode == 'giou':
+        enclose_area = enclose_wh[..., 0] * enclose_wh[..., 1]
+        enclose_area = torch.max(enclose_area, eps_tensor)
+        gious = ious - (enclose_area - union) / enclose_area
+        return gious
+        
+    if mode == 'ciou':
+        # c2: the diagonal length squared of the smallest enclosing box
+        c2 = enclose_wh[..., 0]**2 + enclose_wh[..., 1]**2 + eps
+        
+        # Prepare coordinates for computing distances and aspect ratios
+        if is_aligned:
+            b1_x1, b1_y1 = bboxes1[..., 0], bboxes1[..., 1]
+            b1_x2, b1_y2 = bboxes1[..., 2], bboxes1[..., 3]
+            b2_x1, b2_y1 = bboxes2[..., 0], bboxes2[..., 1]
+            b2_x2, b2_y2 = bboxes2[..., 2], bboxes2[..., 3]
+        else:
+            b1_x1, b1_y1 = bboxes1[..., :, None, 0], bboxes1[..., :, None, 1]
+            b1_x2, b1_y2 = bboxes1[..., :, None, 2], bboxes1[..., :, None, 3]
+            b2_x1, b2_y1 = bboxes2[..., None, :, 0], bboxes2[..., None, :, 1]
+            b2_x2, b2_y2 = bboxes2[..., None, :, 2], bboxes2[..., None, :, 3]
+
+        w1, h1 = b1_x2 - b1_x1, b1_y2 - b1_y1 + eps
+        w2, h2 = b2_x2 - b2_x1, b2_y2 - b2_y1 + eps
+
+        # rho2: squared Euclidean distance between center points
+        left = ((b2_x1 + b2_x2) - (b1_x1 + b1_x2))**2 / 4
+        right = ((b2_y1 + b2_y2) - (b1_y1 + b1_y2))**2 / 4
+        rho2 = left + right
+
+        # Aspect ratio penalty term
+        factor = 4 / math.pi**2
+        v = factor * torch.pow(torch.atan(w2 / h2) - torch.atan(w1 / h1), 2)
+
+        with torch.no_grad():
+            # Added `eps` in the denominator below to ensure it doesn't throw a division 
+            # by zero error when ious=1.0 and v=0.0
+            alpha = (ious > 0.5).float() * v / (1 - ious + v + eps)
+
+        # CIoU
+        cious = ious - (rho2 / c2 + alpha * v)
+        return cious
