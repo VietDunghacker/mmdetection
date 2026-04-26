@@ -24,6 +24,8 @@ from mmdet.structures.bbox import HorizontalBoxes, autocast_box_type
 from mmdet.structures.mask import BitmapMasks, PolygonMasks
 from mmdet.utils import log_img_scale
 
+import torch
+
 try:
     from imagecorruptions import corrupt
 except ImportError:
@@ -3915,7 +3917,7 @@ class RandomMaskFace(BaseTransform):
         img = results['img']
         h, w = img.shape[:2]
 
-        if len(results['gt_bboxes']) != 1:
+        if self.any_box_overlap(results['gt_bboxes'].tensor):
             return results
 
         chosen_box = [random.uniform(0, 1) < self.prob for _ in range(len(results['gt_bboxes']))]
@@ -3993,6 +3995,38 @@ class RandomMaskFace(BaseTransform):
 
     def check_valid_face(self, person, face):
         return face[0] >= person[0] - 5 and face[1] >= person[1] - 5 and face[2] <= person[2] + 5 and face[3] <= person[3] + 5 and face[3] - face[1] >= 10 and face[2] - face[0] >= 10
+
+    def any_box_overlap(self, boxes: torch.Tensor) -> bool:
+        """
+        Check if any two boxes overlap (IoU > 0).
+
+        Args:
+            boxes (Tensor): shape (N, 4) in (x1, y1, x2, y2) format
+
+        Returns:
+            bool: True if any pair overlaps, else False
+        """
+        if boxes.size(0) < 2:
+            return False
+
+        # Split coordinates
+        x1, y1, x2, y2 = boxes.unbind(dim=1)
+
+        # Pairwise intersection
+        inter_x1 = torch.max(x1[:, None], x1[None, :])
+        inter_y1 = torch.max(y1[:, None], y1[None, :])
+        inter_x2 = torch.min(x2[:, None], x2[None, :])
+        inter_y2 = torch.min(y2[:, None], y2[None, :])
+
+        inter_w = (inter_x2 - inter_x1).clamp(min=0)
+        inter_h = (inter_y2 - inter_y1).clamp(min=0)
+        inter_area = inter_w * inter_h
+
+        # Zero out diagonal (self-overlap)
+        inter_area.fill_diagonal_(0)
+
+        # If any intersection area > 0 → IoU > 0
+        return (inter_area > 0).any().item()
 
     def __repr__(self):
         repr_str = self.__class__.__name__
