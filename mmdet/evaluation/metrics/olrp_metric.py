@@ -545,7 +545,7 @@ class OlrpMetric(BaseMetric):
                             ap = np.mean(precision)
                         else:
                             ap = float('nan')
-                        t.append(f'{round(ap, 3)}')
+                        t.append(f'{round(ap, 4)}')
 
                         # indexes of IoU  @50 and @75
                         for iou in [0, 5]:
@@ -555,7 +555,7 @@ class OlrpMetric(BaseMetric):
                                 ap = np.mean(precision)
                             else:
                                 ap = float('nan')
-                            t.append(f'{round(ap, 3)}')
+                            t.append(f'{round(ap, 4)}')
 
                         # indexes of area of small, median and large
                         for area in [1, 2, 3]:
@@ -565,7 +565,7 @@ class OlrpMetric(BaseMetric):
                                 ap = np.mean(precision)
                             else:
                                 ap = float('nan')
-                            t.append(f'{round(ap, 3)}')
+                            t.append(f'{round(ap, 4)}')
                         results_per_category.append(tuple(t))
 
                     num_columns = len(results_per_category[0])
@@ -592,12 +592,12 @@ class OlrpMetric(BaseMetric):
                 for metric_item in metric_items:
                     key = f'{metric}_{metric_item}'
                     val = coco_eval.stats[coco_metric_names[metric_item]]
-                    eval_results[key] = float(f'{round(val, 3)}')
+                    eval_results[key] = float(f'{round(val, 4)}')
 
                 ap = coco_eval.stats[:6]
-                logger.info(f'{metric}_mAP_copypaste: {ap[0]:.3f} '
-                            f'{ap[1]:.3f} {ap[2]:.3f} {ap[3]:.3f} '
-                            f'{ap[4]:.3f} {ap[5]:.3f}')
+                logger.info(f'{metric}_mAP_copypaste: {ap[0]:.4f} '
+                            f'{ap[1]:.4f} {ap[2]:.4f} {ap[3]:.4f} '
+                            f'{ap[4]:.4f} {ap[5]:.4f}')
 
         if tmp_dir is not None:
             tmp_dir.cleanup()
