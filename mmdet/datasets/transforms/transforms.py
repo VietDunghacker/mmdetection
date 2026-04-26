@@ -3915,7 +3915,9 @@ class RandomMaskFace(BaseTransform):
         img = results['img']
         h, w = img.shape[:2]
 
-        y_cropped = 0
+        chosen_box = [random.uniform(0, 1) < self.prob for _ in range(len(results['gt_bboxes']))]
+        if not any(chosen_box):
+            return results
 
         resp = RetinaFace.detect_faces(img)
         boxes = []
@@ -3927,15 +3929,14 @@ class RandomMaskFace(BaseTransform):
 
         if len(boxes) > 0 and len(results['gt_bboxes']) > 0:
             remove_idxs = []
-            for idx, person in enumerate(results['gt_bboxes']):
-                if random.uniform(0, 1) > self.prob:
+            for idx, person, chosen in enumerate(zip(results['gt_bboxes'], chosen_box)):
+                if not chosen:
                     continue
+
                 erase_idx = self.find_valid_face(person, boxes)
 
                 if erase_idx >= 0:
                     face = boxes[erase_idx]
-
-                    y_cropped = max(y_cropped, face[3])
 
                     remove_idxs.append(idx)
 
