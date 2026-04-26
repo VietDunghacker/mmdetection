@@ -591,7 +591,7 @@ class OlrpMetric(BaseMetric):
 
                 for metric_item in metric_items:
                     key = f'{metric}_{metric_item}'
-                    val = coco_eval.stats[coco_metric_names[metric_item]]
+                    val = coco_eval.stats[metric_item]
                     eval_results[key] = float(f'{round(val, 4)}')
 
                 ap = coco_eval.stats[:6]
