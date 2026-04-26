@@ -3929,7 +3929,7 @@ class RandomMaskFace(BaseTransform):
 
         if len(boxes) > 0 and len(results['gt_bboxes']) > 0:
             remove_idxs = []
-            for idx, (person, chosen) in enumerate(zip(results['gt_bboxes'], chosen_box)):
+            for idx, (person, chosen) in enumerate(zip(results['gt_bboxes'].tensor, chosen_box)):
                 if not chosen:
                     continue
 
