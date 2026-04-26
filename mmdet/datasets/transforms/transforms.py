@@ -36,6 +36,8 @@ except ImportError:
     albumentations = None
     Compose = None
 
+from retinaface import RetinaFace
+
 Number = Union[int, float]
 
 
@@ -3896,6 +3898,97 @@ class FocusBoundingBox(BaseTransform):
             results['img'] = img
 
         return results
+
+    def __repr__(self):
+        repr_str = self.__class__.__name__
+        return repr_str
+
+@TRANSFORMS.register_module()
+class RandomMaskFace(BaseTransform):
+    def __init__(self, prob: float = 0.5) -> None:
+        assert 0 <= prob <= 1.0, 'The probability should be in range [0,1]. ' \
+                                 f'got {prob}.'
+        self.prob = prob
+
+    @autocast_box_type()
+    def transform(self, results: dict) -> dict:
+        img = results['img']
+        h, w = img.shape[:2]
+
+        y_cropped = 0
+
+        resp = RetinaFace.detect_faces(img)
+        boxes = []
+
+        for item in resp.values():
+            if item["score"] >= 0.9:
+                box = item["facial_area"]
+                boxes.append((max(box[0], 0), max(box[1], 0), min(box[2], w), min(box[3], h)))
+
+        if len(boxes) > 0 and len(results['gt_bboxes']) > 0:
+            remove_idxs = []
+            for idx, person in enumerate(results['gt_bboxes']):
+                if random.uniform(0, 1) > self.prob:
+                    continue
+                erase_idx = self.find_valid_face(person, boxes)
+
+                if erase_idx >= 0:
+                    face = boxes[erase_idx]
+
+                    y_cropped = max(y_cropped, face[3])
+
+                    remove_idxs.append(idx)
+
+                    face_width = face[2] - face[0]
+                    face_height = face[3] - face[1]
+
+                    x_limit = person[0] + (person[2] - person[0]) * 0.9
+                    y_limit = person[1] + (person[3] - person[1]) * 0.9
+
+                    x1, y1 = (random.randint(max(0, face[0] - face_width / 10), face[0] + 1), random.randint(max(0, face[1] - face_height / 10), face[1] + 1))
+                    x2, y2 = random.randint(min(x1 + face_width * 0.9, x_limit), face[2] + 1), random.randint(min(y1 + face_height * 0.9, y_limit), face[3] + 1)
+
+                    x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+
+                    mask = np.random.rand(y2 - y1, x2 - x1) >= 0.05
+                    cropped_region = img[y1 : y2, x1 : x2]
+                    random_color = np.random.randint(0, 256, (y2 - y1, x2 - x1, 3))
+                    cropped_region[mask] = random_color[mask]
+
+                    img[y1 : y2, x1 : x2] = cropped_region
+
+                    del boxes[erase_idx]
+
+            remain_idx = [i for i in range(len(results['gt_bboxes'])) if not i in remove_idxs]
+
+            for key in ['gt_bboxes', 'gt_labels']:
+                results[key] = results[key][remain_idx]
+
+            results['img'] = img
+        return results
+
+    def find_valid_face(self, person, faces):
+        valid_faces = [self.check_valid_face(person, face) for face in faces]
+
+        smallest_distance = float('inf')
+        return_idx = -1
+
+        for idx, (face, valid) in enumerate(zip(faces, valid_faces)):
+            if valid:
+                face_x = (face[0] + face[2]) / 2
+                face_y = (face[1] + face[3]) / 2
+                person_x = (person[0] + person[2]) / 2
+                person_y = (person[1] + person[3]) / 2
+                center_distance = (face_x - person_x) ** 2 + (face_y - person_y) ** 2
+
+                if center_distance < smallest_distance:
+                    smallest_distance = center_distance
+                    return_idx = idx
+
+        return return_idx
+
+    def check_valid_face(self, person, face):
+        return face[0] >= person[0] - 5 and face[1] >= person[1] - 5 and face[2] <= person[2] + 5 and face[3] <= person[3] + 5 and face[3] - face[1] >= 10 and face[2] - face[0] >= 10
 
     def __repr__(self):
         repr_str = self.__class__.__name__
