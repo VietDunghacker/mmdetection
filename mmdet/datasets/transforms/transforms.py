@@ -3975,6 +3975,8 @@ class RandomMaskFace(BaseTransform):
 
     def find_valid_face(self, person, faces):
         valid_faces = [self.check_valid_face(person, face) for face in faces]
+        if sum(valid_faces) > 1:
+            return -1
 
         smallest_distance = float('inf')
         return_idx = -1
