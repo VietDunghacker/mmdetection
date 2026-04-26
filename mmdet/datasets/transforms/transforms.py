@@ -3915,6 +3915,9 @@ class RandomMaskFace(BaseTransform):
         img = results['img']
         h, w = img.shape[:2]
 
+        if len(results['gt_bboxes']) != 1:
+            return results
+
         chosen_box = [random.uniform(0, 1) < self.prob for _ in range(len(results['gt_bboxes']))]
         if not any(chosen_box):
             return results
