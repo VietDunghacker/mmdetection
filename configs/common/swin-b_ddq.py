@@ -3,54 +3,40 @@ _base_ = [
     '../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py'
 ]
 
-class_name = ['Alexandra Lecciones Doig',
- 'Amy Louise Jackson',
- 'Andrea Katherine Brooks',
+class_name = ['Allison Mack',
+ 'Annette Toole',
  'Audrey Marie Anderson',
  'Azie Tesfai',
+ 'Brianne Sidonie Desaulniers',
  'Caity Lotz',
- 'Calista Kay Flockhart',
  'Candice Patton',
  'Chyler Leigh Potts',
- 'Ciara Renée Harper',
  'Danielle Diggs',
  'Danielle Nicole Panabaker',
  'Elizabeth Chase Olsen',
- 'Elizabeth Melise Jow',
- 'Elizabeth Tulloch',
  'Emily Bett Rickards',
- 'Floriana Lima',
+ 'Erica Durance',
  'Gwyneth Kate Paltrow',
- 'Hayley Elizabeth Atwell',
- 'Jaimie Lauren Tarbush',
- 'Jessica Elise De Gouw',
  'Jessica Lisa Camacho',
  'Jessica Parker Kennedy',
  'Juliana Jay Harkavy',
- 'Julieta Susana Gonzalo',
+ 'Karen Sheila Gillan',
  'Katherine Evelyn Anita Cassidy',
  'Katherine Grace McNamara',
  'Katie McGrath',
  'Katrina Law',
  'Kayla Compton',
- 'Kelly Ann Hu',
- 'Liv Rundgren',
- 'Lư Tĩnh San',
+ 'Kristin Laura Kreuk',
  'Melissa Marie Benoist',
- 'Michelle Harrison',
- 'Natalie Hershlag',
- 'Natalie Rachel Dreyfuss',
  'Nicole Amber Maines',
+ 'Nicole Evangeline Lilly',
  'Odette Juliette Yustman',
- 'Rachel Elizabeth Brosnahan',
+ 'Pom Alexandra Klementieff',
  'Ruby Rose Langenheim',
  'Scarlett Ingrid Johansson',
- 'Sharon Ann Leal',
- 'Susan Walters',
  'Susanna Thompson',
  'Trần Diệu Anh',
  'Trần Thu Trang',
- 'Violett Beane',
  'Willa Joanna Chance Holland',
  'Zoë Yadira Saldaña Nazario']
 num_classes = len(class_name)
@@ -63,6 +49,7 @@ model = dict(
     dense_topk_ratio=1.5,
     with_box_refine=True,
     as_two_stage=True,
+    num_feature_levels=num_levels,
     data_preprocessor=dict(
         type='DetDataPreprocessor',
         mean=[123.675, 116.28, 103.53],
@@ -97,7 +84,7 @@ model = dict(
         num_layers=6,
         num_cp=3,
         layer_cfg=dict(
-            self_attn_cfg=dict(embed_dims=256, num_levels=4,
+            self_attn_cfg=dict(embed_dims=256, num_levels=num_levels,
                                dropout=0.0),  # 0.1 for DeformDETR
             ffn_cfg=dict(
                 embed_dims=256,
@@ -112,7 +99,7 @@ model = dict(
         layer_cfg=dict(
             self_attn_cfg=dict(embed_dims=256, num_heads=8,
                                dropout=0.0),  # 0.1 for DeformDETR
-            cross_attn_cfg=dict(embed_dims=256, num_levels=4,
+            cross_attn_cfg=dict(embed_dims=256, num_levels=num_levels,
                                 dropout=0.0),  # 0.1 for DeformDETR
             ffn_cfg=dict(
                 embed_dims=256,
@@ -150,7 +137,7 @@ model = dict(
                 dict(type='BBoxL1Cost', weight=5.0, box_format='xywh'),
                 dict(type='IoUCost', iou_mode='giou', weight=2.0)
             ])),
-    test_cfg=dict(max_per_img=num_queries, score_threshold=0.05))  # 100 for DeformDETR
+    test_cfg=dict(max_per_img=num_queries, score_threshold=0.2))  # 100 for DeformDETR
 
 # optimizer
 base_lr = 0.0002
@@ -190,7 +177,6 @@ metainfo = {
 #     }))
 backend_args = None
 albu_train_transforms = [
-    dict(type='ShiftScaleRotate', shift_limit=0.0, scale_limit=0.1, rotate_limit=1, interpolation=1, p=0.5, border_mode=0),
     dict(type='ColorJitter', brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2),
     dict(type='RGBShift', r_shift_limit=20, g_shift_limit=20, b_shift_limit=20),
     dict(type='HueSaturationValue', hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20),
@@ -204,12 +190,13 @@ albu_train_transforms = [
 ]
 
 train_pipeline = [
-    dict(type='Mosaic', center_ratio_range=(0.95, 1.05), img_scale=(1280, 1280), pad_val=0.0, prob=0.1),
-    dict(type='RandomResize', scale=[(960, 960), (1280, 1280)], keep_ratio=True),
+    dict(type='FocusBoundingBox', prob=0.5),
+    #dict(type='Mosaic', center_ratio_range=(0.99, 1.01), img_scale=(1280, 1280), pad_val=0.0, prob=0.1),
+    dict(type='RandomResize', scale=[(800, 800), (1280, 1280)], keep_ratio=True),
     dict(
         type='CutOut',
         n_holes=(5, 25),
-        cutout_shape=[(4, 4), (4, 8), (8, 4), (8, 8), (16, 8), (8, 16), (16, 16), (16, 32), (32, 16), (32, 32)]),
+        cutout_shape=[(4, 4), (4, 8), (8, 4), (8, 8), (16, 8), (8, 16), (16, 16)]),
     dict(
         type='Albu',
         transforms=albu_train_transforms,
@@ -257,7 +244,7 @@ train_dataloader = dict(
             ],
             ann_file='celebrity_detection_coco_train.json',
             data_prefix=dict(img='images/train/'),
-            filter_cfg=dict(filter_empty_gt=False, min_size=10),
+            filter_cfg=dict(filter_empty_gt=False),
             backend_args=backend_args,
         ),
         pipeline=train_pipeline))
@@ -274,12 +261,13 @@ val_dataloader = dict(
         ann_file='celebrity_detection_coco_val.json',
         data_prefix=dict(img='images/val/'),
         test_mode=True,
+        filter_cfg=dict(filter_empty_gt=False),
         pipeline=test_pipeline,
         backend_args=backend_args))
 test_dataloader = val_dataloader
 
 val_evaluator = dict(
-    type='CocoMetric',
+    type='OlrpMetric',
     ann_file=data_root + 'celebrity_detection_coco_val.json',
     metric='bbox',
     format_only=False,
@@ -294,7 +282,7 @@ val_cfg = dict(type='ValLoop', fp16=True)
 
 default_hooks = dict(
     logger=dict(interval=25),
-    checkpoint=dict(by_epoch=False, interval=500, max_keep_ckpts=3, save_best='coco/bbox_mAP'),
+    checkpoint=dict(by_epoch=False, interval=500, max_keep_ckpts=3, save_best='olrp/bbox_oLRP', rule='less'),
 )
 
 

@@ -38,7 +38,7 @@ except ImportError:
     albumentations = None
     Compose = None
 
-from retinaface import RetinaFace
+#from retinaface import RetinaFace
 
 Number = Union[int, float]
 
