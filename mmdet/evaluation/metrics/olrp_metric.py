@@ -466,7 +466,7 @@ class OlrpMetric(BaseMetric):
                     'The testing results of the whole dataset is empty.')
                 break
 
-            coco_eval = USBeval(self._coco_api, coco_dt, iou_type)
+            coco_eval = USBeval(self._coco_api, coco_dt, iou_type, "relative_scale_ap")
 
             coco_eval.params.catIds = self.cat_ids
             coco_eval.params.imgIds = self.img_ids
@@ -595,7 +595,7 @@ class OlrpMetric(BaseMetric):
                     val = coco_eval.stats[metric_item]
                     eval_results[key] = float(f'{round(val, 4)}')
                     copypastes.append(f'{coco_eval.stats[metric_item]:.4f}')
-                logger.info(' '.join(copypastes))
+                logger.info('{}_mAP_copypaste: {}'.format(metric, ' '.join(copypastes)))
         if tmp_dir is not None:
             tmp_dir.cleanup()
         return eval_results
