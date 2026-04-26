@@ -3962,7 +3962,7 @@ class RandomMaskFace(BaseTransform):
 
             remain_idx = [i for i in range(len(results['gt_bboxes'])) if not i in remove_idxs]
 
-            for key in ['gt_bboxes', 'gt_labels']:
+            for key in ['gt_bboxes', 'gt_bboxes_labels']:
                 results[key] = results[key][remain_idx]
 
             results['img'] = img
