@@ -65,7 +65,7 @@ class OlrpMetric(BaseMetric):
             used for `Objects365V1Dataset`. Defaults to False.
         use_mp_eval (bool): Whether to use mul-processing evaluation
     """
-    default_prefix: Optional[str] = 'coco'
+    default_prefix: Optional[str] = 'olrp'
 
     def __init__(self,
                  ann_file: Optional[str] = None,
@@ -586,19 +586,16 @@ class OlrpMetric(BaseMetric):
 
                 if metric_items is None:
                     metric_items = [
-                        'mAP', 'mAP_50', 'mAP_75', 'mAP_s', 'mAP_m', 'mAP_l'
+                        'mAP', 'mAP_50', 'mAP_75', 'mAP_s', 'mAP_m', 'mAP_l', 'oLRP'
                     ]
 
+                copypastes = []
                 for metric_item in metric_items:
                     key = f'{metric}_{metric_item}'
                     val = coco_eval.stats[metric_item]
                     eval_results[key] = float(f'{round(val, 4)}')
-
-                ap = coco_eval.stats[:6]
-                logger.info(f'{metric}_mAP_copypaste: {ap[0]:.4f} '
-                            f'{ap[1]:.4f} {ap[2]:.4f} {ap[3]:.4f} '
-                            f'{ap[4]:.4f} {ap[5]:.4f}')
-
+                    copypastes.append(f'{coco_eval.stats[metric_item]:.4f}')
+                logger.info(' '.join(copypastes))
         if tmp_dir is not None:
             tmp_dir.cleanup()
         return eval_results
