@@ -557,8 +557,7 @@ class OlrpMetric(BaseMetric):
                                 ap = float('nan')
                             t.append(f'{round(ap, 4)}')
 
-                        # indexes of area of small, median and large
-                        for area in [1, 2, 3]:
+                        for area in [1, 2, 3, 4]:
                             precision = precisions[:, :, idx, area, -1]
                             precision = precision[precision > -1]
                             if precision.size:
@@ -572,8 +571,8 @@ class OlrpMetric(BaseMetric):
                     results_flatten = list(
                         itertools.chain(*results_per_category))
                     headers = [
-                        'category', 'olrp', 'mAP', 'mAP_50', 'mAP_75', 'mAP_s',
-                        'mAP_m', 'mAP_l'
+                        'category', 'olrp', 'mAP', 'mAP_50', 'mAP_75', 'mAP_1/16_1/8',
+                        'mAP_1/8_1/4', 'mAP_1/4_1/2', 'mAP_1/2_1/1'
                     ]
                     results_2d = itertools.zip_longest(*[
                         results_flatten[i::num_columns]
@@ -586,7 +585,7 @@ class OlrpMetric(BaseMetric):
 
                 if metric_items is None:
                     metric_items = [
-                        'mAP', 'mAP_50', 'mAP_75', 'mAP_s', 'mAP_m', 'mAP_l', 'oLRP'
+                        'mAP', 'mAP_50', 'mAP_75', 'mAP_1/16_1/8', 'mAP_1/8_1/4', 'mAP_1/4_1/2', 'mAP_1/2_1/1', 'oLRP'
                     ]
 
                 copypastes = []
