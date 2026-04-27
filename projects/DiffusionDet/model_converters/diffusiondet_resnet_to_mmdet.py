@@ -28,6 +28,12 @@ def convert(src, dst):
             name = f'backbone.bn1.{key_name_split[-1]}'
         elif 'backbone.bottom_up.stem.conv1.' in k:
             name = f'backbone.conv1.{key_name_split[-1]}'
+        elif 'backbone.bottom_up.patch_embed.' in k:
+            name = k.replace(".bottom_up", "").replace("proj", "projection")
+        elif 'backbone.bottom_up.layers.' in k:
+            name = k.replace(".bottom_up.layers", ".stages").replace("attn.qkv", "attn.w_msa.qkv").replace("attn.proj", "attn.w_msa.proj").replace("mlp.fc1", "ffn.layers.0.0").replace("mlp.fc2", "ffn.layers.1").replace("attn.relative_position", "attn.w_msa.relative_position")
+        elif 'backbone.bottom_up.norm' in k:
+            name = k.replace(".bottom_up.norm", ".norm")
         elif 'backbone.bottom_up.res' in k:
             # weight_type = key_name_split[-1]
             res_id = int(key_name_split[2][-1]) - 1
