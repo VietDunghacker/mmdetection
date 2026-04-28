@@ -1,6 +1,6 @@
 _base_ = [
-    'mmdet::_base_/datasets/coco_detection.py',
-    'mmdet::_base_/schedules/schedule_1x.py', 'mmdet::_base_/default_runtime.py'
+    '/workspace/mmdetection/configs/_base_/datasets/coco_detection.py',
+    '/workspace/mmdetection/configs/_base_/schedules/schedule_1x.py', '/workspace/mmdetection/configs/_base_/default_runtime.py'
 ]
 
 custom_imports = dict(
@@ -45,6 +45,8 @@ class_name = ['Allison Mack',
 num_classes = len(class_name)
 num_queries = 48
 num_levels = 5
+num_dec_layer = 6
+loss_lambda = 2.0
 model = dict(
     type='CoDETR',
     # detr: 52.1
@@ -89,7 +91,7 @@ model = dict(
         as_two_stage=True,
         dn_cfg=dict(
             label_noise_scale=0.5,
-            box_noise_scale=1.0,
+            box_noise_scale=0.5,
             group_cfg=dict(dynamic=False, num_groups=10)),
         transformer=dict(
             type='CoDinoTransformer',
@@ -310,6 +312,23 @@ model = dict(
         # e.g., nms=dict(type='soft_nms', iou_threshold=0.5, min_score=0.05)
     ])
 
+# optimizer
+base_lr = 0.0002
+optim_wrapper = dict(
+    type='AmpOptimWrapper',
+    paramwise_cfg=dict(
+        custom_keys={
+            'backbone': dict(lr_mult=0.1),
+            'sampling_offsets': dict(lr_mult=0.1),
+            'reference_points': dict(lr_mult=0.1),
+            'absolute_pos_embed': dict(decay_mult=0.),
+            'relative_position_bias_table': dict(decay_mult=0.),
+            'norm': dict(decay_mult=0.)
+        }),
+    optimizer=dict(
+        _delete_=True, type='AdamW', lr=base_lr, weight_decay=0.0001),
+    clip_grad=None)
+
 dataset_type = 'CocoDataset'
 data_root = '/workspace/compressed_data_yolo/'
 metainfo = {
@@ -344,7 +363,6 @@ albu_train_transforms = [
 ]
 
 train_pipeline = [
-    dict(type='FocusBoundingBox', prob=0.5),
     dict(type='Mosaic', center_ratio_range=(0.99, 1.01), img_scale=(1280, 1280), pad_val=0.0, prob=0.1),
     dict(type='RandomResize', scale=[(960, 960), (1280, 1280)], keep_ratio=True),
     dict(
@@ -451,5 +469,5 @@ param_scheduler = [
         T_max=10000,
     )
 ]
-load_from = 'https://download.openmmlab.com/mmdetection/v3.0/ddq/ddq_detr_swinl_30e.pth'
+load_from = 'https://download.openmmlab.com/mmdetection/v3.0/codetr/co_dino_5scale_swin_large_16e_o365tococo-614254c9.pth'
 log_processor = dict(type='LogProcessor', by_epoch=False)
