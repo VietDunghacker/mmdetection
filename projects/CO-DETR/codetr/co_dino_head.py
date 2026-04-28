@@ -290,8 +290,8 @@ class CoDINOHead(DINOHead):
         results.labels = det_labels
 
         if with_nms and results.bboxes.numel() > 0:
-            det_bboxes, keep_idxs = batched_nms(results.bboxes.to(float), results.scores.to(float),
-                                                results.labels,
+            det_bboxes, keep_idxs = batched_nms(results.bboxes, results.scores.to(det_bboxes.dtype),
+                                                results.labels.to(det_bboxes.dtype),
                                                 self.test_cfg.nms)
             results = results[keep_idxs]
             results.scores = det_bboxes[:, -1]
