@@ -285,8 +285,8 @@ class CoDINOHead(DINOHead):
                 img_meta['scale_factor']).repeat((1, 2))
 
         results = InstanceData()
-        results.bboxes = det_bboxes
-        results.scores = scores
+        results.bboxes = det_bboxes.to(torch.float32)
+        results.scores = scores.to(torch.float32)
         results.labels = det_labels
 
         if with_nms and results.bboxes.numel() > 0:
