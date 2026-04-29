@@ -1,8 +1,32 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import timm
+import warnings
+
+from mmengine.logging import MMLogger
 from mmengine.model import BaseModule
 
 from mmdet.registry import MODELS
+
+def print_timm_feature_info(feature_info):
+    """Print feature_info of timm backbone to help development and debug.
+
+    Args:
+        feature_info (list[dict] | timm.models.features.FeatureInfo | None):
+            feature_info of timm backbone.
+    """
+    logger = MMLogger.get_current_instance()
+    if feature_info is None:
+        logger.warning('This backbone does not have feature_info')
+    elif isinstance(feature_info, list):
+        for feat_idx, each_info in enumerate(feature_info):
+            logger.info(f'backbone feature_info[{feat_idx}]: {each_info}')
+    else:
+        try:
+            logger.info(f'backbone out_indices: {feature_info.out_indices}')
+            logger.info(f'backbone out_channels: {feature_info.channels()}')
+            logger.info(f'backbone out_strides: {feature_info.reduction()}')
+        except AttributeError:
+            logger.warning('Unexpected format of backbone feature_info')
 
 @MODELS.register_module()
 class TimmModel(BaseModule):
@@ -30,7 +54,6 @@ class TimmModel(BaseModule):
         **kwargs: Other timm & model specific arguments.
     """
 
-    @require('timm')
     def __init__(self,
                  model_name,
                  features_only=False,
