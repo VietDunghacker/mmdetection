@@ -3,9 +3,6 @@ _base_ = [
     '../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py'
 ]
 
-custom_imports = dict(
-    imports=['mmpretrain.models'], allow_failed_imports=False)
-
 class_name = ['Allison Mack',
  'Annette Toole',
  'Audrey Marie Anderson',
@@ -61,7 +58,7 @@ model = dict(
         pad_size_divisor=32),
     backbone=dict(
         _delete_=True,
-        type='mmpretrain.TIMMBackbone',
+        type='TimmModel',
         model_name='vit_base_patch16_dinov3.lvd1689m',
         features_only=True,
         pretrained=True,
