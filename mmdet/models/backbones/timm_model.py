@@ -63,8 +63,6 @@ class TimmModel(BaseModule):
                  init_cfg=None,
                  with_cp=False,
                  **kwargs):
-        import timm
-
         if not isinstance(pretrained, bool):
             raise TypeError('pretrained must be bool, not str for model path')
         if features_only and checkpoint_path:
@@ -73,7 +71,7 @@ class TimmModel(BaseModule):
                 ' in timm. See '
                 'https://github.com/rwightman/pytorch-image-models/issues/488')
 
-        super(TIMMBackbone, self).__init__(init_cfg)
+        super(TimmModel, self).__init__(init_cfg)
         if 'norm_layer' in kwargs:
             norm_class = MODELS.get(kwargs['norm_layer'])
 
