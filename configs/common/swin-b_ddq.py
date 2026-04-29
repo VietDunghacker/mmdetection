@@ -125,7 +125,7 @@ model = dict(
         loss_iou=dict(type='GIoULoss', loss_weight=2.0)),
     dn_cfg=dict(
         label_noise_scale=0.5,
-        box_noise_scale=1.0,
+        box_noise_scale=0.5,
         group_cfg=dict(dynamic=False, num_groups=10)),
     dqs_cfg=dict(type='nms', iou_threshold=0.8),
     # training and testing settings
