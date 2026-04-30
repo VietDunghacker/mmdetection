@@ -57,21 +57,13 @@ model = dict(
         bgr_to_rgb=True,
         pad_size_divisor=32),
     backbone=dict(
-        type='SwinTransformer',
-        embed_dims=128,
-        depths=[2, 2, 18, 2],
-        num_heads=[4, 8, 16, 32],
-        window_size=7,
-        mlp_ratio=4,
-        qkv_bias=True,
-        qk_scale=None,
-        drop_rate=0.,
-        attn_drop_rate=0.,
-        drop_path_rate=0.3,
-        patch_norm=True,
-        out_indices=(1, 2, 3),
+        _delete_=True,
+        type='TimmModel',
+        model_name='eva02_base_patch14_448.mim_in22k_ft_in22k_in1k',
+        features_only=True,
+        pretrained=True,
         with_cp=True,
-        init_cfg=dict(type='Pretrained', checkpoint='https://download.openmmlab.com/mmclassification/v0/swin-transformer/convert/swin_base_patch4_window7_224_22kto1k-f967f799.pth')),
+        out_indices=(5, 8, 11)),
     neck=dict(
         type='ChannelMapper',
         in_channels=[256, 512, 1024],
@@ -190,56 +182,8 @@ albu_train_transforms = [
 ]
 
 train_pipeline = [
-    dict(type='FocusBoundingBox', prob=0.5),
-    dict(
-        type='AutoAugment',
-        policies=[
-            [
-                dict(type='Mosaic', center_ratio_range=(0.99, 1.01), img_scale=(1280, 1280), pad_val=0.0, prob=0.5),
-                dict(type='RandomResize', scale=[(960, 960), (1280, 1280)], keep_ratio=True),
-                dict(
-                    type='CutOut',
-                    n_holes=(5, 25),
-                    cutout_shape=[(4, 4), (4, 8), (8, 4), (8, 8), (16, 8), (8, 16), (16, 16)]
-                ),
-            ],
-            [
-                dict(type='Mosaic', center_ratio_range=(0.99, 1.01), img_scale=(1280, 1280), pad_val=0.0, prob=0.0),
-                dict(type='RandomResize', scale=[(800, 800), (1280, 1280)], keep_ratio=True),
-                dict(
-                    type='CutOut',
-                    n_holes=(5, 25),
-                    cutout_shape=[(4, 4), (4, 8), (8, 4), (8, 8), (16, 8), (8, 16), (16, 16), (16, 32), (32, 16), (32, 32)]
-                ),
-            ],
-            [
-                dict(type='Mosaic', center_ratio_range=(0.99, 1.01), img_scale=(1280, 1280), pad_val=0.0, prob=0.0),
-                dict(type='RandomResize', scale=[(800, 800), (1280, 1280)], keep_ratio=True),
-                dict(
-                    type='CutOut',
-                    n_holes=(5, 25),
-                    cutout_shape=[(4, 4), (4, 8), (8, 4), (8, 8), (16, 8), (8, 16), (16, 16), (16, 32), (32, 16), (32, 32)]
-                ),
-            ],
-            [
-                dict(type='Mosaic', center_ratio_range=(0.99, 1.01), img_scale=(1280, 1280), pad_val=0.0, prob=0.0),
-                dict(type='RandomResize', scale=[(1024, 1024), (1280, 1280)], keep_ratio=True),
-                dict(
-                    type='CutOut',
-                    n_holes=(5, 25),
-                    cutout_shape=[(4, 4), (4, 8), (8, 4), (8, 8), (16, 8), (8, 16), (16, 16), (16, 32), (32, 16), (32, 32)]
-                ),
-            ],
-            [
-                dict(type='Mosaic', center_ratio_range=(0.99, 1.01), img_scale=(1280, 1280), pad_val=0.0, prob=0.0),
-                dict(type='RandomResize', scale=[(1024, 1024), (1280, 1280)], keep_ratio=True),
-                dict(
-                    type='CutOut',
-                    n_holes=(5, 25),
-                    cutout_shape=[(4, 4), (4, 8), (8, 4), (8, 8), (16, 8), (8, 16), (16, 16), (16, 32), (32, 16), (32, 32)]
-                ),
-            ],
-        ]),
+    dict(type='Mosaic', center_ratio_range=(0.99, 1.01), img_scale=(1280, 1280), pad_val=0.0, prob=0.1),
+    dict(type='RandomResize', scale=[(960, 960), (1280, 1280)], keep_ratio=True),
     dict(
         type='Albu',
         transforms=albu_train_transforms,
