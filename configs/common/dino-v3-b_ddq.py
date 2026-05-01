@@ -57,7 +57,6 @@ model = dict(
         bgr_to_rgb=True,
         pad_size_divisor=32),
     backbone=dict(
-        _delete_=True,
         type='TimmModel',
         model_name='vit_base_patch16_dinov3.lvd1689m',
         features_only=True,
@@ -182,12 +181,56 @@ albu_train_transforms = [
 ]
 
 train_pipeline = [
-    dict(type='Mosaic', center_ratio_range=(0.99, 1.01), img_scale=(1280, 1280), pad_val=0.0, prob=0.1),
-    dict(type='RandomResize', scale=[(960, 960), (1280, 1280)], keep_ratio=True),
     dict(
-        type='CutOut',
-        n_holes=(5, 25),
-        cutout_shape=[(4, 4), (4, 8), (8, 4), (8, 8), (16, 8), (8, 16), (16, 16)]),
+        type='AutoAugment',
+        policies=[
+            [
+                dict(type='Mosaic', center_ratio_range=(0.99, 1.01), img_scale=(1280, 1280), pad_val=0.0, prob=0.5),
+                dict(type='RandomResize', scale=[(960, 960), (1280, 1280)], keep_ratio=True),
+                dict(
+                    type='CutOut',
+                    n_holes=(5, 25),
+                    cutout_shape=[(4, 4), (4, 8), (8, 4), (8, 8), (16, 8), (8, 16), (16, 16)]
+                ),
+            ],
+            [
+                dict(type='Mosaic', center_ratio_range=(0.99, 1.01), img_scale=(1280, 1280), pad_val=0.0, prob=0.0),
+                dict(type='RandomResize', scale=[(800, 800), (1280, 1280)], keep_ratio=True),
+                dict(
+                    type='CutOut',
+                    n_holes=(5, 25),
+                    cutout_shape=[(4, 4), (4, 8), (8, 4), (8, 8), (16, 8), (8, 16), (16, 16), (16, 32), (32, 16), (32, 32)]
+                ),
+            ],
+            [
+                dict(type='Mosaic', center_ratio_range=(0.99, 1.01), img_scale=(1280, 1280), pad_val=0.0, prob=0.0),
+                dict(type='RandomResize', scale=[(800, 800), (1280, 1280)], keep_ratio=True),
+                dict(
+                    type='CutOut',
+                    n_holes=(5, 25),
+                    cutout_shape=[(4, 4), (4, 8), (8, 4), (8, 8), (16, 8), (8, 16), (16, 16), (16, 32), (32, 16), (32, 32)]
+                ),
+            ],
+            [
+                dict(type='Mosaic', center_ratio_range=(0.99, 1.01), img_scale=(1280, 1280), pad_val=0.0, prob=0.0),
+                dict(type='RandomResize', scale=[(1024, 1024), (1280, 1280)], keep_ratio=True),
+                dict(
+                    type='CutOut',
+                    n_holes=(5, 25),
+                    cutout_shape=[(4, 4), (4, 8), (8, 4), (8, 8), (16, 8), (8, 16), (16, 16), (16, 32), (32, 16), (32, 32)]
+                ),
+            ],
+            [
+                dict(type='Mosaic', center_ratio_range=(0.99, 1.01), img_scale=(1280, 1280), pad_val=0.0, prob=0.0),
+                dict(type='RandomResize', scale=[(1024, 1024), (1280, 1280)], keep_ratio=True),
+                dict(
+                    type='CutOut',
+                    n_holes=(5, 25),
+                    cutout_shape=[(4, 4), (4, 8), (8, 4), (8, 8), (16, 8), (8, 16), (16, 16), (16, 32), (32, 16), (32, 32)]
+                ),
+            ],
+        ]
+    ),
     dict(
         type='Albu',
         transforms=albu_train_transforms,
@@ -290,3 +333,12 @@ param_scheduler = [
 ]
 load_from = 'https://download.openmmlab.com/mmdetection/v3.0/ddq/ddq_detr_swinl_30e.pth'
 log_processor = dict(type='LogProcessor', by_epoch=False)
+
+custom_hooks = [
+    dict(
+        type='EMAHook',
+        ema_type='ExpMomentumEMA',
+        momentum=0.0002,
+        update_buffers=True,
+        priority=49)
+]
